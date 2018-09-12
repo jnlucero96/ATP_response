@@ -1,0 +1,46 @@
+#
+# This is the input file for the simulations that are to be run on the 
+# bipartite system used to examine information theoretic relationships
+# with efficiency
+#
+
+[DEFAULT]
+# maximum number of timesteps for the time series
+t_max = 8  
+n_grid = 7 
+gamma_x = 0.5
+q_x = 0.5
+# probability of the system being in state 0
+initial probability of system = 1.0 
+log base = 2 # base of log for information
+
+# Quantity of interest
+# Possible choice of quantities: 
+#   1. mu(t) 
+#   2. r(t)
+#   3. eta(t)
+display quantities: mu(t)
+ 
+# Choose parameterization of the system
+# Available parametrizations:
+#   1. kplus_kminus
+#   2. kplus_kminus_alpha
+#   3. kplus_kminus_delta
+#   4. kplus_kminus_wplus_wminus
+#   5. gamma1_gamma2_qbar_qtilde
+parametrization: kplus_kminus_alpha 
+
+initialize from: equilibrium
+
+
+[User Set Parameters]
+t_max = 8
+n_grid = 7
+gamma_x = 0.5
+q_x = 0.5
+initial probability of system = 1.0
+log base = 2
+
+display quantities: mu(t)
+parametrization: kplus_kminus_alpha
+initialize from: equilibrium
