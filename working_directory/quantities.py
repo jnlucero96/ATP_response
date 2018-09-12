@@ -6,7 +6,7 @@
 
 # Import external python libraries
 from numpy import (
-    array, zeros, einsum, where, finfo, float32, errstate, 
+    array, zeros, einsum, where, finfo, float32, errstate, dot
     abs as nabs, sum as nsum, nan as NaN
     )
 from numpy.linalg import eig
@@ -252,6 +252,52 @@ def sigma_system(p_XY, relax_matrix, log_base):
             )
     ).sum()
 
+def relative_entropy(p,q):
+    """\
+    Description:
+
+    Inputs:
+
+    Outputs:
+    """
+    with errstate(divide='ignore'):
+        return nsum(p*safe_log(p/q), axis=-1)
+
+###############################################################################
+############################# FREE ENERGY #####################################
+###############################################################################
+
+def F_neq_add(p_XY, pars, param_func):
+    """\
+    Description:
+
+    Inputs:
+
+    Outputs:
+    """
+    p_YgivenX = conditional_probability_Y(p_XY)
+    a_val, b_val, c_val, d_val, *__ = param_func(pars)
+    p_YgivenX_eq = array(
+        [[b_val/(a_val+b_val), a_val/(a_val+b_val)],
+         [d_val/(c_val+d_val), c_val/(c_val+d_val)]]
+    )
+
+    if a_val*b_val*c_val*d_val == 0:
+        return array([0,0])
+    
+    return relative_entropy(p_YgivenX, p_YgivenX_eq)
+
+def F_neq_add_expectation(p_XY, pars, param_func):
+    """\
+    Description:
+
+    Inputs:
+
+    Outputs:
+    """
+    p_X = marginal_entropy_X(p_XY, keepdims=True)
+    return dot(p_X, F_neq_add(p_XY, pars, param_func))
+
 
 ###############################################################################
 ############################## QUANTITIES #####################################
@@ -288,7 +334,7 @@ def get_quantities(
                     (t_max + 2,) + (n_grid,)*len(par_tuple)
                 )
             return get_quantities(
-                var_list, t_max, n_grid, log_base, quantities, 
+                var_list, t_max, n_grid, log_base, pars, quantities, 
                 relax_distributions, work_distributions, work_matrix, 
                 relax_matrix, par_tuple, t, param_func, instantaneous
             )
