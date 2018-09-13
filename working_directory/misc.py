@@ -141,8 +141,29 @@ def get_params(indices, n_grid, log=False, base=2):
     return pars
 
 def safe_log(arg, log_base):
+    """\
+    Description:
+
+    Inputs:
+
+    Outputs:
+    """
     with errstate(divide='ignore', invalid='ignore'):
         return log(arg).filled(0.0)/nlog(log_base)
+
+def get_unit_label(unit_string):
+    """\
+    Description:
+
+    Inputs:
+
+    Outputs:
+    """
+
+    if unit_string == '':
+        return ''
+    else:
+        return ' (' + unit_string + ')'
 
 
 

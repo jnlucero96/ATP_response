@@ -3,10 +3,11 @@
 # Date Created: 7 September 2018 08:53:10
 
 # Import internal python libraries
+from sys import argv
 from itertools import product
 
 # Import external python libraries
-from numpy import zeros, array
+from numpy import zeros, array, squeeze, nanmax, nanmin
 
 # Import self-made libraries
 from misc import get_vars, read_from_config, get_params
@@ -14,10 +15,11 @@ from parameterization import select_parameterization
 from dynamics import work_step, relax_step
 from quantities import (
     get_relax_matrix, get_initial_distribution, 
-    get_quantities
+    get_quantities, get_equilibrium_distribution
     )
+from analysis import plot_heatmap, plot_heatmap_grid
 
-def main():
+def main(argc, argv):
 
     """\
     Description:
@@ -27,22 +29,37 @@ def main():
     Outputs:
     """
 
+    try:
+        script_name, analyze, *args = argv
+    except ValueError:
+        print(
+            "Not enough values to unpack. Assuming no analysis is to be done."
+            )
+
+    if analyze.lower() in ('y', 'yes', 'true'):
+        analyze = True
+    elif analyze.lower() in ('n', 'no', 'false'):
+        analyze = False
+
     var_names, var_units, var_list = get_vars()
     config_params = read_from_config()
 
-    q_x = config_params['q_x']
-    gamma_x = config_params['gamma_x']
+    q_x = config_params.getfloat('q_x')
+    gamma_x = config_params.getfloat('gamma_x')
     initial_prob_x = array(
-        [config_params['initial probability of system']]
+        [config_params.getfloat('initial probability of system'),
+         1-config_params.getfloat('initial probability of system')]
         )
 
-    assert(set(config_params['display_quantities'])).issubset(set(var_list)), \
-        "Cannot display required quantities. Choose another set."
+    assert (
+        set(config_params['display quantity'].split()).issubset(set(var_list))
+        ), "Cannot display required quantities. Choose another set."
 
     print("Calculating desired distributions and quantities...")
 
     model_param_func, log_params, axes = select_parameterization(
-        config_params['parametrization']
+        config_params['parametrization'], config_params.getfloat('q_x'),
+        config_params.getfloat('gamma_x')
     )
     dimension = len(log_params)
 
@@ -69,11 +86,13 @@ def main():
     par_tuple_generator = product(
         list(range(config_params.getint('n_grid'))), repeat=dimension
         )
-        
+
+    print("Initializing from: " + config_params['initialize from'])
+
     for par_tuple in par_tuple_generator:
         pars = get_params(
             par_tuple, config_params.getint('n_grid'), 
-            log=log_params, base=config_params.getint('log base')
+            log=log_params, base=config_params.getfloat('log base')
             )
         par_array[par_tuple,...] = pars
 
@@ -93,11 +112,104 @@ def main():
             quantities = get_quantities(
                 var_list, config_params.getint('t_max'), 
                 config_params.getint('n_grid'), 
-                config_params.getint('log base'), pars, quantities, 
+                config_params.getfloat('log base'), pars, quantities, 
                 relax_distributions[(t,) + par_tuple],
                 work_distributions[(t,) + par_tuple], work_matrix, relax_matrix,
                 par_tuple, t, model_param_func, instantaneous=True
             )
 
+        relax_distribution_eq = get_equilibrium_distribution(
+            *model_param_func(pars)
+            )
+        work_distribution_eq = work_step(relax_distribution_eq, work_matrix)
+        quantities = get_quantities(
+            var_list, config_params.getint('t_max'),
+            config_params.getint('n_grid'),
+            config_params.getfloat('log base'), pars, quantities,
+            relax_distributions[(t,) + par_tuple],
+            work_distributions[(t,) + par_tuple], work_matrix, relax_matrix,
+            par_tuple, t, model_param_func, instantaneous=False
+        )
+    
+    for k in quantities.keys():
+        quantities_eq[k] = squeeze(quantities_eq[k])
+
+    print("Calculation Complete!")
+
+    if analyze:
+        print("Beginning analysis now...")
+
+        if dimension == 4:
+
+            for key, value in quantities.items():
+                if not key in config_params['display quantity'].split():
+                    continue    
+                print("Plotting heatmap for " + key + "...")
+
+                key_name = var_names[key]
+                key_units = var_units[(key, config_params.getfloat('log base'))]
+
+                if key_units == '':
+                    maxval = 1
+                    minval = 0
+                else:
+                    maxval = nanmax(value)
+                    minval = min(nanmin(value), 0)
+
+                for t_index in range(config_params.getint('t_max') + 1):
+                    filename = key + '_grid_hmap_t_' + str(t_index) + '.pdf'
+                    title = key_name + ' (t = ' + str(t_index) + ')'
+                    plot_heatmap_grid(
+                        value[t_index,...], key, key_name, key_units, axes, 
+                        log_params,
+                        title=title, filename=filename, 
+                        maxval=maxval, minval=minval
+                        )
+                
+                filename2 = key + '_grid_hmap_steady_state.pdf'
+                title = key_name + ' (steady state)'
+                if key_units == '':
+                    maxval = 1
+                    minval = 0
+                else:
+                    maxval = nanmax(quantities_eq[key])
+                    minval = min(nanmin(quantities_eq[key]), 0)
+                plot_heatmap_grid(
+                    quantities_eq[key], key, key_name, key_units, axes,
+                    log_params,
+                    title=title, filename=filename,
+                    maxval=maxval, minval=minval
+                )
+        elif dimension == 2:
+            for key, value in quantities.items():
+                if not key in config_params['display quantity'].split():
+                    continue
+                print("Plotting heatmap for " + key + "...")
+                key_name = var_names[key]
+                key_units = var_units[(key, config_params.getfloat('log base'))]
+
+                if key_units == '':
+                    maxval = 1
+                    minval = 0
+                else:
+                    maxval = nanmax(value)
+                    minval = min(nanmin(value), 0)
+                
+                for t_index in range(config_params.getint('t_max') + 1):
+                    print("Plotting for t = " + str(t_index))
+                    title = key_name + ' (t = ' + str(t_index) + ')'
+                    filename = key + '_hmap_t_' + str(t_index) + '.pdf'
+                    plot_heatmap(
+                        value[t_index, ...], key, key_name, key_units, axes,
+                        title=title, filename=filename,
+                        maxval=maxval, minval=minval
+                    )
+            print("Completed!")
+
+
+
+
     return 0
 
+if __name__ == "__main__":
+    main(len(argv), argv)

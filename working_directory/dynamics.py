@@ -16,7 +16,6 @@ def work_step(p_XY, work_matrix):
 
     Outputs:
     """
-
     return einsum('ij,jk', work_matrix, p_XY)
 
 def relax_step(p_XY, relax_matrix):
