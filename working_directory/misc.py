@@ -57,9 +57,9 @@ def get_vars():
         'I_e^work': r'$I_{\mathrm{e}}^{\mathrm{work}}$',
         'F': r'$\beta\left< F^{\mathrm{add}}(t) \right>$',
         'Delta F': r'$\beta \left< \Delta F_{\mathrm{neq}}^{\mathrm{relax}}(t)'
-        ' \right>$',
+            + r' \right>$',
         '-Delta F': r'$-\beta \left< \Delta F_{\mathrm{neq}}^{\mathrm{relax}}(t)'
-        ' \right>$',
+            + r' \right>$',
         'r(t)': r'$r (t)$',
         'eta(t)': r'$\eta (t)$',
         'mu(t)': r'$\mu (t)$',

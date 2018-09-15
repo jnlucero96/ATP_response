@@ -17,7 +17,7 @@ from quantities import (
     get_relax_matrix, get_initial_distribution, 
     get_quantities, get_equilibrium_distribution
     )
-from analysis import plot_heatmap, plot_heatmap_grid
+from analysis import plot_heatmap, plot_heatmap_grid, plot_timeseries
 
 def main(argc, argv):
 
@@ -36,9 +36,9 @@ def main(argc, argv):
             "Not enough values to unpack. Assuming no analysis is to be done."
             )
 
-    if analyze.lower() in ('y', 'yes', 'true'):
+    if analyze.lower() in ('y', 'yes', 't', 'true'):
         analyze = True
-    elif analyze.lower() in ('n', 'no', 'false'):
+    elif analyze.lower() in ('n', 'no', 'f', 'false'):
         analyze = False
 
     var_names, var_units, var_list = get_vars()
@@ -52,7 +52,7 @@ def main(argc, argv):
         )
 
     assert (
-        set(config_params['display quantity'].split()).issubset(set(var_list))
+        set([config_params['display quantity']]).issubset(set(var_list))
         ), "Cannot display required quantities. Choose another set."
 
     print("Calculating desired distributions and quantities...")
@@ -67,6 +67,8 @@ def main(argc, argv):
     e = gamma_x*q_x
     f = (1-q_x) * gamma_x
 
+    # Don't really understand why the matrix is defined in terms of these
+    # e and f quantities
     work_matrix = array(
         [[1-e, f],
          [e, 1-f]]
@@ -142,7 +144,7 @@ def main(argc, argv):
         if dimension == 4:
 
             for key, value in quantities.items():
-                if not key in config_params['display quantity'].split():
+                if not key in [config_params['display quantity']]:
                     continue    
                 print("Plotting heatmap for " + key + "...")
 
@@ -182,7 +184,7 @@ def main(argc, argv):
                 )
         elif dimension == 2:
             for key, value in quantities.items():
-                if not key in config_params['display quantity'].split():
+                if not key in [config_params['display quantity']]:
                     continue
                 print("Plotting heatmap for " + key + "...")
                 key_name = var_names[key]
@@ -204,7 +206,29 @@ def main(argc, argv):
                         title=title, filename=filename,
                         maxval=maxval, minval=minval
                     )
+                
+                print("Plotting timeseries for " + key + "...")
+                for index4 in range(config_params.getint('n_grid')):
+                    if log_params[1]:
+                        title_timeseries = key_name + r' ($' + axes[1][1:-1] \
+                            + r'=' + str(index4) + r'/' \
+                            + str(config_params.getint('n_grid')-1) + r'$)'
+                    else:
+                        title_timeseries = key_name + r' ($' + axes[1][1:-1] \
+                            + r'=' + str(index4) + r'/' \
+                            + str(config_params.getint('n_grid')-1) + r'$)'
+                    filename_timeseries = key + '_tseries' \
+                        + axes[1][1:-1] + '_' + str(index4) + '.pdf'
+                    plot_timeseries(
+                        value[:-1, :, index4], key, key_name, key_units, 
+                        config_params.getint('t_max'), axes, log_params, 
+                        title=title, filename=filename, 
+                        maxval=maxval, minval=minval
+                        )
+
             print("Completed!")
+
+
 
 
 
