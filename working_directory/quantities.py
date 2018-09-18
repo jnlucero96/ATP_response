@@ -53,7 +53,6 @@ def get_initial_distribution(
     Outputs:
     """
 
-    initial_prob = zeros((2, 2))
     relax_matrix_eq = einsum('i,ijk', initial_prob_x, relax_matrix)
     D, U = eig(relax_matrix_eq)
 
@@ -104,8 +103,10 @@ def get_equilibrium_distribution(
     )
 
     transfer_matrix = dot(relax_matrix, work_matrix)
+    print(transfer_matrix)
+    print(transfer_matrix[:,0].sum())
     D, U = eig(transfer_matrix)
-
+    print(D);exit(0)
     # find vector corresponding with eigenvalue 1
     pi = array(U[:, where(nabs(D - 1.0) <= finfo(float32).eps)[0][0]])
 
@@ -144,7 +145,9 @@ def marginal_probability_Y(p_XY, keepdims=True):
 
 def conditional_probability_X(p_XY):
     """\
-    Description: Calculate the conditional probability p[X_t|Y_t].
+    Description: Calculate the conditional probability p[X_t|Y_t] by \
+    calculating the marginal distribution of X and then dividing it out from \
+    the joint distribution. 
 
     Inputs:
 

@@ -27,7 +27,7 @@ def relax_step(p_XY, relax_matrix):
     Outputs:
     """
 
-    return einsum('ijk,ik->ij',relax_matrix, p_XY)
+    return einsum('ijk,ik->ij', relax_matrix, p_XY)
 
 
 

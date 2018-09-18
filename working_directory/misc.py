@@ -80,7 +80,7 @@ def get_vars():
         ('sigma_X(t)', 2): 'bits', ('sigma_X(t)', euler): 'nats',
         ('sigma_Y(t)', 2): 'bits', ('sigma_Y(t)', euler): 'nats',
         ('sigma(t)', 2): 'bits', ('sigma(t)', euler): 'nats',
-        ('l_Y(t)', 2): 'bits', ('l_Y(t)', 2): 'nats',
+        ('l_Y(t)', 2): 'bits', ('l_Y(t)', euler): 'nats',
         ('I_nos(t)', 2): 'bits', ('I_nos(t)', euler): 'nats',
         ('T_{X->Y}(t)', 2): 'bits', ('T_{X->Y}(t)', euler): 'nats',
         ('Delta I', 2): 'bits', ('Delta I', euler): 'nats',
@@ -132,7 +132,7 @@ def get_params(indices, n_grid, log=False, base=2):
     else:
         assert len(log) == len(indices), \
             "Mismatch in the length of log and index!"
-    
+
     pars = tuple(
         base**(ind_i-(n_grid-1)) if log[i] else (ind_i*(1.0/(n_grid-1)))
         for i, ind_i in enumerate(indices)

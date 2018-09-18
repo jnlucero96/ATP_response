@@ -61,8 +61,8 @@ def plot_heatmap(
     
     fig.tight_layout()
 
-    left = 0.125  # the left side of the subplots of the figure
-    right = 0.87    # the right side of the subplots of the figure
+    left = 0.10  # the left side of the subplots of the figure
+    right = 0.85    # the right side of the subplots of the figure
     bottom = 0.1   # the bottom of the subplots of the figure
     top = 0.94      # the top of the subplots of the figure
     # wspace = 0.2  # the amount of width reserved for blank space between subplots
@@ -70,7 +70,7 @@ def plot_heatmap(
 
     fig.subplots_adjust(left=left, right=right, bottom=bottom, top=top)
 
-    cbar_axes = fig.add_axes([0.88, 0.1, 0.01, 0.84])
+    cbar_axes = fig.add_axes([0.86, 0.1, 0.01, 0.84])
     cbar_axes.tick_params(labelsize=20)
 
     cbar = fig.colorbar(image, cax=cbar_axes)
@@ -152,7 +152,7 @@ def plot_heatmap_grid(
 
     fig.tight_layout()
 
-    left = 0.125  # the left side of the subplots of the figure
+    left = 0.10  # the left side of the subplots of the figure
     right = 0.88    # the right side of the subplots of the figure
     bottom = 0.1   # the bottom of the subplots of the figure
     top = 0.88      # the top of the subplots of the figure
@@ -295,7 +295,8 @@ def plot_timeseries(
     fig, ax = subplots(1, 1, figsize=(10,10))
 
     if use_legend:
-        image = label = []
+        image = []
+        label = []
         for index in range(n_grid):
             image += ax.plot(data[:, index])
             label.append(str(n_grid - index - 1))
@@ -317,7 +318,7 @@ def plot_timeseries(
 
         fig.subplots_adjust(left=left, right=right, bottom=bottom, top=top)
 
-        legend = fig.add_axes([0.8, 0.15, 0.05, 0.7])
+        legend = fig.add_axes([0.89, 0.1, 0.01, 0.78])
         legend.axis('off')
         if log_params[0]:
             legend.legend(
@@ -331,13 +332,6 @@ def plot_timeseries(
                 title=str(n_grid-1) + r'$' + axes[0][1:-1] + r'= $',
                 loc='center left'
             )
-    fig.text(0.5, 0.98, va='center', ha='center', fontsize=24)
+    fig.text(0.5, 0.98, title, va='center', ha='center', fontsize=24)
     fig.savefig(filename)
     close('all')
-
-    
-    
-
-
-    
-

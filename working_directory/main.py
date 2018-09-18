@@ -96,7 +96,7 @@ def main(argc, argv):
             par_tuple, config_params.getint('n_grid'), 
             log=log_params, base=config_params.getfloat('log base')
             )
-        par_array[par_tuple,...] = pars
+        par_array[par_tuple,...] = pars 
 
         relax_matrix = get_relax_matrix(*model_param_func(pars))
         p_XY = get_initial_distribution(
@@ -209,6 +209,7 @@ def main(argc, argv):
                 
                 print("Plotting timeseries for " + key + "...")
                 for index4 in range(config_params.getint('n_grid')):
+                    print("Plotting for grid number: " + str(index4))
                     if log_params[1]:
                         title_timeseries = key_name + r' ($' + axes[1][1:-1] \
                             + r'=' + str(index4) + r'/' \
@@ -222,7 +223,7 @@ def main(argc, argv):
                     plot_timeseries(
                         value[:-1, :, index4], key, key_name, key_units, 
                         config_params.getint('t_max'), axes, log_params, 
-                        title=title, filename=filename, 
+                        title=title_timeseries, filename=filename_timeseries, 
                         maxval=maxval, minval=minval
                         )
 
