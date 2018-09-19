@@ -17,7 +17,9 @@ from quantities import (
     get_relax_matrix, get_initial_distribution, 
     get_quantities, get_equilibrium_distribution
     )
-from analysis import plot_heatmap, plot_heatmap_grid, plot_timeseries
+from analysis import (
+    plot_heatmap, plot_heatmap_grid, plot_timeseries, plot_timeseries_grid
+    )
 
 def main(argc, argv):
 
@@ -33,12 +35,13 @@ def main(argc, argv):
         script_name, analyze, *args = argv
     except ValueError:
         print(
-            "Not enough values to unpack. Assuming no analysis is to be done."
+            "Not enough values to unpack. Assuming analysis to be done."
             )
+        analyze = 'true'
 
-    if analyze.lower() in ('y', 'yes', 't', 'true'):
+    if analyze.lower() in (1, '1', 'y', 'yes', 't', 'true'):
         analyze = True
-    elif analyze.lower() in ('n', 'no', 'f', 'false'):
+    elif analyze.lower() in (0, '0', 'n', 'no', 'f', 'false'):
         analyze = False
 
     var_names, var_units, var_list = get_vars()
@@ -75,7 +78,12 @@ def main(argc, argv):
     )
 
     # Initialize arrays and tables
-    relax_distributions = work_distributions = zeros(
+    relax_distributions = zeros(
+        (config_params.getint('t_max')+2,) 
+        + (config_params.getint('n_grid'),)*dimension 
+        + (2, 2)
+        )
+    work_distributions = zeros(
         (config_params.getint('t_max')+2,) 
         + (config_params.getint('n_grid'),)*dimension 
         + (2, 2)
@@ -83,7 +91,8 @@ def main(argc, argv):
     par_array = zeros(
         (config_params.getint('n_grid'),)*dimension + (dimension,)
         )
-    quantities = quantities_eq = {}
+    quantities = {}
+    quantities_eq = {}
 
     par_tuple_generator = product(
         list(range(config_params.getint('n_grid'))), repeat=dimension
@@ -120,14 +129,15 @@ def main(argc, argv):
                 par_tuple, t, model_param_func, instantaneous=True
             )
 
+        # Begin steady state calculation
         relax_distribution_eq = get_equilibrium_distribution(
             *model_param_func(pars)
             )
         work_distribution_eq = work_step(relax_distribution_eq, work_matrix)
-        quantities = get_quantities(
+        quantities_eq = get_quantities(
             var_list, config_params.getint('t_max'),
             config_params.getint('n_grid'),
-            config_params.getfloat('log base'), pars, quantities,
+            config_params.getfloat('log base'), pars, quantities_eq,
             relax_distributions[(t,) + par_tuple],
             work_distributions[(t,) + par_tuple], work_matrix, relax_matrix,
             par_tuple, t, model_param_func, instantaneous=False
@@ -182,13 +192,81 @@ def main(argc, argv):
                     title=title, filename=filename,
                     maxval=maxval, minval=minval
                 )
-        elif dimension == 2:
+
+        elif dimension == 3:
+
             for key, value in quantities.items():
                 if not key in [config_params['display quantity']]:
                     continue
                 print("Plotting heatmap for " + key + "...")
                 key_name = var_names[key]
                 key_units = var_units[(key, config_params.getfloat('log base'))]
+
+                if key_units == '':
+                    maxval = 1
+                    minval = 0
+                else: 
+                    maxval = nanmax(value)
+                    minval = min(nanmin(value), 0)
+                title = key_name
+                filename = key + '_grid_tseries.pdf'
+
+                print("Plotting timeseries for " + key + "...")
+                plot_timeseries_grid(
+                    value[:-1,...], key, key_name, key_units, 
+                    config_params.getint('t_max'), axes, log_params,
+                    title=title, filename=filename, maxval=maxval, minval=minval
+                )
+
+                if key_units == '':
+                    maxval = 1
+                    minval = 0
+                else:
+                    maxval = nanmax(quantities_eq[key])
+                    minval = min(nanmin(quantities_eq[k]), 0)
+                for index3 in range(config_params.getint('n_grid')):
+                    filename = key + '_hmap_steadystate_' + axes[2][1:-1] \
+                        + '_' + str(index3) + '.pdf'
+                    if log_params[2]:
+                        title = key_name + r' ($' + axes[2][1:-1] + r'=2^{' \
+                            + str(index3+1-config_params.getint('n_grid')) \
+                            + r'}$, steady-state)'
+                    else:
+                        title = key_name + r' ($' + axes[2][1:-1] + '=' \
+                            + str(index3) + r'/' \
+                            + str(config_params.getint('n_grid')-1) \
+                            + r'$, steady-state)'
+                    print("Plotting heatmap for " + index3 + "...")
+                    plot_heatmap(
+                        quantities_eq[key][..., index3], 
+                        key, key_name, key_units, axes,
+                        title=title, filename=filename,
+                        maxval=maxval, minval=minval
+                        )
+
+
+        elif dimension == 2:
+            
+            for key, value in quantities.items():
+                if not key in [config_params['display quantity']]:
+                    continue
+                print("Plotting heatmap for " + key + "...")
+                key_name = var_names[key]
+                key_units = var_units[(key, config_params.getfloat('log base'))]
+
+                if key_units == '':
+                    maxval = 1
+                    minval = 0
+                else:
+                    maxval = nanmax(quantities_eq[key])
+                    minval = min(nanmin(quantities_eq[key]), 0)
+                title = key_name + '(steady-state)'
+                filename = key + '_hmap_steadystate.pdf'
+                plot_heatmap(
+                    quantities_eq[key], key, key_name, key_units, axes,
+                    title=title, filename=filename,
+                    maxval=maxval, minval=minval
+                )
 
                 if key_units == '':
                     maxval = 1

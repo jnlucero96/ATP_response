@@ -5,7 +5,7 @@
 # Import internal python libraries
 from sys import exit
 # Import external python libraries
-from numpy import nanmin, nanmax
+from numpy import nanmin, nanmax, arange
 from matplotlib import colors, rcParams, rc
 from matplotlib.cm import get_cmap
 from matplotlib.style import use
@@ -73,7 +73,7 @@ def plot_heatmap(
     cbar_axes = fig.add_axes([0.86, 0.1, 0.01, 0.84])
     cbar_axes.tick_params(labelsize=20)
 
-    cbar = fig.colorbar(image, cax=cbar_axes)
+    cbar = fig.colorbar(image, cax=cbar_axes, ticks=arange(0.0, 1.1, 0.1))
     cbar.set_label(var_name + units, labelpad=10, fontsize=18)
     fig.text(0.5, 0.965, title, va='center', ha='center', fontsize=24)
     fig.savefig(filename)
@@ -248,13 +248,13 @@ def plot_timeseries_grid(
         if log_params[2]:
             legend.legend(
                 image, label, 
-                title=r'$-\log_{2}{' + str(n_grid-1) + axes[2][1:-1] + r'= $',
+                title=r'$-\log_{2}' + str(n_grid-1) + axes[2][1:-1] + r'= $',
                 loc='center left'
             )
         else:
             legend.legend(
                 image, label,
-                title=+ str(n_grid-1) + r'$' + axes[2][1:-1] + r'= $',
+                title=str(n_grid-1) + r'$' + axes[2][1:-1] + r'= $',
                 loc='center left'
             )
     

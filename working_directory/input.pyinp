@@ -38,9 +38,9 @@ t_max = 8
 n_grid = 7
 gamma_x = 0.25
 q_x = 0.5
-initial probability of system = 0.75
+initial probability of system = 1.0
 log base = 2
 
-display quantity: l_Y(t)
+display quantity: mu(t)
 parametrization: kplus_kminus
 initialize from: equilibrium

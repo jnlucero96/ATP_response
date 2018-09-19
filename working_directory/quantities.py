@@ -38,7 +38,6 @@ def get_relax_matrix(a_val, b_val, c_val, d_val, *__):
 
     return relax_matrix
 
-
 ###############################################################################
 ############################## DISTRIBUTIONS ##################################
 ###############################################################################
@@ -55,7 +54,7 @@ def get_initial_distribution(
 
     relax_matrix_eq = einsum('i,ijk', initial_prob_x, relax_matrix)
     D, U = eig(relax_matrix_eq)
-
+    
     if initialization_condition.lower() == 'equilibrium':
         # find the eigenvector corresponding to eigenvalue 1
         p = array(U[:, where(nabs(D - 1.0) <= finfo(float32).eps)[0][0]])
@@ -103,10 +102,7 @@ def get_equilibrium_distribution(
     )
 
     transfer_matrix = dot(relax_matrix, work_matrix)
-    print(transfer_matrix)
-    print(transfer_matrix[:,0].sum())
     D, U = eig(transfer_matrix)
-    print(D);exit(0)
     # find vector corresponding with eigenvalue 1
     pi = array(U[:, where(nabs(D - 1.0) <= finfo(float32).eps)[0][0]])
 
@@ -124,7 +120,8 @@ def get_equilibrium_distribution(
 ###############################################################################
 def marginal_probability_X(p_XY, keepdims=True):
     """\
-    Description: Calculate the marginal probability p[X_t]
+    Description: Calculate the marginal probability p[X_t] by summing out \
+    Y from p[X_t,Y_t].
 
     Inputs:
 
@@ -134,7 +131,8 @@ def marginal_probability_X(p_XY, keepdims=True):
 
 def marginal_probability_Y(p_XY, keepdims=True):
     """\
-    Description: Calculate the marginal probability p[Y_t]
+    Description: Calculate the marginal probability p[Y_t] by summing out \
+    X from p[X_t, Y_t].
 
     Inputs:
 
@@ -238,10 +236,11 @@ def conditional_entropy_Y(p_XY, log_base):
 
     Outputs:
     """
-    p_YgivenX = conditional_probability_X(p_XY)
+    p_YgivenX = conditional_probability_Y(p_XY)
     H_YgivenX = nsum(
         p_XY*safe_log(p_YgivenX, log_base), axis=(-1, -2)
     ).__neg__()
+
 
     return H_YgivenX
 
@@ -262,7 +261,7 @@ def transfer_entropy(p_XY_t, log_base):
         - safe_log(p_Y_t_minus_1*p_X_t_minus_1, log_base)
         ).sum()
 
-def sigma_environment(p_XY, work_matrix, log_base):
+def sigma_X(p_XY, work_matrix, log_base):
     """\
     Description: Calculate the thermodyanmics entropy produced by the \
     environment.
@@ -277,7 +276,7 @@ def sigma_environment(p_XY, work_matrix, log_base):
         * (safe_log(work_matrix, log_base) - safe_log(work_matrix.T, log_base))
         ).sum()
 
-def sigma_system(p_XY, relax_matrix, log_base):
+def sigma_Y(p_XY, relax_matrix, log_base):
     """\
     Description: Calculate the thermodynamic entropy produced by the system.
 
@@ -404,6 +403,11 @@ def get_quantities(
         conditional_entropy_Y(relax_distributions, log_base)
     quantities['H[X_t|Y_t]'][index0] = \
         conditional_entropy_X(relax_distributions, log_base)
+        
+    quantities['H[Y_t|X_t+1]'][index0] = \
+        conditional_entropy_Y(work_distributions, log_base)
+    quantities['H[X_t+1|Y_t]'][index0] = \
+        conditional_entropy_X(work_distributions, log_base)
 
     quantities['H[X_t,Y_t]'][index0] = \
         quantities['H[Y_t]'][index0] + quantities['H[X_t|Y_t]'][index0]
@@ -424,9 +428,9 @@ def get_quantities(
             quantities['r(t)'][index0] = NaN
 
     quantities['sigma_X(t)'][index0] = \
-        sigma_environment(relax_distributions, work_matrix, log_base)
+        sigma_X(relax_distributions, work_matrix, log_base)
     quantities['sigma_Y(t)'][index0] = \
-        sigma_system(work_distributions, relax_matrix, log_base)
+        sigma_Y(work_distributions, relax_matrix, log_base)
     quantities['sigma(t)'][index0] = \
         quantities['sigma_X(t)'][index0] + quantities['sigma_Y(t)'][index0]
 
@@ -439,7 +443,7 @@ def get_quantities(
     quantities['-Delta F'][index0] = -quantities['Delta F'][index0]
 
     if t > 0 or not instantaneous:
-        quantities['l_Y(t)'][index0] = \
+        quantities['l_Y(t)'][index1] = \
             quantities['H[X_t+1|Y_t]'][index1] - quantities['H[X_t|Y_t]'][index0]
         quantities['I_nos(t)'][index1] = \
             quantities['I[X_t,Y_t]'][index1] - quantities['I[X_t+1,Y_t]'][index1]
