@@ -73,7 +73,7 @@ def plot_heatmap(
     cbar_axes = fig.add_axes([0.86, 0.1, 0.01, 0.84])
     cbar_axes.tick_params(labelsize=20)
 
-    cbar = fig.colorbar(image, cax=cbar_axes, ticks=arange(0.0, 1.1, 0.1))
+    cbar = fig.colorbar(image, cax=cbar_axes)
     cbar.set_label(var_name + units, labelpad=10, fontsize=18)
     fig.text(0.5, 0.965, title, va='center', ha='center', fontsize=24)
     fig.savefig(filename)

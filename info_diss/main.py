@@ -18,7 +18,8 @@ from quantities import (
     get_quantities, get_equilibrium_distribution
     )
 from analysis import (
-    plot_heatmap, plot_heatmap_grid, plot_timeseries, plot_timeseries_grid
+    plot_heatmap, plot_heatmap_grid, plot_timeseries, 
+    plot_timeseries_grid
     )
 
 def main(argc, argv):
@@ -261,12 +262,14 @@ def main(argc, argv):
                     maxval = nanmax(quantities_eq[key])
                     minval = min(nanmin(quantities_eq[key]), 0)
                 title = key_name + '(steady-state)'
-                filename = key + '_hmap_steadystate.pdf'
+                filename = key + '_hmap_steadystate.png'
                 plot_heatmap(
                     quantities_eq[key], key, key_name, key_units, axes,
                     title=title, filename=filename,
                     maxval=maxval, minval=minval
                 )
+
+                exit(0)
 
                 if key_units == '':
                     maxval = 1

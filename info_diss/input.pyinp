@@ -41,6 +41,6 @@ q_x = 0.5
 initial probability of system = 1.0
 log base = 2
 
-display quantity: mu(t)
+display quantity: l_Y(t)
 parametrization: kplus_kminus
 initialize from: equilibrium
