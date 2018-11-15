@@ -12,7 +12,8 @@ use('seaborn-paper')
 rc('text', usetex=True)
 rcParams['mathtext.fontset'] = 'cm'
 rcParams['text.latex.preamble'] = [
-    r"\usepackage{amsmath}", r"\usepackage{lmodern}", r"\usepackage{siunitx}", r"\usepackage{units}"
+    r"\usepackage{amsmath}", r"\usepackage{lmodern}", r"\usepackage{siunitx}", r"\usepackage{units}",
+    r"\usepackage{physics}"
 ]
 
 def get_params():
@@ -106,7 +107,7 @@ def main2():
     # periods_to_run = 2**(arange(-8.0, 8.0))
     # amplitudes = array([0.0, 2.0, 4.0, 8.0])
     # trap_strengths = array([1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
-    periods_to_run = array([7.5e4])
+    periods_to_run = array([1.0])
     amplitudes_x = array([1.0])
     amplitudes_y = array([1.0])
     amplitudes_xy = array([1.0])
@@ -148,10 +149,10 @@ def main2():
                         ofile.flush()
 
                     fig, ax = subplots(3, 1, figsize=(10,10), sharex='all', sharey='all')
-                    cl0 = ax[0].contourf(positions_deg, positions_deg, p_now.T, 20)
+                    cl0 = ax[0].contourf(positions_deg, positions_deg, p_now.T, 50)
                     ax[0].set_title(r'$\hat{\pi}^{\mathrm{eq}}$', fontsize=28)
                     ax[0].set_ylim([0, 360-(360/N)+0.001])
-                    cl1 = ax[1].contourf(positions_deg, positions_deg, p_equil.T, 20)
+                    cl1 = ax[1].contourf(positions_deg, positions_deg, p_equil.T, 50)
                     ax[1].set_title(r'$\pi^{\mathrm{eq}}$', fontsize=28)
                     ax[1].set_ylim([0, 360-(360/N)+0.001])
                     cl2 = ax[2].contourf(positions_deg, positions_deg, (p_now / p_equil).T, 20)
@@ -192,7 +193,55 @@ def main2():
                         wspace=wspace, hspace=hspace
                         )
 
-                    fig.savefig('test.pdf')
+                    fig.savefig('probability_comparison.pdf')
+
+                    print("Mean flux is = " + str(mean_flux))
+                    fig2, ax2 = subplots(2, 1, figsize=(
+                        10, 10), sharex='all', sharey='all')
+                    cl0_1 = ax2[0].contourf(
+                        positions_deg, positions_deg, flux[0].T, 50)
+                    ax2[0].set_title(r'$\langle J_{1}(\vb{x})\rangle$', fontsize=28)
+                    ax2[0].set_ylim([0, 360-(360/N)+0.001])
+                    cl1_1 = ax2[1].contourf(
+                        positions_deg, positions_deg, flux[1].T, 50)
+                    ax2[1].set_title(r'$\langle J_{2}(\vb{x},t)\rangle$', fontsize=28)
+                    ax2[1].set_ylim([0, 360-(360/N)+0.001])
+                    ax2[0].tick_params(
+                        axis='y', labelsize=22
+                    )
+                    ax2[1].tick_params(
+                        axis='y', labelsize=22
+                    )
+                    ax2[1].tick_params(
+                        axis='both', labelsize=22
+                    )
+                    fig2.colorbar(cl0_1, ax=ax2[0])
+                    fig2.colorbar(cl1_1, ax=ax2[1])
+
+                    fig2.tight_layout()
+                    fig2.text(
+                        0.03, 0.51, r'$\theta_{y}$', va='center', ha='center',
+                        fontsize=27, rotation='vertical'
+                    )
+                    fig2.text(
+                        0.47, 0.02, r'$\theta_{x}$', va='center', ha='center',
+                        fontsize=27
+                    )
+
+                    left = 0.1  # the left side of the subplots of the figure
+                    right = 1.0    # the right side of the subplots of the figure
+                    bottom = 0.09   # the bottom of the subplots of the figure
+                    top = 0.95      # the top of the subplots of the figure
+                    wspace = 0.1  # the amount of width reserved for blank space between subplots
+                    hspace = 0.20  # the amount of height reserved for white space between subplots
+
+                    fig2.subplots_adjust(
+                        left=left, right=right, bottom=bottom, top=top,
+                        wspace=wspace, hspace=hspace
+                    )
+
+                    fig2.savefig('flux_components.pdf')
+
                     close('all')
 
                     print("normalization check:", p_sum)

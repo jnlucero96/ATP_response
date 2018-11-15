@@ -34,7 +34,7 @@ def launchpad_coupled(
         np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] prob      = np.empty((N, N), dtype=DTYPE)
         np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] p_now     = np.zeros((N, N), dtype=DTYPE)
         np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] p_later   = np.empty((N, N), dtype=DTYPE)
-        np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] flux      = np.zeros((N, N), dtype=DTYPE)   # initalize cumulative flux as list to keep track of flux at every position
+        np.ndarray[DTYPE_t, ndim=3, negative_indices=False, mode='c'] flux      = np.zeros((2, N, N), dtype=DTYPE)   # initalize cumulative flux as list to keep track of flux at every position
         np.ndarray[DTYPE_t, ndim=1, negative_indices=False, mode='c'] positions = np.linspace(0, (2*pi)-dx, N, dtype=DTYPE)
 
     if dt > time_check:
@@ -61,18 +61,19 @@ def launchpad_coupled(
 
     for x1 in range(N):
         for x2 in range(N):
-            # p_now[x1, x2] = 1.0/(N*N)
-            p_now[x1, x2] = prob[x1, x2]
+            p_now[x1, x2] = 1.0/(N*N)
+            # p_now[x1, x2] = prob[x1, x2]
 
     E_after_relax = E
     E_0 = E
 
     print("Running simulation now")
-    work, heat, mean_flux, p_sum = run_simulation_coupled(
+    work, heat, p_sum = run_simulation_coupled(
         p_now, flux, dx, dt, cycles, period, m, gamma, beta, Ax, Axy, Ay, E_after_relax
     )
 
-    return flux, mean_flux, work, heat, p_sum, p_now, prob, positions
+    return flux, flux.mean(axis=(1,2)), work, heat, p_sum, p_now, prob, positions
+    # return flux, work, heat, p_sum, p_now, prob, positions
 
 @cdivision(True)
 cdef double force1(
@@ -112,45 +113,143 @@ cdef double potential_coupled(
 
 @cdivision(True)
 @boundscheck(False)
+@wraparound(False)
 cdef double calc_mean(
     np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] array, int N
     ):
     cdef double mean_val = 0.0
-    cdef int i
+    cdef int i, j
     for i in range(N):
-        mean_val += array[i]
+        for j in range(N):
+            mean_val += array[i, j]
 
     return mean_val / N
 
 @boundscheck(False)
+@wraparound(False)
 cdef double calc_sum(
-    np.ndarray[DTYPE_t, ndim=1, negative_indices=False, mode='c'] array, int N
+    np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] array, int N
     ):
     cdef double sum_val = 0.0
-    cdef int i
-
-    for i in range(N):
-        sum_val += array[i]
-
-    return sum_val
-
-cdef void calc_flux(
-    np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c']  p_now, int N
-    ):
-
-    cdef np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] flux_array = np.empty((N, N), dtype=DTYPE)
     cdef int i, j
 
-    # for i in range(N):
-    #     for j in range(N):
-    #         flux_array[i, j] = -
+    for i in range(N):
+        for j in range(N):
+            sum_val += array[i, j]
+
+    return sum_val
 
 @cdivision(True)
 @boundscheck(False)
 @wraparound(False)
-cdef (double, double, double, double) run_simulation_coupled(
+cdef void calc_flux(
+    np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c']  p_now,
+    np.ndarray[DTYPE_t, ndim=3, negative_indices=False, mode='c']  flux_array,
+    double period, double M_tot, double m1, double m2, double gamma, double beta,
+    double Ax, double Axy, double Ay, int N, double dx, double dt
+    ):
+
+    cdef int i, j
+
+    # explicit update of the corners
+    # first component
+    flux_array[0, 0, 0] += (-1.0)*(
+        force1(0.0, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[0, 0]
+        + (p_now[1, 0] - p_now[N-1, 0])/(beta*gamma*2*dx)
+        )*(dt/dx)
+    flux_array[0, 0, N-1] += (-1.0)*(
+        force1(0.0, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[0, N-1]
+        + (p_now[1, N-1] - p_now[N-1, N-1])/(beta*gamma*2*dx)
+        )*(dt/dx)
+    flux_array[0, N-1, 0] += (-1.0)*(
+        force1(-dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[N-1, 0]
+        + (p_now[0, 0] - p_now[N-2, 0])/(beta*gamma*2*dx)
+        )*(dt/dx)
+    flux_array[0, N-1, N-1] += (-1.0)*(
+        force1(-dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[N-1, N-1]
+        + (p_now[0, N-1] - p_now[N-2, N-1])/(beta*gamma*2*dx)
+        )*(dt/dx)
+
+    # second component
+    flux_array[1, 0, 0] += (-1.0)*(
+        force2(0.0, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[0, 0]
+        + (p_now[0, 1] - p_now[0, N-1])/(beta*gamma*m2*2*dx)
+        )*(dt/dx)
+    flux_array[1, 0, N-1] += (-1.0)*(
+        force2(0.0, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[0, N-1]
+        + (p_now[0, 0] - p_now[0, N-2])/(beta*gamma*m2*2*dx)
+        )*(dt/dx)
+    flux_array[1, N-1, 0] += (-1.0)*(
+        force2(-dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[N-1, 0]
+        + (p_now[N-1, 1] - p_now[N-1, N-1])/(beta*gamma*m2*2*dx)
+        )*(dt/dx)
+    flux_array[1, N-1, N-1] += (-1.0)*(
+        force2(-dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[N-1, N-1]
+        + (p_now[N-1, 0] - p_now[N-1, N-2])/(beta*gamma*m2*2*dx)
+        )*(dt/dx)
+
+    # for points with well defined neighbours
+    for i in range(1, N-1):
+        # explicitly update for edges not corners
+        # first component
+        flux_array[0, 0, i] += (-1.0)*(
+        force1(0.0, i*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[0, i]
+        + (p_now[1, i] - p_now[N-1, i])/(beta*gamma*2*dx)
+        )*(dt/dx)
+        flux_array[0, i, 0] += (-1.0)*(
+            force1(i*dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[i, 0]
+            + (p_now[i+1, 0]- p_now[i-1, 0])/(beta*gamma*2*dx)
+        )*(dt/dx)
+
+        # second component
+        flux_array[1, 0, i] += (-1.0)*(
+            force2(0.0, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[0, i]
+            + (p_now[0, i+1] - p_now[0, i-1])/(beta*gamma*m2*2*dx)
+            )*(dt/dx)
+        flux_array[1, i, 0] += (-1.0)*(
+            force2(0.0, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[i, 0]
+            + (p_now[i, 1] - p_now[i, N-1])/(beta*gamma*m2*2*dx)
+            )*(dt/dx)
+
+        for j in range(1, N-1):
+            # first component
+            flux_array[0, i, j] += (-1.0)*(
+                force1(i*dx, j*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[i, j]
+                + (p_now[i+1, j] - p_now[i-1, j])/(beta*gamma*2*dx)
+                )*(dt/dx)
+            # second component
+            flux_array[1, i, j] += (-1.0)*(
+                force2(i*dx, j*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[i, j]
+                + (p_now[i, j+1] - p_now[i, j-1])/(beta*gamma*m2*2*dx)
+                )*(dt/dx)
+
+        # update rest of edges not corners
+        # first component
+        flux_array[0, N-1, i] += (-1.0)*(
+            force1(-dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[N-1, i]
+            + (p_now[0, i] - p_now[N-2, i])/(beta*gamma*2*dx)
+            )*(dt/dx)
+        flux_array[0, i, N-1] += (-1.0)*(
+            force1(-dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[i, N-1]
+            + (p_now[i+1, N-1] - p_now[i-1, N-1])/(beta*gamma*2*dx)
+            )*(dt/dx)
+
+        # second component
+        flux_array[1, N-1, i] += (-1.0)*(
+            force2(-dx, i*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[N-1, i]
+            + (p_now[N-1, i+1] - p_now[N-1, i-1])/(beta*gamma*m2*2*dx)
+            )*(dt/dx)
+        flux_array[1, i, N-1] += (-1.0)*(
+            force2(i*dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_now[i, N-1]
+            + (p_now[i, 0] - p_now[i, N-2])/(beta*gamma*m2*2*dx)
+            )*(dt/dx)
+
+@cdivision(True)
+@boundscheck(False)
+@wraparound(False)
+cdef (double, double, double) run_simulation_coupled(
     np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] p_now,
-    np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] flux,
+    np.ndarray[DTYPE_t, ndim=3, negative_indices=False, mode='c'] flux,
     double dx, double dt, double cycles, double period,
     double m, double gamma, double beta, double Ax,
     double Axy, double Ay, double E_after_relax
@@ -172,17 +271,16 @@ cdef (double, double, double, double) run_simulation_coupled(
         double      m2            = 1.0
         double      M_tot         = m1 + m2
         np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] p_last   = np.empty((N, N), dtype=DTYPE)
-        np.ndarray[DTYPE_t, ndim=2, negative_indices=False, mode='c'] flux_now = np.empty((N, N), dtype=DTYPE)
 
     t += dt #step forwards in t
 
     while t < (cycles*period+dt):
 
         for i in range(N):
-            p_last[i] = p_now[i] # save previous distribution
-            # reset to zero
-            p_now[i] = 0.0
-            flux_now[i] = 0.0
+            for j in range(N):
+                p_last[i, j] = p_now[i, j] # save previous distribution
+                # reset to zero
+                p_now[i, j] = 0.0
 
         E_last = E_after_relax  #Energy at t-dt is E_last
         E_change_pot = 0.0 #intialize energy of system after potential moved
@@ -279,6 +377,8 @@ cdef (double, double, double, double) run_simulation_coupled(
         heat += E_after_relax - E_change_pot #adds to cumulative heat
         heat_inst = E_after_relax - E_change_pot #heat just in this move
 
+        calc_flux(p_now, flux, period, M_tot, m1, m2, gamma, beta, Ax, Axy, Ay, N, dx, dt)
+
         t += dt
 
-    return work/cycles, heat/cycles, flux.mean(axis=None)/cycles, p_now.sum(axis=None)
+    return work/cycles, heat/cycles, calc_sum(p_now, N)

@@ -1,11 +1,12 @@
 from numpy import (
-    cos, array, linspace, arange, loadtxt, vectorize, pi, exp, empty, log,
-    finfo
+    cos, array, linspace, arange, loadtxt, vectorize, pi, exp, empty, log, log2,
+    finfo, true_divide
     )
-from matplotlib import rcParams, rc 
+from matplotlib import rcParams, rc
 from matplotlib.style import use
 from matplotlib.pyplot import subplots, close
 from matplotlib.cm import get_cmap
+from os import getcwd
 
 use('seaborn-paper')
 rc('text', usetex=True)
@@ -32,27 +33,27 @@ def plot_equilibrium():
 
     for Axy in amplitudes_xy:
         fig, ax = subplots(
-            amplitudes_x.size, amplitudes_y.size, 
+            amplitudes_x.size, amplitudes_y.size,
             figsize=(10, 10), sharex='all', sharey='all'
             )
         fig2, ax2 = subplots(
-            amplitudes_x.size, amplitudes_y.size, 
+            amplitudes_x.size, amplitudes_y.size,
             figsize=(10, 10), sharex='all', sharey='all'
             )
         for index1, Ax in enumerate(amplitudes_x):
             for index2, Ay in enumerate(amplitudes_y):
-                
+
                 p_eq = empty((N, N), dtype='float64')
                 Uprofile = empty((N, N), dtype='float64')
                 s = 0.0
-                
+
                 for i in range(N):
                     for j in range(N):
                         Utot = landscape(Ax, Axy, Ay, i*dx, j*dx)
                         s += exp((-1)*Utot)
-                        p_eq[i, j] = exp((-1)*Utot) 
+                        p_eq[i, j] = exp((-1)*Utot)
                         Uprofile[i, j] = Utot
-                
+
                 p_eq /= s
 
                 ax[index1, index2].contourf(position, position, p_eq.T, 20)
@@ -61,7 +62,7 @@ def plot_equilibrium():
                 if index1 == 0:
                     ax[index1, index2].set_title(r"$\mathrm{A}_{x}$ = " + "{0}".format(Ay))
                     ax2[index1, index2].set_title(r"$\mathrm{A}_{x}$ = " + "{0}".format(Ay))
-                
+
                 if index2 == amplitudes_y.size - 1:
                     ax[index1, index2].set_ylabel(r'$\mathrm{A}_{y}$ = ' + "{0}".format(Ax))
                     ax[index1, index2].yaxis.set_label_position("right")
@@ -82,7 +83,7 @@ def analyze_alex_cython_simulation():
     trap_strengths = array([1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
 
     cycles = 1.0
-    
+
     fig, ax = subplots(4, 4, figsize=(10, 10))
     target_dir = './output_dir/'
     for row_index in range(4):
@@ -115,18 +116,20 @@ def analyze_alex_cython_simulation():
 def analyze_joint_equilibrium_estimate():
 
     Ax = Ay = Axy = 1.0
-    N = 50
+    cwd = getcwd()
+    pi_est = loadtxt(cwd + '/joint_distribution2.dat')
+    N = pi_est.shape[0]
     dx = (2*pi)/N
     positions = linspace(0.0, (2*pi)-dx, N)
     lanscape_vec = vectorize(landscape)
     E = landscape(Ax, Axy, Ay, positions[:,None], positions[None,:])
 
     pi_theory = exp(-E) / exp(-E).sum(axis=None)
-    pi_est = loadtxt('joint_distribution.dat')
 
     compare = (pi_est - pi_theory) / pi_theory
 
-    print((compare < finfo('float32').eps).sum() / compare.size)
+    print("Total Variation Distance =", 0.5*((pi_est-pi_theory).__abs__().sum()))
+    print("Relative Entropy =", pi_est.dot(log2(true_divide(pi_est, pi_theory))).sum(axis=None))
 
     # fig, ax = subplots(3, 1, figsize=(10,10), sharex='all', sharey='all')
     # blues_cmap = get_cmap('Blues')
@@ -140,7 +143,7 @@ def analyze_joint_equilibrium_estimate():
     # coolwarm_cmap = get_cmap('coolwarm')
     # cl2 = ax[2].contourf(positions * (180./pi), positions * (180./pi), ((pi_est - pi_theory) / pi_theory).T , 50, cmap=coolwarm_cmap)
     # ax[2].set_title(
-    #     r'$\left(\hat{\pi}^{\mathrm{eq}}-\pi^{\mathrm{eq}}\right)/\pi^{\mathrm{eq}}$', 
+    #     r'$\left(\hat{\pi}^{\mathrm{eq}}-\pi^{\mathrm{eq}}\right)/\pi^{\mathrm{eq}}$',
     #     fontsize=28
     #     )
     # ax[2].set_ylim([0, 360-(360/N)+0.001])
@@ -227,4 +230,3 @@ if __name__ == "__main__":
     # analyze_alex_cython_simulation()
     # plot_equilibrium()
     analyze_joint_equilibrium_estimate()
-
