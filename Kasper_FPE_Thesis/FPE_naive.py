@@ -2,7 +2,7 @@ from math import *   # import everything from python math library
 from protocol import *
 from potential import TrapMin,force_x, potential_x #import potential and force functions from potential.py
 from parameters import *  #import everything in parameters.py
-import random #import the python random library 
+import random #import the python random library
 import numpy as np #import python numpy library as np
 import os.path
 
@@ -46,13 +46,14 @@ del E
 ##____________Definitions_________##
 
 def calc_flux(location):
+	#JNL: Why is the flux here calculated using the Prob_last distribution and not Prob_now??
 	inst_flux=(force_x(c,location*dx)*Prob_last[location]/(m*gamma)-(Prob_last[location+1]-Prob_last[location-1])/(gamma*beta*2*dx))*dt/dx
 	return inst_flux
 
 def SaveData(*args): # example: SaveData(x, v, work) prints x, v, work to workfile3.dat
 	for data in args:
 		h.write(str(data)+'\t')
-	h.write('\n')
+	h.write('\n')c
 
 def Rotation(P_dist,deg): # and P_240 is prob Period/3 ago (c=240)
 	P_rotate=[0]*N
@@ -63,7 +64,7 @@ def Rotation(P_dist,deg): # and P_240 is prob Period/3 ago (c=240)
 	return P_rotate
 
 
-##____________Initialize Simulation_________##	
+##____________Initialize Simulation_________##
 flux=[0]*N   # list to keep track of flux at every position
 work=0 #Cumulative work
 work_QS=0
@@ -73,8 +74,8 @@ step_counter=0
 print_counter=0
 print_frequency=50*write_out
 SSS_counter=0
-Prob_last_cycle=Prob_now  #for SSS check, need to save initial distribution 
-SSS_cycle_counter=0 # counts the number of SSS cycles 
+Prob_last_cycle=Prob_now  #for SSS check, need to save initial distribution
+SSS_cycle_counter=0 # counts the number of SSS cycles
 f=open('PROB_naive.dat', 'w')
 g=open('WORKandHEAT_naive.dat', 'w')
 h=open('FLUX_naive.dat', 'w')
@@ -160,7 +161,7 @@ while (time<cycles*Period+dt and SSS_cycle_counter<3):
 				work=0
 				work_QS=0
 				heat=0
-				flux=[0]*N 
+				flux=[0]*N
 			print SSS_cycle_counter
 			Sq_diff=0
 			Prob_240_rot=Rotation(Prob_240,120)
@@ -239,4 +240,3 @@ info.close()
 # print 'Total Probability: ' + str(sum(Prob_now))
 # print 'final energy: ' +str(E_afterRelax)
 # print position
-
