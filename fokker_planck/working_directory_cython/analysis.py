@@ -117,79 +117,86 @@ def analyze_joint_equilibrium_estimate():
 
     Ax = Ay = Axy = 1.0
     cwd = getcwd()
-    pi_est = loadtxt(cwd + '/joint_distribution2.dat')
+    pi_est = loadtxt(cwd + '/joint_distribution3.dat')
     N = pi_est.shape[0]
     dx = (2*pi)/N
     positions = linspace(0.0, (2*pi)-dx, N)
-    lanscape_vec = vectorize(landscape)
-    E = landscape(Ax, Axy, Ay, positions[:,None], positions[None,:])
+    landscape_vec = vectorize(landscape)
+    E = landscape_vec(Ax, Axy, Ay, positions[:,None], positions[None,:])
 
-    pi_theory = exp(-E) / exp(-E).sum(axis=None)
+    Z = exp((-1.0)*E).sum(axis=None)
+    F = -log(Z)
+    V_theory = E - F
+    V_est = -log(pi_est)
+    pi_theory = exp((-1.0)*E) / exp((-1.0)*E).sum(axis=None)
+
 
     compare = (pi_est - pi_theory) / pi_theory
 
     print("Total Variation Distance =", 0.5*((pi_est-pi_theory).__abs__().sum()))
     print("Relative Entropy =", pi_est.dot(log2(true_divide(pi_est, pi_theory))).sum(axis=None))
 
-    # fig, ax = subplots(3, 1, figsize=(10,10), sharex='all', sharey='all')
-    # blues_cmap = get_cmap('Blues')
-    # cl0 = ax[0].contourf(positions * (180./pi), positions * (180./pi), pi_est.T, 50, cmap=blues_cmap)
-    # ax[0].set_title(r'$\hat{\pi}^{\mathrm{eq}}$', fontsize=28)
-    # ax[0].set_ylim([0, 360-(360/N)+0.001])
-    # oranges_cmap = get_cmap('Oranges')
-    # cl1 = ax[1].contourf(positions * (180./pi), positions * (180./pi), pi_theory.T, 50, cmap=oranges_cmap)
-    # ax[1].set_title(r'$\pi^{\mathrm{eq}}$', fontsize=28)
-    # ax[1].set_ylim([0, 360-(360/N)+0.001])
-    # coolwarm_cmap = get_cmap('coolwarm')
-    # cl2 = ax[2].contourf(positions * (180./pi), positions * (180./pi), ((pi_est - pi_theory) / pi_theory).T , 50, cmap=coolwarm_cmap)
-    # ax[2].set_title(
-    #     r'$\left(\hat{\pi}^{\mathrm{eq}}-\pi^{\mathrm{eq}}\right)/\pi^{\mathrm{eq}}$',
-    #     fontsize=28
-    #     )
-    # ax[2].set_ylim([0, 360-(360/N)+0.001])
-    # ax[0].tick_params(
-    #     axis='y', labelsize=22
-    #     )
-    # ax[1].tick_params(
-    #     axis='y', labelsize=22
-    #     )
-    # ax[2].tick_params(
-    #     axis='both', labelsize=22
-    #     )
-    # fig.colorbar(cl0, ax=ax[0])
-    # fig.colorbar(cl1, ax=ax[1])
-    # fig.colorbar(cl2, ax=ax[2])
+    fig, ax = subplots(3, 1, figsize=(10,10), sharex='all', sharey='all')
+    blues_cmap = get_cmap('Blues')
+    cl0 = ax[0].contourf(positions * (180./pi), positions * (180./pi), pi_est.T, cmap=blues_cmap)
+    ax[0].set_title(r'$\hat{\pi}^{\mathrm{eq}}$', fontsize=28)
+    ax[0].set_ylim([0, 360-(360/N)+0.001])
+    oranges_cmap = get_cmap('Oranges')
+    cl1 = ax[1].contourf(positions * (180./pi), positions * (180./pi), pi_theory.T, cmap=oranges_cmap)
+    ax[1].set_title(r'$\pi^{\mathrm{eq}}$', fontsize=28)
+    ax[1].set_ylim([0, 360-(360/N)+0.001])
+    coolwarm_cmap = get_cmap('coolwarm')
+    cl2 = ax[2].contourf(positions * (180./pi), positions * (180./pi), ((pi_est - pi_theory) / pi_theory).T , cmap=coolwarm_cmap)
+    ax[2].set_title(
+        r'$\left(\hat{\pi}^{\mathrm{eq}}-\pi^{\mathrm{eq}}\right)/\pi^{\mathrm{eq}}$',
+        fontsize=28
+        )
+    ax[2].set_ylim([0, 360-(360/N)+0.001])
+    ax[0].tick_params(
+        axis='y', labelsize=22
+        )
+    ax[1].tick_params(
+        axis='y', labelsize=22
+        )
+    ax[2].tick_params(
+        axis='both', labelsize=22
+        )
+    fig.colorbar(cl0, ax=ax[0])
+    fig.colorbar(cl1, ax=ax[1])
+    fig.colorbar(cl2, ax=ax[2])
 
-    # fig.tight_layout()
-    # fig.text(
-    #     0.03, 0.51, r'$\theta_{y}$', va='center', ha='center',
-    #     fontsize=27, rotation='vertical'
-    #     )
-    # fig.text(
-    #     0.47, 0.02, r'$\theta_{x}$', va='center', ha='center',
-    #     fontsize=27
-    #     )
+    fig.tight_layout()
+    fig.text(
+        0.03, 0.51, r'$\theta_{y}$', va='center', ha='center',
+        fontsize=27, rotation='vertical'
+        )
+    fig.text(
+        0.47, 0.02, r'$\theta_{x}$', va='center', ha='center',
+        fontsize=27
+        )
 
-    # left = 0.1  # the left side of the subplots of the figure
-    # right = 1.0    # the right side of the subplots of the figure
-    # bottom = 0.09   # the bottom of the subplots of the figure
-    # top = 0.95      # the top of the subplots of the figure
-    # wspace = 0.1  # the amount of width reserved for blank space between subplots
-    # hspace = 0.20  # the amount of height reserved for white space between subplots
+    left = 0.1  # the left side of the subplots of the figure
+    right = 1.0    # the right side of the subplots of the figure
+    bottom = 0.09   # the bottom of the subplots of the figure
+    top = 0.95      # the top of the subplots of the figure
+    wspace = 0.1  # the amount of width reserved for blank space between subplots
+    hspace = 0.20  # the amount of height reserved for white space between subplots
 
-    # fig.subplots_adjust(
-    #     left=left, right=right, bottom=bottom, top=top,
-    #     wspace=wspace, hspace=hspace
-    #     )
+    fig.subplots_adjust(
+        left=left, right=right, bottom=bottom, top=top,
+        wspace=wspace, hspace=hspace
+        )
 
-    # fig.savefig('observe.pdf')
-    # close(fig)
+    fig.savefig('observe.pdf')
 
-    # fig2, ax2 = subplots(1, 1, figsize=(10, 10), sharex='all', sharey='all')
+    # fig2, ax2 = subplots(2, 1, figsize=(10, 10), sharex='all', sharey='all')
 
     # bwr_cmap = get_cmap('bwr')
     # cl0 = ax2.contourf(positions * (180./pi), positions *
-    #                      (180./pi), -(log(pi_est) / E).T, 50, cmap=bwr_cmap)
+    #                      (180./pi), -(log(pi_est)).T, 50, cmap=bwr_cmap)
+    # cl0 = ax2.contourf(positions * (180./pi), positions *
+    #                      (180./pi), -(log(pi_est)).T, 50, cmap=bwr_cmap)
+
     # ax2.set_title('Boltzmann Inversion', fontsize=28)
     # ax2.set_ylim([0, 360-(360/N)+0.001])
     # ax2.set_yticks(arange(0.0, 360.0, 60.0))
@@ -197,7 +204,7 @@ def analyze_joint_equilibrium_estimate():
     # ax2.tick_params(
     #     axis='both', labelsize=22
     # )
-    # cbar = fig2.colorbar(cl0, ax=ax2, ticks=arange(0, 76, 5))
+    # cbar = fig2.colorbar(cl0, ax=ax2)
     # cbar.ax.set_ylabel(r'$\beta(x,y)$', fontsize=20)
 
     # fig2.tight_layout()
@@ -224,6 +231,62 @@ def analyze_joint_equilibrium_estimate():
 
     # fig2.savefig('observe2.pdf')
     # close('all')
+
+    fig3, ax3 = subplots(3, 1, figsize=(10, 10), sharex='all', sharey='all')
+    blues_cmap = get_cmap('Blues')
+    cl0_3 = ax3[0].contourf(positions * (180./pi), positions *
+                         (180./pi), V_theory, cmap=blues_cmap)
+    ax3[0].set_title(r'$\hat{V}$', fontsize=28)
+    ax3[0].set_ylim([0, 360-(360/N)+0.001])
+    oranges_cmap = get_cmap('Oranges')
+    cl1_3 = ax3[1].contourf(positions * (180./pi), positions *
+                         (180./pi), V_est, cmap=oranges_cmap)
+    ax3[1].set_title(r'$V_{\mathrm{theory}}$', fontsize=28)
+    ax3[1].set_ylim([0, 360-(360/N)+0.001])
+    coolwarm_cmap = get_cmap('coolwarm')
+    cl2_3 = ax3[2].contourf(positions * (180./pi), positions * (180./pi),
+                         (V_est-V_theory)/V_theory, cmap=coolwarm_cmap)
+    ax3[2].set_title(
+        r'$\left(\hat{V}-V_{\mathrm{theory}}\right)/V_{\mathrm{theory}}$',
+        fontsize=28
+    )
+    ax3[2].set_ylim([0, 360-(360/N)+0.001])
+    ax3[0].tick_params(
+        axis='y', labelsize=22
+    )
+    ax3[1].tick_params(
+        axis='y', labelsize=22
+    )
+    ax3[2].tick_params(
+        axis='both', labelsize=22
+    )
+    fig3.colorbar(cl0_3, ax=ax3[0])
+    fig3.colorbar(cl1_3, ax=ax3[1])
+    fig3.colorbar(cl2_3, ax=ax3[2])
+
+    fig3.tight_layout()
+    fig3.text(
+        0.03, 0.51, r'$\theta_{y}$', va='center', ha='center',
+        fontsize=27, rotation='vertical'
+    )
+    fig3.text(
+        0.47, 0.02, r'$\theta_{x}$', va='center', ha='center',
+        fontsize=27
+    )
+
+    left = 0.1  # the left side of the subplots of the figure
+    right = 1.0    # the right side of the subplots of the figure
+    bottom = 0.09   # the bottom of the subplots of the figure
+    top = 0.95      # the top of the subplots of the figure
+    wspace = 0.1  # the amount of width reserved for blank space between subplots
+    hspace = 0.20  # the amount of height reserved for white space between subplots
+
+    fig3.subplots_adjust(
+        left=left, right=right, bottom=bottom, top=top,
+        wspace=wspace, hspace=hspace
+    )
+
+    fig3.savefig('observe3.pdf')
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
 from math import pi
-from numpy import array, arange, empty, finfo, pi as npi
+from numpy import array, arange, empty, finfo, pi as npi, log, true_divide, asarray
 from matplotlib import cm, colors, rcParams, rc
 from matplotlib.style import use as use
 from matplotlib.pyplot import subplots, close, show
+from sys import argv, stdin
 
 from fpe import launchpad
 from fpe2 import launchpad_coupled
@@ -20,11 +21,11 @@ def get_params():
     gamma = 1000.0  # drag
     beta = 1.0  # 1/kT
     m = 1.0  # mass
-    dt = 0.01  # time discretization
+    dt = 0.01  # time discretization. Keep this number low
+    N = 360  # inverse space discretization. Keep this number high!
 
     ## system-specific parameters
     cycles = 1.0  # Max number of cycles
-    N = 20
     write_out = 1./dt  # to have write out every second use 1/dt
     write_out = 1.0 # to write out every calculation
 
@@ -107,10 +108,12 @@ def main2():
     # periods_to_run = 2**(arange(-8.0, 8.0))
     # amplitudes = array([0.0, 2.0, 4.0, 8.0])
     # trap_strengths = array([1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
-    periods_to_run = array([1.0])
+    periods_to_run = array([20.0])
     amplitudes_x = array([1.0])
     amplitudes_y = array([1.0])
     amplitudes_xy = array([1.0])
+    Hs = array([1.0])
+    As = array([0.0])
 
     # fluxes = empty((amplitudes.size, trap_strengths.size, periods_to_run.size))
 
@@ -127,16 +130,18 @@ def main2():
     for index1, Axy in enumerate(amplitudes_xy):
         for index2, Ax in enumerate(amplitudes_x):
             for index3, Ay in enumerate(amplitudes_y):
-                for period in periods_to_run:
+                for index4, H in enumerate(Hs):
+                    for index5, A in enumerate(As):
+                        for period in periods_to_run:
 
-                    print("Ax:", Ax, "Axy:", Axy, "Ay:", Ay, "T:", period)
+                            print("Ax:", Ax, "Axy:", Axy, "Ay:", Ay, "H:",H, "A:", A, "T:", period)
 
-                    dt_sim = 0.01
+                            dt_sim = 0.01
 
-                    flux, mean_flux, work, heat, p_sum, p_now, p_equil, positions = launchpad_coupled(
-                        steady_state_var, cycles, N, write_out, period, Ax, Axy, Ay,
-                        dt_sim, m, beta, gamma
-                    )
+                            flux, mean_flux, work, heat, p_sum, p_now, p_equil, positions = launchpad_coupled(
+                                steady_state_var, cycles, N, write_out, period, Ax, Axy, Ay, H, A,
+                                dt_sim, m, beta, gamma
+                            )
 
                     positions_deg = positions * (180.0/npi)
 
@@ -252,6 +257,74 @@ def main2():
 
     # save_data(periods_to_run, amplitudes, trap_strengths, works, fluxes)
 
+def main2_profile():
+
+    # dic = {
+    #     '1': 2.0 ** 1.0,
+    #     '2': 2.0 ** 2.0,
+    #     '3': 2.0 ** 3.0,
+    #     '4': 2.0 ** 4.0,
+    #     '5': 2.0 ** 5.0,
+    #     '6': 2.0 ** 6.0,
+    #     '7': 2.0 ** 7.0,
+    #     '8': 2.0 ** 8.0
+    # }
+    # dic2= {
+    #     '1': 10,
+    #     '2': 20,
+    #     '3': 30,
+    #     '4': 40,
+    #     '5': 50,
+    #     '6': 60,
+    #     '7': 70,
+    #     '8': 80
+    # }
+
+    dt_sim = 0.005
+    period = 10
+    N=360
+    # period = dic[arg1]
+    # N = dic2[arg2]
+
+    Ax = 1.0
+    Axy = 1.0
+    Ay = 1.0
+    H = 0.5
+    A = 0.0
+
+
+    gamma, beta, m, dt, cycles, __, write_out, steady_state = get_params()
+
+    if steady_state:
+        steady_state_var = 1
+    else:
+        steady_state_var = 0
+
+
+    flux_m, work, heat, p_sum, p_now_m, p_equil_m, positions_m = launchpad_coupled(
+        steady_state_var, cycles, N, write_out, period, Ax, Axy, Ay, H, A,
+        dt_sim, m, beta, gamma
+    )
+    # p_equil, p_now_m = run_func(N)
+    print(asarray(p_equil_m).sum())
+    print()
+    print(asarray(p_now_m).sum())
+    exit(0)
+    # flux = asarray(flux_m)
+    # mean_flux = flux.mean(axis=(1,2))
+    # p_now = asarray(p_now_m)
+    # p_equil = asarray(p_equil_m)
+    # positions = asarray(positions_m)
+
+    # print(p_equil.sum(axis=None))
+    # print(p_now.sum(axis=None))
+
+    # distance = 0.5*(p_equil - p_now).__abs__().sum(axis=None)
+    # rel_entropy = p_now.dot(log(p_now / p_equil)).sum(axis=None)
+
+    # print("T = {0}, N = {1}, d = {2}, H = {3}, Psum = {4}".format(period, N, distance, rel_entropy, p_sum))
+
 if __name__ == "__main__":
     # main()
-    main2()
+    # main2()
+    main2_profile()

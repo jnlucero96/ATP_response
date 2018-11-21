@@ -13,7 +13,12 @@ include_dirs=numpy.distutils.misc_util.get_numpy_include_dirs()
 
 ext = [
     Extension('fpe',['fpe.pyx'], include_dirs=include_dirs),
-    Extension('fpe2',['fpe2.pyx'], include_dirs=include_dirs)
+    Extension(
+        'fpe2',['fpe2.pyx'],
+        include_dirs=include_dirs,
+        extra_compile_args=["-O3","-ffast-math","-fopenmp"],
+        extra_link_args=['-fopenmp']
+        )
     ]
 
 setup(
