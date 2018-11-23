@@ -1,38 +1,36 @@
 from math import pi
-from numpy import array, arange, empty, finfo, pi as npi, log, true_divide, asarray
-from matplotlib import cm, colors, rcParams, rc
-from matplotlib.style import use as use
-from matplotlib.pyplot import subplots, close, show
-from sys import argv, stdin
+from numpy import (
+    array, arange, empty, finfo, pi as npi, log, true_divide, asarray,
+    empty, zeros, linspace
+    )
+from time import time
 
-from fpe import launchpad
-from fpe2 import launchpad_coupled
-
-
-use('seaborn-paper')
-rc('text', usetex=True)
-rcParams['mathtext.fontset'] = 'cm'
-rcParams['text.latex.preamble'] = [
-    r"\usepackage{amsmath}", r"\usepackage{lmodern}", r"\usepackage{siunitx}", r"\usepackage{units}",
-    r"\usepackage{physics}"
-]
+from fpe import launchpad_coupled
 
 def get_params():
+
+    # discretization parameters
+    dt = 0.005  # time discretization. Keep this number low
+    N = 720  # inverse space discretization. Keep this number high!
+
+    # time-specific parameters
+    cycles = 1.0  # Max number of cycles
+    period = 1.0  # How long a cycle takes
+
+    # model-specific parameters
     gamma = 1000.0  # drag
     beta = 1.0  # 1/kT
     m = 1.0  # mass
-    dt = 0.01  # time discretization. Keep this number low
-    N = 360  # inverse space discretization. Keep this number high!
+    Ax = 10.0 # energy scale of system X
+    Axy = 0.0 # energy scale of coupling between systems X and Y
+    Ay = 0.0 # energy scale of system Y
+    H = 1000.0 # force on system X by chemical bath B1
+    A = 0.0 # force on system Y by chemical bath B2
 
-    ## system-specific parameters
-    cycles = 1.0  # Max number of cycles
-    write_out = 1./dt  # to have write out every second use 1/dt
-    write_out = 1.0 # to write out every calculation
-
-    # steady_state = True
+    # initialization conditions
     steady_state = False
 
-    return (gamma, beta, m, dt, cycles, N, write_out, steady_state)
+    return (dt, N, cycles, period, gamma, beta, m, Ax, Ay, Axy, H, A, steady_state)
 
 def save_data(times, amplitudes, trap_strengths, work_array, flux_array):
 
@@ -57,274 +55,77 @@ def save_data(times, amplitudes, trap_strengths, work_array, flux_array):
 
 def main():
 
-    # periods_to_run = 2**(arange(-8.0, 8.0))
-    # amplitudes = array([0.0, 2.0, 4.0, 8.0])
-    # trap_strengths = array([1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
-    periods_to_run = array([100.0])
-    amplitudes = array([0.0])
-    trap_strengths = array([40.0])
+    # unload parameters
+    [
+        dt, N, cycles, period, gamma, beta, m, Ax, Ay, Axy, H, A, steady_state
+        ] = get_params()
 
-    works = empty((amplitudes.size, trap_strengths.size, periods_to_run.size))
-    fluxes = empty((amplitudes.size, trap_strengths.size, periods_to_run.size))
-
-    gamma, beta, m, dt, cycles, N, write_out, steady_state = get_params()
-
-    dt = ((2*pi/N)*m*gamma / (1.5*amplitudes.max() + 0.5*trap_strengths.max()))
-    dt_sim = dt / 10.0
+    # calculate derived discretization parameters
+    dx = (2*pi) / N  # space discretization
+    if Ax == 0.0 and Ay == 0.0:
+        time_check = 100000000.0
+    else:
+        time_check = dx*m*gamma / (3*(Ax + Ay))
 
     if steady_state:
         steady_state_var = 1
     else:
         steady_state_var = 0
 
-    for index1, A in enumerate(amplitudes):
-        for index2, k in enumerate(trap_strengths):
-            for index3, period in enumerate(periods_to_run):
+    prob = zeros((N, N))
+    p_now = zeros((N, N))
+    p_last = zeros((N, N))
+    flux = zeros((2, N, N))  # array to keep
+    positions = linspace(0, (2*pi)-dx, N)
 
-                print("A:", A, "k:", k, "T:", period)
-
-                dt_sim = 0.1
-
-                flux, mean_flux, work, heat, p_sum, p_now, p_equil = launchpad(
-                    steady_state_var, cycles, N, write_out, period, A, k,
-                    dt_sim, m, beta, gamma
-                    )
-
-                # plot(flux); show()
-                print(work, heat, mean_flux)
-                print(p_sum)
-
-                works[index1, index2, index3] = work
-                fluxes[index1, index2, index3] = mean_flux
-
-                print("normalization check:", p_sum)
-                assert(abs(p_sum-1.0) <= finfo('float32').eps), \
-                    "WARNING: Normalization of distribution lost. Quitting."
-
-    # save_data(periods_to_run, amplitudes, trap_strengths, works, fluxes)
-
-def main2():
-
-    # periods_to_run = 2**(arange(-8.0, 8.0))
-    # amplitudes = array([0.0, 2.0, 4.0, 8.0])
-    # trap_strengths = array([1.0, 2.0, 4.0, 8.0, 16.0, 32.0])
-    periods_to_run = array([20.0])
-    amplitudes_x = array([1.0])
-    amplitudes_y = array([1.0])
-    amplitudes_xy = array([1.0])
-    Hs = array([1.0])
-    As = array([0.0])
-
-    # fluxes = empty((amplitudes.size, trap_strengths.size, periods_to_run.size))
-
-    gamma, beta, m, dt, cycles, N, write_out, steady_state = get_params()
-
-    # dt = ((2*pi/N)*m*gamma / (1.5*amplitudes.max() + 0.5*trap_strengths.max()))
-    # dt_sim = dt / 10.0
-
-    if steady_state:
-        steady_state_var = 1
-    else:
-        steady_state_var = 0
-
-    for index1, Axy in enumerate(amplitudes_xy):
-        for index2, Ax in enumerate(amplitudes_x):
-            for index3, Ay in enumerate(amplitudes_y):
-                for index4, H in enumerate(Hs):
-                    for index5, A in enumerate(As):
-                        for period in periods_to_run:
-
-                            print("Ax:", Ax, "Axy:", Axy, "Ay:", Ay, "H:",H, "A:", A, "T:", period)
-
-                            dt_sim = 0.01
-
-                            flux, mean_flux, work, heat, p_sum, p_now, p_equil, positions = launchpad_coupled(
-                                steady_state_var, cycles, N, write_out, period, Ax, Axy, Ay, H, A,
-                                dt_sim, m, beta, gamma
-                            )
-
-                    positions_deg = positions * (180.0/npi)
-
-                    with open('joint_distribution.dat', 'w') as ofile:
-
-                        for i in range(N):
-                            for j in range(N):
-                                ofile.write(str(p_now[i, j]) + '\t')
-                            ofile.write('\n')
-                        ofile.flush()
-
-                    fig, ax = subplots(3, 1, figsize=(10,10), sharex='all', sharey='all')
-                    cl0 = ax[0].contourf(positions_deg, positions_deg, p_now.T, 50)
-                    ax[0].set_title(r'$\hat{\pi}^{\mathrm{eq}}$', fontsize=28)
-                    ax[0].set_ylim([0, 360-(360/N)+0.001])
-                    cl1 = ax[1].contourf(positions_deg, positions_deg, p_equil.T, 50)
-                    ax[1].set_title(r'$\pi^{\mathrm{eq}}$', fontsize=28)
-                    ax[1].set_ylim([0, 360-(360/N)+0.001])
-                    cl2 = ax[2].contourf(positions_deg, positions_deg, (p_now / p_equil).T, 20)
-                    ax[2].set_title(r'$\hat{\pi}^{\mathrm{eq}}/\pi^{\mathrm{eq}}$',fontsize=28)
-                    ax[2].set_ylim([0, 360-(360/N)+0.001])
-                    ax[0].tick_params(
-                        axis='y', labelsize=22
-                        )
-                    ax[1].tick_params(
-                        axis='y', labelsize=22
-                        )
-                    ax[2].tick_params(
-                        axis='both', labelsize=22
-                        )
-                    fig.colorbar(cl0, ax=ax[0])
-                    fig.colorbar(cl1, ax=ax[1])
-                    fig.colorbar(cl2, ax=ax[2])
-
-                    fig.tight_layout()
-                    fig.text(
-                        0.03, 0.51, r'$\theta_{y}$', va='center', ha='center',
-                        fontsize=27, rotation='vertical'
-                        )
-                    fig.text(
-                        0.47, 0.02, r'$\theta_{x}$', va='center', ha='center',
-                        fontsize=27
-                        )
-
-                    left = 0.1  # the left side of the subplots of the figure
-                    right = 1.0    # the right side of the subplots of the figure
-                    bottom = 0.09   # the bottom of the subplots of the figure
-                    top = 0.95      # the top of the subplots of the figure
-                    wspace = 0.1  # the amount of width reserved for blank space between subplots
-                    hspace = 0.20  # the amount of height reserved for white space between subplots
-
-                    fig.subplots_adjust(
-                        left=left, right=right, bottom=bottom, top=top,
-                        wspace=wspace, hspace=hspace
-                        )
-
-                    fig.savefig('probability_comparison.pdf')
-
-                    print("Mean flux is = " + str(mean_flux))
-                    fig2, ax2 = subplots(2, 1, figsize=(
-                        10, 10), sharex='all', sharey='all')
-                    cl0_1 = ax2[0].contourf(
-                        positions_deg, positions_deg, flux[0].T, 50)
-                    ax2[0].set_title(r'$\langle J_{1}(\vb{x})\rangle$', fontsize=28)
-                    ax2[0].set_ylim([0, 360-(360/N)+0.001])
-                    cl1_1 = ax2[1].contourf(
-                        positions_deg, positions_deg, flux[1].T, 50)
-                    ax2[1].set_title(r'$\langle J_{2}(\vb{x},t)\rangle$', fontsize=28)
-                    ax2[1].set_ylim([0, 360-(360/N)+0.001])
-                    ax2[0].tick_params(
-                        axis='y', labelsize=22
-                    )
-                    ax2[1].tick_params(
-                        axis='y', labelsize=22
-                    )
-                    ax2[1].tick_params(
-                        axis='both', labelsize=22
-                    )
-                    fig2.colorbar(cl0_1, ax=ax2[0])
-                    fig2.colorbar(cl1_1, ax=ax2[1])
-
-                    fig2.tight_layout()
-                    fig2.text(
-                        0.03, 0.51, r'$\theta_{y}$', va='center', ha='center',
-                        fontsize=27, rotation='vertical'
-                    )
-                    fig2.text(
-                        0.47, 0.02, r'$\theta_{x}$', va='center', ha='center',
-                        fontsize=27
-                    )
-
-                    left = 0.1  # the left side of the subplots of the figure
-                    right = 1.0    # the right side of the subplots of the figure
-                    bottom = 0.09   # the bottom of the subplots of the figure
-                    top = 0.95      # the top of the subplots of the figure
-                    wspace = 0.1  # the amount of width reserved for blank space between subplots
-                    hspace = 0.20  # the amount of height reserved for white space between subplots
-
-                    fig2.subplots_adjust(
-                        left=left, right=right, bottom=bottom, top=top,
-                        wspace=wspace, hspace=hspace
-                    )
-
-                    fig2.savefig('flux_components.pdf')
-
-                    close('all')
-
-                    print("normalization check:", p_sum)
-                    exit(0)
-
-                    assert(abs(p_sum-1.0) <= finfo('float32').eps), \
-                        "WARNING: Normalization of distribution lost. Quitting."
-
-    # save_data(periods_to_run, amplitudes, trap_strengths, works, fluxes)
-
-def main2_profile():
-
-    # dic = {
-    #     '1': 2.0 ** 1.0,
-    #     '2': 2.0 ** 2.0,
-    #     '3': 2.0 ** 3.0,
-    #     '4': 2.0 ** 4.0,
-    #     '5': 2.0 ** 5.0,
-    #     '6': 2.0 ** 6.0,
-    #     '7': 2.0 ** 7.0,
-    #     '8': 2.0 ** 8.0
-    # }
-    # dic2= {
-    #     '1': 10,
-    #     '2': 20,
-    #     '3': 30,
-    #     '4': 40,
-    #     '5': 50,
-    #     '6': 60,
-    #     '7': 70,
-    #     '8': 80
-    # }
-
-    dt_sim = 0.005
-    period = 10
-    N=360
-    # period = dic[arg1]
-    # N = dic2[arg2]
-
-    Ax = 1.0
-    Axy = 1.0
-    Ay = 1.0
-    H = 0.5
-    A = 0.0
-
-
-    gamma, beta, m, dt, cycles, __, write_out, steady_state = get_params()
-
-    if steady_state:
-        steady_state_var = 1
-    else:
-        steady_state_var = 0
-
-
-    flux_m, work, heat, p_sum, p_now_m, p_equil_m, positions_m = launchpad_coupled(
-        steady_state_var, cycles, N, write_out, period, Ax, Axy, Ay, H, A,
-        dt_sim, m, beta, gamma
+    print("Number of times around loop = {0}".format((period*cycles+dt)/dt))
+    print("Launching!")
+    t0 = time()
+    work, heat = launchpad_coupled(
+        prob, p_now, p_last, flux, positions, N, dx, time_check,
+        steady_state_var, cycles, period,
+        Ax, Axy, Ay, H, A,
+        dt, m, beta, gamma
     )
+    t1 = time()
+    total = t1-t0
     # p_equil, p_now_m = run_func(N)
-    print(asarray(p_equil_m).sum())
-    print()
-    print(asarray(p_now_m).sum())
-    exit(0)
-    # flux = asarray(flux_m)
-    # mean_flux = flux.mean(axis=(1,2))
-    # p_now = asarray(p_now_m)
-    # p_equil = asarray(p_equil_m)
-    # positions = asarray(positions_m)
+    print("Finished! Processing data now...")
+    flux = asarray(flux)
+    mean_flux = flux.mean(axis=(1, 2))
+    p_now = asarray(p_now)
+    p_sum = p_now.sum(axis=None)
+    p_equil = asarray(prob)
+    positions = asarray(positions)
 
-    # print(p_equil.sum(axis=None))
-    # print(p_now.sum(axis=None))
+    assert (p_now >= 0.0).all(), \
+        "ABORT: Probability density has negative values!"
+    assert ((p_now.sum(axis=None) - 1.0).__abs__() <= finfo('float32').eps), \
+        "ABORT: Probability density is not normalized"
 
-    # distance = 0.5*(p_equil - p_now).__abs__().sum(axis=None)
-    # rel_entropy = p_now.dot(log(p_now / p_equil)).sum(axis=None)
+    # with open('T{0}_H{1}_A{2}_outfile.dat'.format(period, H, A), 'w') as ofile:
+    #     for i in range(N):
+    #         for j in range(N):
+    #             ofile.write(
+    #                 str(p_now[i, j])
+    #                 + '\t' + str(flux[0, i, j])
+    #                 + '\t' + str(flux[1, i, j])
+    #                 + '\n'
+    #             )
 
-    # print("T = {0}, N = {1}, d = {2}, H = {3}, Psum = {4}".format(period, N, distance, rel_entropy, p_sum))
+    distance = 0.5*(p_equil - p_now).__abs__().sum(axis=None)
+    rel_entropy = p_now.dot(log(p_now / p_equil)).sum(axis=None)
+
+    print("Processing finished!")
+
+    print("Real T = {0}, Simulation T = {1}, N = {2}, Psum = {3}".format(
+        total, period, N, p_sum))
+    print("H = {0}, A = {1}".format(H, A))
+    print("Total Variation Distance = {0}, D(P||pi_eq) = {1}".format(
+        distance, rel_entropy))
+    print("<J1> = {0}, <J2> = {1}".format(mean_flux[0], mean_flux[1]))
+
+    print("Exiting...")
 
 if __name__ == "__main__":
-    # main()
-    # main2()
-    main2_profile()
+    main()
