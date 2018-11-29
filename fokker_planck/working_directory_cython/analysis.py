@@ -12,7 +12,9 @@ use('seaborn-paper')
 rc('text', usetex=True)
 rcParams['mathtext.fontset'] = 'cm'
 rcParams['text.latex.preamble'] = [
-    r"\usepackage{amsmath}", r"\usepackage{lmodern}", r"\usepackage{siunitx}", r"\usepackage{units}"
+    r"\usepackage{amsmath}", r"\usepackage{lmodern}",
+    r"\usepackage{siunitx}", r"\usepackage{units}",
+    r"\usepackage{physics}", r"\usepackage{bm}"
 ]
 
 def landscape(Ax, Axy, Ay, position1, position2):
@@ -49,7 +51,7 @@ def plot_equilibrium():
 
                 for i in range(N):
                     for j in range(N):
-                        Utot = landscape(Ax, Axy, Ay, i*dx, j*dx)
+                        Utot = landscape(Ax, Axy, Ay, position[i], position[j])
                         s += exp((-1)*Utot)
                         p_eq[i, j] = exp((-1)*Utot)
                         Uprofile[i, j] = Utot
@@ -288,8 +290,92 @@ def analyze_joint_equilibrium_estimate():
 
     fig3.savefig('observe3.pdf')
 
+def analyze():
+
+    ID = 3
+    N = 360
+    Ax = 10.0
+    Axy = Ay = A = 0.0
+    H = 3.0
+
+    cwd = getcwd()
+    target_dir = cwd + '/output_dir/'
+    data_filename = '/ID_{0}_outfile.dat'.format(ID)
+    data_total_path = target_dir + data_filename
+
+    p_now, p_equil, flux1, flux2 = loadtxt(data_total_path, unpack=True)
+
+    p_now = p_now.reshape((N, N))
+    p_equil = p_equil.reshape((N, N))
+    flux1 = flux1.reshape((N, N))
+    flux2 = flux2.reshape((N, N))
+
+    positions = linspace(0.0, 2*pi-(2*pi/N), N) * (180/pi)
+
+    fig, ax = subplots(2, 2, figsize=(10, 10), sharex='all', sharey='all')
+    cl0 = ax[0, 0].contourf(positions, positions, p_now.T, cmap=get_cmap('Reds'))
+    cl1 = ax[0, 1].contourf(positions, positions, p_equil.T, cmap=get_cmap('Blues'))
+    cl2 = ax[1, 0].contourf(positions, positions, flux1.T, cmap=get_cmap('coolwarm'))
+    cl3 = ax[1, 1].contourf(positions, positions, flux2.T, cmap=get_cmap('bwr'))
+
+    titles = {
+        (0,0): r'$\hat{p}^{\mathrm{SS}}(\bm{\theta})$',
+        (0,1): r'$\pi(\bm{\theta})$',
+        (1,0): r'$\vb{J}_{X}^{\mathrm{SS}}(\bm{\theta})$',
+        (1,1): r'$\vb{J}_{Y}^{\mathrm{SS}}(\bm{\theta})$'
+        }
+
+    for i in range(2):
+        for j in range(2):
+            ax[i, j].set_title(titles[(i, j)], fontsize=20)
+            ax[i, j].set_xticks(array([0.0, 2*pi/9, 8*pi/9, 14*pi/9])*(180/pi))
+            ax[i, j].set_xticklabels(
+                [
+                    r'$0$', r'$\frac{2\pi}{9}$', r'$\frac{8\pi}{9}$',
+                    r'$\frac{14\pi}{9}$'
+                    ]
+                    )
+            ax[i, j].set_yticks(arange(0, 360, 60))
+            ax[i, j].tick_params(axis='both', labelsize=18)
+
+    fig.colorbar(cl0, ax=ax[0, 0])
+    fig.colorbar(cl1, ax=ax[0, 1])
+    fig.colorbar(cl2, ax=ax[1, 0])
+    fig.colorbar(cl3, ax=ax[1, 1])
+
+    fig.tight_layout()
+
+    fig.text(
+        0.5, 0.98,
+        'Ax = {0}, Axy = {1}, Ay = {2}, H = {3}, A = {4}'.format(Ax, Axy, Ay, H, A),
+        fontsize=28, va='center', ha='center'
+        )
+    fig.text(
+        0.5, 0.03,
+        r'$\theta_{X}$',
+        fontsize=28, va='center', ha='center'
+        )
+    fig.text(
+        0.03, 0.51,
+        r'$\theta_{Y}$',
+        fontsize=28, va='center', ha='center', rotation='vertical'
+        )
+
+    left = 0.09  # the left side of the subplots of the figure
+    # right = 1.0    # the right side of the subplots of the figure
+    bottom = 0.09   # the bottom of the subplots of the figure
+    top = 0.92      # the top of the subplots of the figure
+    # wspace = 0.1  # the amount of width reserved for blank space between subplots
+    # hspace = 0.20  # the amount of height reserved for white space between subplots
+
+    fig.subplots_adjust(
+        left=left, top=top, bottom=bottom
+    )
+
+    fig.savefig(target_dir + 'ID_{}_plot.pdf'.format(ID))
 
 if __name__ == "__main__":
     # analyze_alex_cython_simulation()
     # plot_equilibrium()
-    analyze_joint_equilibrium_estimate()
+    # analyze_joint_equilibrium_estimate()
+    analyze()

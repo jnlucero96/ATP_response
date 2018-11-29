@@ -15,7 +15,7 @@ ext = [
     Extension(
         'fpe',['fpe.pyx'],
         include_dirs=include_dirs,
-        extra_compile_args=["-O3","-ffast-math", "-v", "-march=native"]
+        extra_compile_args=["-O3", "-ffast-math", "-v", "-march=native", "-Wall"]
         )
     ]
 
@@ -23,7 +23,7 @@ ext_parallel = [
     Extension(
         'fpe', ['fpe.pyx'],
         include_dirs=include_dirs,
-        extra_compile_args=["-O3", "-ffast-math", "-fopenmp", "-v"],
+        extra_compile_args=["-O3", "-ffast-math", "-fopenmp"],
         extra_link_args=['-fopenmp', '-lm']
     )
     ]
