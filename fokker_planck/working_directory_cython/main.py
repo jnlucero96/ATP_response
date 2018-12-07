@@ -1,21 +1,35 @@
+#!/anaconda3/bin/python
 from math import pi
 from numpy import (
     array, arange, empty, finfo, pi as npi, log, true_divide, asarray,
     empty, zeros, linspace
     )
 from time import time
+from datetime import datetime
+from os.path import isfile
 
 from fpe import launchpad_coupled
 
+def get_ID_value(filename=".varstore"):
+    try:
+        with open(filename, "r+") as rfile:
+            val = int(rfile.read()) + 1
+    except FileNotFoundError:
+        with open(filename, "w") as ofile:
+            val = 1
+    with open(filename, "w") as wfile:
+        wfile.write(str(val))
+    return val
+
 def get_params():
 
-    ID = 5
+    ID = get_ID_value()
     # discretization parameters
-    dt = 0.005  # time discretization. Keep this number low
-    N = 360  # inverse space discretization. Keep this number high!
+    dt = 0.001  # time discretization. Keep this number low
+    N = 1800  # inverse space discretization. Keep this number high!
 
     # time-specific parameters
-    total_time = 1000.0
+    total_time = 0.5
 
     # model-specific parameters
     gamma = 1000.0  # drag
@@ -27,8 +41,8 @@ def get_params():
     H = 10.0 # force on system X by chemical bath B1
     A = 0.0 # force on system Y by chemical bath B2
 
-    # initialization condition
-    initialize_from = 'uniform'
+    # initialization condition: equilibrium , uniform, or steady
+    initialize_from = 'steady'
 
     # save data or not
     save = True
@@ -44,6 +58,7 @@ def save_data(
     ID, total_time, Ax, Axy, Ay, H, A,
     p_now, check_sum, p_equil, distance, rel_entropy,
     flux, mean_space_flux, mean_space_time_flux,
+    potential_at_pos, force1_at_pos, force2_at_pos,
     N, comp_time
     ):
 
@@ -59,6 +74,9 @@ def save_data(
                     + '\t' + '{0:.15e}'.format(p_equil[i, j])
                     + '\t' + '{0:.15e}'.format(flux[0, i, j])
                     + '\t' + '{0:.15e}'.format(flux[1, i, j])
+                    + '\t' + '{0:.15e}'.format(potential_at_pos[i, j])
+                    + '\t' + '{0:.15e}'.format(force1_at_pos[i, j])
+                    + '\t' + '{0:.15e}'.format(force2_at_pos[i, j])
                     + '\n'
                 )
 
@@ -74,7 +92,7 @@ def save_data(
             + "Real T = {0}, Simulation T = {1}, N = {2}, Normalization = {3}".format(comp_time, total_time, N, check_sum) + '\n'
             + "Total Variation Distance = {0}, D(P||pi_eq) = {1}".format(distance, rel_entropy) + '\n'
             + "<J1> = {0}, <J2> = {1}, <J> = {2}".format(mean_space_flux[0], mean_space_flux[1], mean_space_flux.mean()) + '\n'
-            + "<<J1>> = {0}, <<J2>> = {1}, <<J> >= {2}".format(mean_space_time_flux[0], mean_space_time_flux[1], mean_space_time_flux.mean()) + '\n\n'
+            + "<<J1>> = {0}, <<J2>> = {1}, <<J>>= {2}".format(mean_space_time_flux[0], mean_space_time_flux[1], mean_space_time_flux.mean()) + '\n\n'
             )
 
 def main():
@@ -93,49 +111,63 @@ def main():
     else:
         time_check = dx*m*gamma / (3*(Ax + Ay))
 
+    if dt > time_check:
+        print("!!!TIME UNSTABLE!!! No use in going on. Aborting...\n")
+        exit(1)
+
     if initialize_from.lower() == "equilibrium":
         steady_state_var = 0
     elif initialize_from.lower() == "uniform":
         steady_state_var = 1
+    elif initialize_from.lower() == "steady":
+        steady_state_var = 2
     else:
-        print("Initialization condition not understood. Aborting...")
+        print("Initialization condition not understood! Aborting...")
         exit(1)
+
+    print("Initialization condition: " + initialize_from)
 
     prob = zeros((N, N))
     p_now = zeros((N, N))
     p_last = zeros((N, N))
-    p_last_100 = zeros((N, N))
+    p_last_ref = zeros((N, N))
     flux = zeros((2, N, N))  # array to keep
     positions = linspace(0, (2*pi)-dx, N)
+    potential_at_pos = zeros((N, N))
+    force1_at_pos = zeros((N, N))
+    force2_at_pos = zeros((N, N))
 
     # count number of times the primary loops correspond to the desired
-    #
     num_loops = int((total_time+dt)//dt)
-    num_loops_by_two = int(num_loops // 2) # for calculating the flux
 
     print("Number of times around loop = {0}".format(num_loops))
-    print("Launching!")
+    print("{} Launching simulation...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
     t0 = time()
     work, heat = launchpad_coupled(
-        prob, p_now, p_last, p_last_100, flux, positions,
-        N, num_loops, num_loops_by_two,
+        positions, prob, p_now, p_last, p_last_ref, flux,
+        potential_at_pos, force1_at_pos, force2_at_pos,
+        N, num_loops,
         dx, time_check, steady_state_var,
         Ax, Axy, Ay, H, A,
         dt, m, beta, gamma
     )
     t1 = time()
     comp_time = t1-t0
-    print("Finished! Processing data now...")
+    print("{} Simulation done!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
+    print("{} Processing data...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
     # recast everything into a numpy array
     flux = asarray(flux)
     p_now = asarray(p_now)
     p_equil = asarray(prob)
     positions = asarray(positions)
+    potential_at_pos = asarray(potential_at_pos)
+    force1_at_pos = asarray(force1_at_pos)
+    force2_at_pos = asarray(force2_at_pos)
 
     # average over the positions
     mean_space_flux = flux.mean(axis=(1, 2))
-    mean_space_time_flux = mean_space_flux / float(num_loops_by_two)
+    mean_space_time_flux = mean_space_flux / float(num_loops)
 
     # for checking normalization
     check_sum = p_now.sum(axis=None)
@@ -149,17 +181,21 @@ def main():
     distance = 0.5*(p_equil - p_now).__abs__().sum(axis=None)
     rel_entropy = p_now.dot(log(p_now / p_equil)).sum(axis=None)
 
-    print("Processing finished!")
+    print("{} Processing finished!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
     # write to file or to stdout
     if save:
+        print("{} Saving data...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
         save_data(
             ID, total_time, Ax, Axy, Ay, H, A,
             p_now, check_sum, p_equil, distance, rel_entropy,
             flux, mean_space_flux, mean_space_time_flux,
+            potential_at_pos, force1_at_pos, force2_at_pos,
             N, comp_time
             )
+        print("{} Saving completed!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
     else:
+        print("="*10 + " Simulation Summary " + "="*10)
         print("Simulation ID: {0}".format(ID))
         print(
             "Real T = {0}, Simulation T = {1}, N = {2}, Normalization = {3}".format(comp_time, total_time, N, check_sum)
@@ -169,8 +205,8 @@ def main():
             "Total Variation Distance = {0}, D(P||pi_eq) = {1}".format(distance, rel_entropy)
             )
         print("<J1> = {0}, <J2> = {1}, <J> = {2}".format(mean_space_flux[0], mean_space_flux[1], mean_space_flux.mean()))
-        print("<<J1>> = {0}, <<J2>> = {1}, <<J> >= {2}".format(mean_space_time_flux[0], mean_space_time_flux[1], mean_space_time_flux.mean()))
-        print()
+        print("<<J1>> = {0}, <<J2>> = {1}, <<J>>= {2}".format(mean_space_time_flux[0], mean_space_time_flux[1], mean_space_time_flux.mean()))
+        print("="*40)
 
     print("Exiting...")
 
