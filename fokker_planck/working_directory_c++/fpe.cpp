@@ -61,7 +61,6 @@ int main(int argc, char *argv[]) {
 
     // initialize and calculate the energies of the system
     double E_initial = 0.0;
-
     for (int i=0; i<N; i++) {
         E_i = potential(0.0, position[i]);
         p_init[i] += exp(-beta*E_i) * dx / Z;

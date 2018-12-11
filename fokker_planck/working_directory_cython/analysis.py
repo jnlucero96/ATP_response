@@ -107,15 +107,19 @@ def analyze_energetics():
 
 def analyze():
 
-    ID = 4
-    N = 1800
-    Ax = 10.0
-    Axy = Ay = A = 0.0
-    H = 10.0
+    ID = 1
+    N = 360
+    Ax = 4.0
+    Axy = 0.0
+    Ay = 4.0
+    H = 0.0
+    A = 0.0
 
     cwd = getcwd()
     target_dir = cwd + '/output_dir/'
-    data_filename = '/ID_{0}_outfile.dat'.format(ID)
+    #data_filename = '/ID_{0}_outfile.dat'.format(ID)
+    data_filename = 'Ax_{0}_Axy_{1}_Ay_{2}_Fh_{3}_Fa_{4}_outfile.dat'.format(
+        Ax, Axy, Ay, H, A)
     data_total_path = target_dir + data_filename
 
     print("{} Loading data...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
@@ -130,7 +134,7 @@ def analyze():
     force1 = force1.reshape((N, N))
     force2 = force2.reshape((N, N))
 
-    positions = linspace(0.0, 2*pi-(2*pi/N), N) * (180/pi)
+    positions = linspace(0.0, 2*pi-(2*pi/N), N)*(180/pi)
 
     to_plot = [p_now, p_equil, flux1, flux2]
     vmin0 = min([array_to_plot.min() for array_to_plot in to_plot[:2]])
@@ -142,10 +146,10 @@ def analyze():
 
     print("{} Plotting the contours...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
     fig, ax = subplots(2, 2, figsize=(10, 10), sharex='all', sharey='all')
-    cl0 = ax[0, 0].contourf(positions, positions, p_now.T, vmin=vmin0, vmax=vmax0, cmap=cmap0)
-    cl1 = ax[0, 1].contourf(positions, positions, p_equil.T, vmin=vmin0, vmax=vmax0, cmap=cmap0)
-    cl2 = ax[1, 0].contourf(positions, positions, flux1.T, vmin=vmin1, vmax=vmax1, cmap=cmap1)
-    cl3 = ax[1, 1].contourf(positions, positions, flux2.T, vmin=vmin1, vmax=vmax1, cmap=cmap1)
+    cl0 = ax[0, 0].contourf(positions, positions, p_now.T, 30, vmin=vmin0, vmax=vmax0, cmap=cmap0)
+    cl1 = ax[0, 1].contourf(positions, positions, p_equil.T, 30, vmin=vmin0, vmax=vmax0, cmap=cmap0)
+    cl2 = ax[1, 0].contourf(positions, positions, flux1.T, 30, vmin=vmin1, vmax=vmax1, cmap=cmap1)
+    cl3 = ax[1, 1].contourf(positions, positions, flux2.T, 30, vmin=vmin1, vmax=vmax1, cmap=cmap1)
 
     titles = {
         (0,0): r'$\hat{p}^{\mathrm{SS}}(\bm{\theta})$',
@@ -216,17 +220,25 @@ def analyze():
     fig.savefig(target_dir + 'ID_{}_plot.pdf'.format(ID))
     print("{} Done!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
-    fig2, ax2 = subplots(2,1, sharex=True, figsize=(10,10))
-    ax2[0].plot(positions, flux1[:, N//2], "X-", lw=3.0, ms=8)
+    fig2, ax2 = subplots(3,1, sharex=True, figsize=(10,10))
+    ax2[0].plot(positions, flux1.T[N//4, :], "X-", lw=3.0, ms=8)
     ax2[0].set_ylabel(titles[(1, 0)], fontsize=18)
-    ax2[1].plot(positions, p_now[:, N//2], "go-", lw=3.0, ms=8)
-    ax2[1].set_ylabel(titles[(0, 0)], fontsize=18)
-    ax2[1].set_xlabel(r"$\theta_{X}$", fontsize=18)
-    ax2[0].grid(True)
-    ax2[1].grid(True)
+    ax2[0].set_ylim([1.5*vmin1, 1.5*vmax1])
+    ax2[1].plot(positions, flux2.T[N//4, :], "X-", lw=3.0, ms=8)
+    ax2[1].set_ylabel(titles[(1, 1)], fontsize=18)
+    ax2[1].set_ylim([1.5*vmin1, 1.5*vmax1])
+    ax2[2].plot(positions, p_now.T[N//4, :], "go-", lw=3.0, ms=8)
+    ax2[2].set_ylim(bottom=0.0)
+    ax2[2].set_ylabel(titles[(0, 0)], fontsize=18)
+    ax2[2].set_xlabel(r"$\theta_{X}$", fontsize=18)
+
+    for i in range(3):
+        ax2[i].grid(True)
+        ax2[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        ax2[i].yaxis.offsetText.set_fontsize(14)
 
     fig2.tight_layout()
-    fig2.savefig("slice.pdf")
+    fig2.savefig("slice-cluster.pdf")
 
     fig3, ax3 = subplots(3,1, sharex=True, figsize=(10,10))
     ax3[0].plot(positions, potential[:, N//2], lw=3.0, ms=8)
@@ -241,7 +253,7 @@ def analyze():
     ax3[2].grid(True)
 
     fig3.tight_layout()
-    fig3.savefig("slice_energetics.pdf")
+    fig3.savefig("slice_energetics-cluster.pdf")
 
     close("all")
 

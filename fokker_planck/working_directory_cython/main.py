@@ -26,7 +26,7 @@ def get_params():
     ID = get_ID_value()
     # discretization parameters
     dt = 0.001  # time discretization. Keep this number low
-    N = 1800  # inverse space discretization. Keep this number high!
+    N = 360  # inverse space discretization. Keep this number high!
 
     # time-specific parameters
     total_time = 0.5

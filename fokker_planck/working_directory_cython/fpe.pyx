@@ -1,5 +1,5 @@
 # cython: language_level=3, cdivision=True, boundscheck=False, wraparound=False
-from libc.math cimport exp, sin, cos, fabs
+from libc.math cimport exp, sin, cos, fabs, log
 
 # yes, this is what you think it is
 cdef double pi = 3.14159265358979323846264338327950288419716939937510582
