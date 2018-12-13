@@ -100,6 +100,49 @@ cdef double potential(
     ) nogil: #need the potential in the FPE
     return 0.5*(Ax*(1-cos((3*position1)-(2*pi/3)))+Axy*(1-cos(position1-position2))+Ay*(1-cos((3*position2))))
 
+cdef void calc_transfer_entropy():
+
+    # first compute H(Y_t|Y_{t-1:t-L}), unsure how to compute
+    # next compute H(Y_t|Y_{t-1:t-L}, X_{t-1:t-L}), unsure how to compute
+    # compute the transfer entropy by subtraction
+
+cdef void calc_learning_rate():
+
+    # first compute I(X_{t};Y_{t+\tau})
+    # then compute derivative wrt \tau
+
+cdef double calc_nostalgia(
+    double[:, :] p_xy_now,
+    double[:, :] p_x_now_y_next, # not sure how to compute
+    double[:] p_x_now,
+    double[:] p_y_now,
+    double[:] p_y_next,
+    double[:, :] p_next,
+    double dx
+    ):
+
+    cdef:
+        double I_mem  = 0.0
+        double I_pred = 0.0
+
+        # declare iterator variables
+        Py_ssize_t i, j
+
+    # compute I_{mem} = I(X_{t}, Y_{t}), assume dx = dy
+    for i in range(N):
+        for j in range(N):
+            I_mem += p_now[i, j]*log(p_xy_now[i, j]/(p_x_now[i]*p_y_now[j]))
+    I_mem *= (dx*dx)
+
+    # compute I_{pred} = I(X_{t}, Y_{t+1})
+    for i in range(N):
+        for j in range(N):
+            I_pred += p_x_now_y_next[i, j]*log(p_x_now_y_next[i, j]/(p_x_now[i]*p_y_next[j]))
+    I_pred *= (dx*dx)
+
+    # compute the nostalgia by subtraction
+    return I_mem - I_pred
+
 cdef void calc_flux(
     double[:] positions,
     double[:, :]  p_now,
