@@ -185,8 +185,8 @@ def analyze():
         r'$A_{x}$ = ' + str(Ax)
         + r', $A_{xy}$ = ' + str(Axy)
         + r', $A_{y}$ = ' + str(Ay)
-        + r', $F_{H}$ = ' + str(H)
-        + r', $F_{A}$ = '  + str(A)
+        + r', $F_{X}$ = ' + str(H)
+        + r', $F_{Y}$ = '  + str(A)
         )
 
     fig.text(
@@ -256,6 +256,37 @@ def analyze():
     fig3.savefig("slice_energetics-cluster.pdf")
 
     close("all")
+
+
+def analyze2():
+
+    N = 360
+
+    cwd = getcwd()
+    target_dir = cwd + '/output_dir/'
+    #data_filename = '/ID_{0}_outfile.dat'.format(ID)
+    data_filename = 'Ax_{0}_Axy_{1}_Ay_{2}_Fh_{3}_Fa_{4}_outfile.dat'.format(
+        Ax, Axy, Ay, H, A)
+    data_total_path = target_dir + data_filename
+
+    print("{} Loading data...".format(
+        datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
+    p_now, p_equil, flux1, flux2, potential, force1, force2 = loadtxt(
+        data_total_path, unpack=True)
+    # p_now,  flux1, force1 = loadtxt(data_total_path, unpack=True, usecols=(0, 2, 5))
+
+    p_now = p_now.reshape((N, N))
+    p_equil = p_equil.reshape((N, N))
+    flux1 = flux1.reshape((N, N))
+    flux2 = flux2.reshape((N, N))
+    potential = potential.reshape((N, N))
+    force1 = force1.reshape((N, N))
+    force2 = force2.reshape((N, N))
+
+    positions = linspace(0.0, 2*pi-(2*pi/N), N)*(180/pi)
+
+
+
 
 if __name__ == "__main__":
     # analyze_energetics()

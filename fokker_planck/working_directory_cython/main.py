@@ -35,14 +35,17 @@ def get_params():
     gamma = 1000.0  # drag
     beta = 1.0  # 1/kT
     m = 1.0  # mass
-    Ax = 10.0 # energy scale of system X
+    Ax = 2.0 # energy scale of system X
     Axy = 0.0 # energy scale of coupling between systems X and Y
     Ay = 0.0 # energy scale of system Y
-    H = 10.0 # force on system X by chemical bath B1
+    H = 0.0 # force on system X by chemical bath B1
     A = 0.0 # force on system Y by chemical bath B2
 
     # initialization condition: equilibrium , uniform, or steady
     initialize_from = 'steady'
+
+    # specify simulation: coupled, or flows
+    which_simulation = 'coupled'
 
     # save data or not
     save = True
@@ -139,15 +142,19 @@ def main():
 
     # count number of times the primary loops correspond to the desired
     num_loops = int((total_time+dt)//dt)
+    # how many time update steps before checking for steady state convergence
+    # enfore steady state convergence check every unit time
+    check_step = int(1.0/dt)
 
     print("Number of times around loop = {0}".format(num_loops))
+    print("Number of times before check = {0}".format(check_step))
     print("{} Launching simulation...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
     t0 = time()
-    work, heat = launchpad_coupled(
+    launchpad_coupled(
         positions, prob, p_now, p_last, p_last_ref, flux,
         potential_at_pos, force1_at_pos, force2_at_pos,
         N, num_loops,
-        dx, time_check, steady_state_var,
+        dx, time_check, check_step, steady_state_var,
         Ax, Axy, Ay, H, A,
         dt, m, beta, gamma
     )
