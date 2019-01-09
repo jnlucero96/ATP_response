@@ -1,16 +1,8 @@
 # cython: language_level=3, cdivision=True, boundscheck=False, wraparound=False
-from libc.math cimport exp, fabs
+from libc.math cimport exp, fabs, log, sin, cos
 
-# import self-made cython modules
-from energetics cimport potential, force1, force2
-from updates cimport (
-    update_probability_full, update_probability_x, update_probability_y
-    )
-from dynamical cimport calc_flux
-from information_theoretic cimport (
-    calc_nostalgia, calc_learning_rate, calc_transfer_entropy
-    )
-
+# yes, this is what you think it is
+cdef double pi = 3.14159265358979323846264338327950288419716939937510582
 # float32 machine eps
 cdef double float32_eps = 1.1920928955078125e-07
 # float64 machine eps
@@ -90,6 +82,9 @@ def launchpad_coupled(
 
 def launchpad_flows(
     double[:] positions,
+    double[:] p_x_now,
+    double[:] p_y_now,
+    double[:] p_y_next,
     double[:, :] prob,
     double[:, :] p_now,
     double[:, :] p_last,
@@ -162,21 +157,43 @@ def launchpad_flows(
 
     for i in range(N):
         for j in range(N):
+            p_x_next_y_next[i, j] = p_now[i, j]
             p_last[i, j] = p_now[i, j]
-            p_now[i, j] = 0.0
 
-    run_simulation_flows(
-        positions,
-        p_last,
-        p_x_next_y_now,
-        p_x_next_y_next,
-        fluxes_x,
-        fluxes_y,
-        potential_at_pos,
-        force1_at_pos,
-        force2_at_pos,
+    work, heat, nostalgia = run_simulation_flows(
+        positions, p_x_now, p_y_now, p_y_next,
+        p_last, p_x_next_y_now, p_x_next_y_next, fluxes_x, fluxes_y,
+        potential_at_pos, force1_at_pos, force2_at_pos,
         N, dx, dt, num_loops, m, gamma, beta, E_after_relax
         )
+
+    return work, heat, nostalgia
+
+###############################################################################
+###############################################################################
+############
+############ ENERGETICS AND FORCES
+############
+###############################################################################
+###############################################################################
+
+cdef double force1(
+    double position1, double position2,
+    double Ax, double Axy, double H
+    ) nogil: # force on system X
+    return (0.5)*(Axy*sin(position1-position2)+(3*Ax*sin((3*position1)-(2*pi/3)))) + H
+
+cdef double force2(
+    double position1, double position2,
+    double Ay, double Axy, double A
+    ) nogil: # force on system Y
+    return (0.5)*((-1.0)*Axy*sin(position1-position2)+(3*Ay*sin(3*position2))) - A
+
+cdef double potential(
+    double position1, double position2,
+    double Ax, double Axy, double Ay
+    ) nogil:
+    return 0.5*(Ax*(1-cos((3*position1)-(2*pi/3)))+Axy*(1-cos(position1-position2))+Ay*(1-cos((3*position2))))
 
 ###############################################################################
 ###############################################################################
@@ -249,6 +266,424 @@ cdef void steady_state_initialize(
 ###############################################################################
 ###############################################################################
 ############
+############ UPDATE STEPS - FULL UPDATES
+############
+###############################################################################
+###############################################################################
+
+cdef void update_probability_x(
+    double[:] positions,
+    double[:, :] p_now,
+    double[:, :] p_last,
+    double[:, :] force1_at_pos,
+    double m1, double gamma, double beta,
+    int N, double dx, double dt
+    ) nogil:
+
+    # declare iterator variables
+    cdef Py_ssize_t i, j
+
+    ## Periodic boundary conditions:
+    ## Explicity update FPE for the corners
+    p_now[0, 0] = (
+            p_last[0, 0]
+            + dt*(force1_at_pos[1, 0]*p_last[1, 0]-force1_at_pos[N-1, 0]*p_last[N-1, 0])/(gamma*m1*2.0*dx)
+            + dt*(p_last[1, 0]-2.0*p_last[0, 0]+p_last[N-1, 0])/(beta*gamma*m1*(dx*dx))
+            ) # checked
+    p_now[0, N-1] = (
+        p_last[0, N-1]
+        + dt*(force1_at_pos[1, N-1]*p_last[1, N-1]-force1_at_pos[N-1, N-1]*p_last[N-1, N-1])/(gamma*m1*2.0*dx)
+        + dt*(p_last[1, N-1]-2.0*p_last[0, N-1]+p_last[N-1, N-1])/(beta*gamma*m1*(dx*dx))
+        ) # checked
+    p_now[N-1, 0] = (
+        p_last[N-1, 0]
+        + dt*(force1_at_pos[0, 0]*p_last[0, 0]-force1_at_pos[N-2, 0]*p_last[N-2, 0])/(gamma*m1*2.0*dx)
+        + dt*(p_last[0, 0]-2.0*p_last[N-1, 0]+p_last[N-2, 0])/(beta*gamma*m1*(dx*dx))
+        ) # checked
+    p_now[N-1, N-1] = (
+        p_last[N-1, N-1]
+        + dt*(force1_at_pos[0, N-1]*p_last[0, N-1]-force1_at_pos[N-2, N-1]*p_last[N-2, N-1])/(gamma*m1*2.0*dx)
+        + dt*(p_last[0, N-1]-2.0*p_last[N-1, N-1]+p_last[N-2, N-1])/(beta*gamma*m1*(dx*dx))
+        ) #checked
+
+    # iterate through all the coordinates, not on the corners, for both variables
+    for i in range(1, N-1):
+        ## Periodic boundary conditions:
+        ## Explicitly update FPE for edges not corners
+        p_now[0, i] = (
+            p_last[0, i]
+            + dt*(force1_at_pos[1, i]*p_last[1, i]-force1_at_pos[N-1, i]*p_last[N-1, i])/(gamma*m1*2.0*dx)
+            + dt*(p_last[1, i]-2*p_last[0, i]+p_last[N-1, i])/(beta*gamma*m1*(dx*dx))
+            ) # checked
+        p_now[i, 0] = (
+            p_last[i, 0]
+            + dt*(force1_at_pos[i+1, 0]*p_last[i+1, 0]-force1_at_pos[i-1, 0]*p_last[i-1, 0])/(gamma*m1*2.0*dx)
+            + dt*(p_last[i+1, 0]-2*p_last[i, 0]+p_last[i-1, 0])/(beta*gamma*m1*(dx*dx))
+            ) # checked
+
+        ## all points with well defined neighbours go like so:
+        for j in range(1, N-1):
+            p_now[i, j] = (
+                p_last[i, j]
+                + dt*(force1_at_pos[i+1, j]*p_last[i+1, j]-force1_at_pos[i-1, j]*p_last[i-1, j])/(gamma*m1*2.0*dx)
+                + dt*(p_last[i+1, j]-2.0*p_last[i, j]+p_last[i-1, j])/(beta*gamma*m1*(dx*dx))
+                ) # checked
+
+        ## Explicitly update FPE for rest of edges not corners
+        p_now[N-1, i] = (
+            p_last[N-1, i]
+            + dt*(force1_at_pos[0, i]*p_last[0, i]-force1_at_pos[N-2, i]*p_last[N-2, i])/(gamma*m1*2.0*dx)
+            + dt*(p_last[0, i]-2.0*p_last[N-1, i]+p_last[N-2, i])/(beta*gamma*m1*(dx*dx))
+            ) # checked
+        p_now[i, N-1] = (
+            p_last[i, N-1]
+            + dt*(force1_at_pos[i+1, N-1]*p_last[i+1, N-1]-force1_at_pos[i-1, N-1]*p_last[i-1, N-1])/(gamma*m1*2.0*dx)
+            + dt*(p_last[i+1, N-1]-2.0*p_last[i, N-1]+p_last[i-1, N-1])/(beta*gamma*m1*(dx*dx))
+            ) # checked
+
+cdef void update_probability_y(
+    double[:] positions,
+    double[:, :] p_now,
+    double[:, :] p_last,
+    double[:, :] force2_at_pos,
+    double m2, double gamma, double beta,
+    int N, double dx, double dt
+    ) nogil:
+
+    # declare iterator variables
+    cdef Py_ssize_t i, j
+
+    ## Periodic boundary conditions:
+    ## Explicity update FPE for the corners
+    p_now[0, 0] = (
+            p_last[0, 0]
+            + dt*(force2_at_pos[0, 1]*p_last[0, 1]-force2_at_pos[0, N-1]*p_last[0, N-1])/(gamma*m2*2.0*dx)
+            + dt*(p_last[0, 1]-2.0*p_last[0, 0]+p_last[0, N-1])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+    p_now[0, N-1] = (
+        p_last[0, N-1]
+        + dt*(force2_at_pos[0, 0]*p_last[0, 0]-force2_at_pos[0, N-2]*p_last[0, N-2])/(gamma*m2*2.0*dx)
+        + dt*(p_last[0, 0]-2.0*p_last[0, N-1]+p_last[0, N-2])/(beta*gamma*m2*(dx*dx))
+        ) # checked
+    p_now[N-1, 0] = (
+        p_last[N-1, 0]
+        + dt*(force2_at_pos[N-1, 1]*p_last[N-1, 1]-force2_at_pos[N-1, N-1]*p_last[N-1, N-1])/(gamma*m2*2.0*dx)
+        + dt*(p_last[N-1, 1]-2.0*p_last[N-1, 0]+p_last[N-1, N-1])/(beta*gamma*m2*(dx*dx))
+        ) # checked
+    p_now[N-1, N-1] = (
+        p_last[N-1, N-1]
+        + dt*(force2_at_pos[N-1, 0]*p_last[N-1, 0]-force2_at_pos[N-1, N-2]*p_last[N-1, N-2])/(gamma*m2*2.0*dx)
+        + dt*(p_last[N-1, 0]-2.0*p_last[N-1, N-1]+p_last[N-1, N-2])/(beta*gamma*m2*(dx*dx))
+        ) #checked
+
+    # iterate through all the coordinates, not on the corners, for both variables
+    for i in range(1, N-1):
+        ## Periodic boundary conditions:
+        ## Explicitly update FPE for edges not corners
+        p_now[0, i] = (
+            p_last[0, i]
+            + dt*(force2_at_pos[0, i+1]*p_last[0, i+1]-force2_at_pos[0, i-1]*p_last[0, i-1])/(gamma*m2*2.0*dx)
+            + dt*(p_last[0, i+1]-2*p_last[0, i]+p_last[0, i-1])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+        p_now[i, 0] = (
+            p_last[i, 0]
+            + dt*(force2_at_pos[i, 1]*p_last[i, 1]-force2_at_pos[i, N-1]*p_last[i, N-1])/(gamma*m2*2.0*dx)
+            + dt*(p_last[i, 1]-2*p_last[i, 0]+p_last[i, N-1])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+
+        ## all points with well defined neighbours go like so:
+        for j in range(1, N-1):
+            p_now[i, j] = (
+                p_last[i, j]
+                + dt*(force2_at_pos[i, j+1]*p_last[i, j+1]-force2_at_pos[i, j-1]*p_last[i, j-1])/(gamma*m2*2.0*dx)
+                + dt*(p_last[i, j+1]-2.0*p_last[i, j]+p_last[i, j-1])/(beta*gamma*m2*(dx*dx))
+                ) # checked
+
+        ## Explicitly update FPE for rest of edges not corners
+        p_now[N-1, i] = (
+            p_last[N-1, i]
+            + dt*(force2_at_pos[N-1, i+1]*p_last[N-1, i+1]-force2_at_pos[N-1, i-1]*p_last[N-1, i-1])/(gamma*m2*2.0*dx)
+            + dt*(p_last[N-1, i+1]-2.0*p_last[N-1, i]+p_last[N-1, i-1])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+        p_now[i, N-1] = (
+            p_last[i, N-1]
+            + dt*(force2_at_pos[i, 0]*p_last[i, 0]-force2_at_pos[i, N-2]*p_last[i, N-2])/(gamma*m2*2.0*dx)
+            + dt*(p_last[i, 0]-2.0*p_last[i, N-1]+p_last[i, N-2])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+
+cdef void update_probability_full(
+    double[:] positions,
+    double[:, :] p_now,
+    double[:, :] p_last,
+    double[:, :] force1_at_pos,
+    double[:, :] force2_at_pos,
+    double m1, double m2, double gamma, double beta,
+    int N, double dx, double dt
+    ) nogil:
+
+    # declare iterator variables
+    cdef Py_ssize_t i, j
+
+    ## Periodic boundary conditions:
+    ## Explicity update FPE for the corners
+    p_now[0, 0] = (
+            p_last[0, 0]
+            + dt*(force1_at_pos[1, 0]*p_last[1, 0]-force1_at_pos[N-1, 0]*p_last[N-1, 0])/(gamma*m1*2.0*dx)
+            + dt*(p_last[1, 0]-2.0*p_last[0, 0]+p_last[N-1, 0])/(beta*gamma*m1*(dx*dx))
+            + dt*(force2_at_pos[0, 1]*p_last[0, 1]-force2_at_pos[0, N-1]*p_last[0, N-1])/(gamma*m2*2.0*dx)
+            + dt*(p_last[0, 1]-2.0*p_last[0, 0]+p_last[0, N-1])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+    p_now[0, N-1] = (
+        p_last[0, N-1]
+        + dt*(force1_at_pos[1, N-1]*p_last[1, N-1]-force1_at_pos[N-1, N-1]*p_last[N-1, N-1])/(gamma*m1*2.0*dx)
+        + dt*(p_last[1, N-1]-2.0*p_last[0, N-1]+p_last[N-1, N-1])/(beta*gamma*m1*(dx*dx))
+        + dt*(force2_at_pos[0, 0]*p_last[0, 0]-force2_at_pos[0, N-2]*p_last[0, N-2])/(gamma*m2*2.0*dx)
+        + dt*(p_last[0, 0]-2.0*p_last[0, N-1]+p_last[0, N-2])/(beta*gamma*m2*(dx*dx))
+        ) # checked
+    p_now[N-1, 0] = (
+        p_last[N-1, 0]
+        + dt*(force1_at_pos[0, 0]*p_last[0, 0]-force1_at_pos[N-2, 0]*p_last[N-2, 0])/(gamma*m1*2.0*dx)
+        + dt*(p_last[0, 0]-2.0*p_last[N-1, 0]+p_last[N-2, 0])/(beta*gamma*m1*(dx*dx))
+        + dt*(force2_at_pos[N-1, 1]*p_last[N-1, 1]-force2_at_pos[N-1, N-1]*p_last[N-1, N-1])/(gamma*m2*2.0*dx)
+        + dt*(p_last[N-1, 1]-2.0*p_last[N-1, 0]+p_last[N-1, N-1])/(beta*gamma*m2*(dx*dx))
+        ) # checked
+    p_now[N-1, N-1] = (
+        p_last[N-1, N-1]
+        + dt*(force1_at_pos[0, N-1]*p_last[0, N-1]-force1_at_pos[N-2, N-1]*p_last[N-2, N-1])/(gamma*m1*2.0*dx)
+        + dt*(p_last[0, N-1]-2.0*p_last[N-1, N-1]+p_last[N-2, N-1])/(beta*gamma*m1*(dx*dx))
+        + dt*(force2_at_pos[N-1, 0]*p_last[N-1, 0]-force2_at_pos[N-1, N-2]*p_last[N-1, N-2])/(gamma*m2*2.0*dx)
+        + dt*(p_last[N-1, 0]-2.0*p_last[N-1, N-1]+p_last[N-1, N-2])/(beta*gamma*m2*(dx*dx))
+        ) #checked
+
+    # iterate through all the coordinates, not on the corners, for both variables
+    for i in range(1, N-1):
+        ## Periodic boundary conditions:
+        ## Explicitly update FPE for edges not corners
+        p_now[0, i] = (
+            p_last[0, i]
+            + dt*(force1_at_pos[1, i]*p_last[1, i]-force1_at_pos[N-1, i]*p_last[N-1, i])/(gamma*m1*2.0*dx)
+            + dt*(p_last[1, i]-2*p_last[0, i]+p_last[N-1, i])/(beta*gamma*m1*(dx*dx))
+            + dt*(force2_at_pos[0, i+1]*p_last[0, i+1]-force2_at_pos[0, i-1]*p_last[0, i-1])/(gamma*m2*2.0*dx)
+            + dt*(p_last[0, i+1]-2*p_last[0, i]+p_last[0, i-1])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+        p_now[i, 0] = (
+            p_last[i, 0]
+            + dt*(force1_at_pos[i+1, 0]*p_last[i+1, 0]-force1_at_pos[i-1, 0]*p_last[i-1, 0])/(gamma*m1*2.0*dx)
+            + dt*(p_last[i+1, 0]-2*p_last[i, 0]+p_last[i-1, 0])/(beta*gamma*m1*(dx*dx))
+            + dt*(force2_at_pos[i, 1]*p_last[i, 1]-force2_at_pos[i, N-1]*p_last[i, N-1])/(gamma*m2*2.0*dx)
+            + dt*(p_last[i, 1]-2*p_last[i, 0]+p_last[i, N-1])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+
+        ## all points with well defined neighbours go like so:
+        for j in range(1, N-1):
+            p_now[i, j] = (
+                p_last[i, j]
+                + dt*(force1_at_pos[i+1, j]*p_last[i+1, j]-force1_at_pos[i-1, j]*p_last[i-1, j])/(gamma*m1*2.0*dx)
+                + dt*(p_last[i+1, j]-2.0*p_last[i, j]+p_last[i-1, j])/(beta*gamma*m1*(dx*dx))
+                + dt*(force2_at_pos[i, j+1]*p_last[i, j+1]-force2_at_pos[i, j-1]*p_last[i, j-1])/(gamma*m2*2.0*dx)
+                + dt*(p_last[i, j+1]-2.0*p_last[i, j]+p_last[i, j-1])/(beta*gamma*m2*(dx*dx))
+                ) # checked
+
+        ## Explicitly update FPE for rest of edges not corners
+        p_now[N-1, i] = (
+            p_last[N-1, i]
+            + dt*(force1_at_pos[0, i]*p_last[0, i]-force1_at_pos[N-2, i]*p_last[N-2, i])/(gamma*m1*2.0*dx)
+            + dt*(p_last[0, i]-2.0*p_last[N-1, i]+p_last[N-2, i])/(beta*gamma*m1*(dx*dx))
+            + dt*(force2_at_pos[N-1, i+1]*p_last[N-1, i+1]-force2_at_pos[N-1, i-1]*p_last[N-1, i-1])/(gamma*m2*2.0*dx)
+            + dt*(p_last[N-1, i+1]-2.0*p_last[N-1, i]+p_last[N-1, i-1])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+        p_now[i, N-1] = (
+            p_last[i, N-1]
+            + dt*(force1_at_pos[i+1, N-1]*p_last[i+1, N-1]-force1_at_pos[i-1, N-1]*p_last[i-1, N-1])/(gamma*m1*2.0*dx)
+            + dt*(p_last[i+1, N-1]-2.0*p_last[i, N-1]+p_last[i-1, N-1])/(beta*gamma*m1*(dx*dx))
+            + dt*(force2_at_pos[i, 0]*p_last[i, 0]-force2_at_pos[i, N-2]*p_last[i, N-2])/(gamma*m2*2.0*dx)
+            + dt*(p_last[i, 0]-2.0*p_last[i, N-1]+p_last[i, N-2])/(beta*gamma*m2*(dx*dx))
+            ) # checked
+
+###############################################################################
+###############################################################################
+############
+############ DYNAMICAL QUANTITIES
+############
+###############################################################################
+###############################################################################
+
+cdef void calc_flux(
+    double[:] positions,
+    double[:, :]  p_now,
+    double[:, :, :]  flux_array,
+    double[:, :] force1_at_pos,
+    double[:, :] force2_at_pos,
+    double m1, double m2, double gamma, double beta,
+    int N, double dx, double dt
+    ) nogil:
+
+    cdef Py_ssize_t i, j # declare iterator variables
+
+    # explicit update of the corners
+    # first component
+    flux_array[0, 0, 0] += (-1.0)*(
+        (force1_at_pos[0, 0]*p_now[0, 0])/(gamma*m1)
+        + (p_now[1, 0] - p_now[N-1, 0])/(beta*gamma*m1*2*dx)
+        )*(dt/dx)
+    flux_array[0, 0, N-1] += (-1.0)*(
+        (force1_at_pos[0, N-1]*p_now[0, N-1])/(gamma*m1)
+        + (p_now[1, N-1] - p_now[N-1, N-1])/(beta*gamma*m1*2*dx)
+        )*(dt/dx)
+    flux_array[0, N-1, 0] += (-1.0)*(
+        (force1_at_pos[N-1, 0]*p_now[N-1, 0])/(gamma*m1)
+        + (p_now[0, 0] - p_now[N-2, 0])/(beta*gamma*m1*2*dx)
+        )*(dt/dx)
+    flux_array[0, N-1, N-1] += (-1.0)*(
+        (force1_at_pos[N-1, N-1]*p_now[N-1, N-1])/(gamma*m1)
+        + (p_now[0, N-1] - p_now[N-2, N-1])/(beta*gamma*m1*2*dx)
+        )*(dt/dx)
+
+    # second component
+    flux_array[1, 0, 0] += (-1.0)*(
+        (force2_at_pos[0, 0]*p_now[0, 0])/(gamma*m2)
+        + (p_now[0, 1] - p_now[0, N-1])/(beta*gamma*m2*2*dx)
+        )*(dt/dx)
+    flux_array[1, 0, N-1] += (-1.0)*(
+        (force2_at_pos[0, N-1]*p_now[0, N-1])/(gamma*m2)
+        + (p_now[0, 0] - p_now[0, N-2])/(beta*gamma*m2*2*dx)
+        )*(dt/dx)
+    flux_array[1, N-1, 0] += (-1.0)*(
+        (force2_at_pos[N-1, 0]*p_now[N-1, 0])/(gamma*m2)
+        + (p_now[N-1, 1] - p_now[N-1, N-1])/(beta*gamma*m2*2*dx)
+        )*(dt/dx)
+    flux_array[1, N-1, N-1] += (-1.0)*(
+        (force2_at_pos[N-1, N-1]*p_now[N-1, N-1])/(gamma*m2)
+        + (p_now[N-1, 0] - p_now[N-1, N-2])/(beta*gamma*m2*2*dx)
+        )*(dt/dx)
+
+    # for points with well defined neighbours
+    for i in range(1, N-1):
+        # explicitly update for edges not corners
+        # first component
+        flux_array[0, 0, i] += (-1.0)*(
+            (force1_at_pos[0, i]*p_now[0, i])/(gamma*m1)
+            + (p_now[1, i] - p_now[N-1, i])/(beta*gamma*m1*2*dx)
+        )*(dt/dx)
+        flux_array[0, i, 0] += (-1.0)*(
+            (force1_at_pos[i, 0]*p_now[i, 0])/(gamma*m1)
+            + (p_now[i+1, 0]- p_now[i-1, 0])/(beta*gamma*m1*2*dx)
+        )*(dt/dx)
+
+        # second component
+        flux_array[1, 0, i] += (-1.0)*(
+            (force2_at_pos[0, i]*p_now[0, i])/(gamma*m2)
+            + (p_now[0, i+1] - p_now[0, i-1])/(beta*gamma*m2*2*dx)
+            )*(dt/dx)
+        flux_array[1, i, 0] += (-1.0)*(
+            (force2_at_pos[i, 0]*p_now[i, 0])/(gamma*m2)
+            + (p_now[i, 1] - p_now[i, N-1])/(beta*gamma*m2*2*dx)
+            )*(dt/dx)
+
+        for j in range(1, N-1):
+            # first component
+            flux_array[0, i, j] += (-1.0)*(
+                (force1_at_pos[i, j]*p_now[i, j])/(gamma*m1)
+                + (p_now[i+1, j] - p_now[i-1, j])/(beta*gamma*m1*2*dx)
+                )*(dt/dx)
+            # second component
+            flux_array[1, i, j] += (-1.0)*(
+                (force2_at_pos[i, j]*p_now[i, j])/(gamma*m2)
+                + (p_now[i, j+1] - p_now[i, j-1])/(beta*gamma*m2*2*dx)
+                )*(dt/dx)
+
+        # update rest of edges not corners
+        # first component
+        flux_array[0, N-1, i] += (-1.0)*(
+            (force1_at_pos[N-1, i]*p_now[N-1, i])/(gamma*m1)
+            + (p_now[0, i] - p_now[N-2, i])/(beta*gamma*m1*2*dx)
+            )*(dt/dx)
+        flux_array[0, i, N-1] += (-1.0)*(
+            (force1_at_pos[i, N-1]*p_now[i, N-1])/(gamma*m1)
+            + (p_now[i+1, N-1] - p_now[i-1, N-1])/(beta*gamma*m1*2*dx)
+            )*(dt/dx)
+
+        # second component
+        flux_array[1, N-1, i] += (-1.0)*(
+            (force2_at_pos[N-1, i]*p_now[N-1, i])/(gamma*m2)
+            + (p_now[N-1, i+1] - p_now[N-1, i-1])/(beta*gamma*m2*2*dx)
+            )*(dt/dx)
+        flux_array[1, i, N-1] += (-1.0)*(
+            (force2_at_pos[i, N-1]*p_now[i, N-1])/(gamma*m2)
+            + (p_now[i, 0] - p_now[i, N-2])/(beta*gamma*m2*2*dx)
+            )*(dt/dx)
+
+###############################################################################
+###############################################################################
+############
+############ INFORMATION THEORETIC QUANTITIES
+############
+###############################################################################
+###############################################################################
+cdef double calc_transfer_entropy(None) nogil:
+    # first compute H(Y_t|Y_{t-1:t-L}), unsure how to compute
+    # next compute H(Y_t|Y_{t-1:t-L}, X_{t-1:t-L}), unsure how to compute
+    # compute the transfer entropy by subtraction
+    return 0.0
+
+cdef double calc_learning_rate(None) nogil:
+    # first compute I(X_{t};Y_{t+\tau})
+    # then compute derivative wrt \tau
+    return 0.0
+
+cdef double calc_nostalgia(
+    double[:] p_x_now, double[:] p_y_now, double[:] p_y_next,
+    double[:, :] p_xy_now, double[:, :] p_x_now_y_next,
+    int N, double dx
+    ) nogil:
+
+    cdef:
+        double I_mem  = 0.0
+        double I_pred = 0.0
+
+        # declare iterator variables
+        Py_ssize_t i, j
+
+    # compute the marginal distributions for the "now" variables
+    for i in range(N):
+        for j in range(N):
+            p_x_now[i] += p_xy_now[i, j]
+    for j in range(N):
+        for i in range(N):
+            p_y_now[j] += p_xy_now[i, j]
+
+    # compute I_{mem} = I(X_{t}, Y_{t}), assume dx = dy
+    for i in range(N):
+        for j in range(N):
+            I_mem += p_xy_now[i, j]*log(p_xy_now[i, j]/(p_x_now[i]*p_y_now[j]))
+    I_mem *= (dx*dx)
+
+    # reset the marginal distributions
+    for i in range(N):
+        p_x_now[i] = 0.0
+        p_y_now[i] = 0.0
+        p_y_next[i] = 0.0
+
+    # compute the marginal distributions for the "next" variables
+    for i in range(N):
+        for j in range(N):
+            p_x_now[i] += p_x_now_y_next[i, j]
+    for j in range(N):
+        for i in range(N):
+            p_y_next[j] += p_x_now_y_next[i, j]
+
+    # compute I_{pred} = I(X_{t}, Y_{t+1})
+    for i in range(N):
+        for j in range(N):
+            I_pred += p_x_now_y_next[i, j]*log(p_x_now_y_next[i, j]/(p_x_now[i]*p_y_next[j]))
+    I_pred *= (dx*dx)
+
+    # compute the nostalgia by subtraction
+    return I_mem - I_pred
+
+###############################################################################
+###############################################################################
+############
 ############ SIMULATIONS
 ############
 ###############################################################################
@@ -296,8 +731,11 @@ cdef void run_simulation_coupled(
             N, dx, dt
             )
 
-cdef (double, double) run_simulation_flows(
+cdef (double, double, double) run_simulation_flows(
     double[:] positions,
+    double[:] p_x_now,
+    double[:] p_y_now,
+    double[:] p_y_next,
     double[:, :] p_last,
     double[:, :] p_x_next_y_now,
     double[:, :] p_x_next_y_next,
@@ -318,6 +756,7 @@ cdef (double, double) run_simulation_flows(
         double      E_change_pot       = 0.0
         double      m1                 = m
         double      m2                 = m
+        double      nostalgia          = 0.0
         int         continue_condition = 1
 
         # counters
@@ -368,8 +807,14 @@ cdef (double, double) run_simulation_flows(
             N, dx, dt
             )
 
+        nostalgia += calc_nostalgia(
+            p_x_now, p_y_now, p_y_next,
+            p_x_next_y_now, p_x_next_y_next,
+            N, dx
+            )
+
         # reset energy variables
         E_change_pot = 0.0
         E_after_relax = 0.0
 
-    return work, heat
+    return work, heat, nostalgia
