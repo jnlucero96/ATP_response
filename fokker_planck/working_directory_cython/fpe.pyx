@@ -632,8 +632,8 @@ cdef double calc_learning_rate(None) nogil:
     return 0.0
 
 cdef double calc_nostalgia(
-    double[:] p_x_now, double[:] p_y_now, double[:] p_y_next,
-    double[:, :] p_xy_now, double[:, :] p_x_now_y_next,
+    double[:] p_x_now, double[:] p_x_next, double[:] p_y_now,
+    double[:, :] p_xy_now, double[:, :] p_x_next_y_now,
     int N, double dx
     ) nogil:
 
@@ -667,15 +667,15 @@ cdef double calc_nostalgia(
     # compute the marginal distributions for the "next" variables
     for i in range(N):
         for j in range(N):
-            p_x_now[i] += p_x_now_y_next[i, j]
+            p_x_next[i] += p_x_next_y_now[i, j]
     for j in range(N):
         for i in range(N):
-            p_y_next[j] += p_x_now_y_next[i, j]
+            p_y_now[j] += p_x_next_y_now[i, j]
 
     # compute I_{pred} = I(X_{t}, Y_{t+1})
     for i in range(N):
         for j in range(N):
-            I_pred += p_x_now_y_next[i, j]*log(p_x_now_y_next[i, j]/(p_x_now[i]*p_y_next[j]))
+            I_pred += p_x_next_y_now[i, j]*log(p_x_next_y_now[i, j]/(p_x_next[i]*p_y_now[j]))
     I_pred *= (dx*dx)
 
     # compute the nostalgia by subtraction
@@ -790,6 +790,12 @@ cdef (double, double, double) run_simulation_flows(
             N, dx, dt
             )
 
+        nostalgia += calc_nostalgia(
+            p_x_now, p_x_next, p_y_now,
+            p_last, p_x_next_y_now,
+            N, dx
+            )
+
         update_probability_y(
             positions, p_x_next_y_next, p_x_next_y_now, force2_at_pos,
             m2, gamma, beta, N, dx, dt
@@ -805,12 +811,6 @@ cdef (double, double, double) run_simulation_flows(
             force1_at_pos, force2_at_pos,
             m1, m2, gamma, beta,
             N, dx, dt
-            )
-
-        nostalgia += calc_nostalgia(
-            p_x_now, p_y_now, p_y_next,
-            p_x_next_y_now, p_x_next_y_next,
-            N, dx
             )
 
         # reset energy variables
