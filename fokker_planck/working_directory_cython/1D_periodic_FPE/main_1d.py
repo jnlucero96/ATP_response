@@ -6,46 +6,47 @@ from numpy import (
 from time import time
 from datetime import datetime
 from os.path import isfile
+from scipy.integrate import trapz
 
-from fpe_1d import (
-    launchpad_reference
-    )
+from fpe_1d import launchpad_reference
+from utilities_1d import calc_flux_1d
 
 def get_params():
 
     # discretization parameters
-    dt = 0.001  # time discretization. Keep this number low
+    dt = 0.01  # time discretization. Keep this number low
     N = 360  # inverse space discretization. Keep this number high!
-
-    # time-specific parameters
-    total_time = 10.0
 
     # model-specific parameters
     gamma = 1000.0  # drag
     beta = 1.0  # 1/kT
     m = 1.0  # mass
 
-    A = 3.0 # energy scale of system X
-    H = 0.0 # force on system X by chemical bath B1
+    A = 8.0 # energy scale of system 
+
+    H = 8.0 # force on system by chemical bath B1
+    atp = -2.0 # force on system by chemical bath B2
+    overall = 6.0
 
     return (
         dt, N,
         gamma, beta, m,
-        A, H
+        A, H, atp, overall
         )
 
 def save_data_reference(
-    A, H, p_now, p_equil, potential_at_pos, force_at_pos, N
+    A, H, atp, p_now, flux_array, p_equil, potential_at_pos, force_at_pos, N
     ):
 
     target_dir = './master_output_dir/'
-    data_filename = '/reference_A_{0}_F_{1}_outfile.dat'.format(A, H)
+    data_filename = '/reference_A_{0}_F_{1}_atp_{2}_outfile.dat'.format(A, H, atp)
     data_total_path = target_dir + data_filename
 
     with open(data_total_path, 'w') as dfile:
         for i in range(N):
             dfile.write(
                 '{0:.15e}'.format(p_now[i])
+                + '\t' + '{0:.15e}'.format(flux_array[i])
                 + '\t' + '{0:.15e}'.format(p_equil[i])
                 + '\t' + '{0:.15e}'.format(potential_at_pos[i])
                 + '\t' + '{0:.15e}'.format(force_at_pos[i])
@@ -55,7 +56,7 @@ def save_data_reference(
 def main():
 
     # unload parameters
-    [dt, N, gamma, beta, m, A, H] = get_params()
+    [dt, N, gamma, beta, m, A, H, atp, overall] = get_params()
 
     # calculate derived discretization parameters
     dx = (2*pi) / N  # space discretization: total distance / number of points
@@ -80,22 +81,20 @@ def main():
     p_now = zeros(N)
     p_last = zeros(N)
     p_last_ref = zeros(N)
-    positions = linspace(0, (2*pi)-dx, N)
+    positions = linspace(0.0, (2*pi)-dx, N)
     potential_at_pos = zeros(N)
     force_at_pos = zeros(N)
+    flux_array = zeros(N)
 
     print("{} Launching reference simulation...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
-    t0 = time()
     launchpad_reference(
         positions,
         prob,
         p_now, p_last, p_last_ref,
         potential_at_pos,
         force_at_pos,
-        N, dx, check_step, A, H, dt, m, beta, gamma
+        N, dx, check_step, A, H, atp, overall, dt, m, beta, gamma
     )
-    t1 = time()
-    comp_time = t1-t0
     print("{} Reference simulation done!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
     print("{} Processing data...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
@@ -114,12 +113,21 @@ def main():
     assert ((check_sum - 1.0).__abs__() <= finfo('float32').eps), \
         "ABORT: Probability density is not normalized!"
 
+    print("{} Calculating flux...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
+
+    calc_flux_1d(
+        positions, p_now, force_at_pos, flux_array, 
+        m, gamma, beta, N, dx, dt
+        )
+
+    print("Flux is: {0:.15e}".format(trapz(flux_array, dx=dx)/(2*pi)))
+
     print("{} Processing finished!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
     # write to file
     print("{} Saving data...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
     save_data_reference(
-        A, H, p_now, p_equil, potential_at_pos, force_at_pos, N
+        A, H, atp, p_now, flux_array, p_equil, potential_at_pos, force_at_pos, N
         )
     print("{} Saving completed!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
