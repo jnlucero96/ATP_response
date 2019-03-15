@@ -23,6 +23,13 @@ rcParams['text.latex.preamble'] = [
     r"\usepackage{physics}", r"\usepackage{bm}"
 ]
 
+# declare global arrays
+Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
+# F_Hplus_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
+# F_atp_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
+F_Hplus_array = array([0.0, 2.0, 4.0, 8.0])
+F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
+
 def set_params():
 
     N = 360
@@ -92,9 +99,6 @@ def calculate_flux_power_and_efficiency(target_dir=None):
         m1, m2, beta, gamma
         ] = set_params()
 
-    Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
-    F_Hplus_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-    F_atp_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
 
     dx = (2*pi)/N
 
@@ -337,11 +341,6 @@ def plot_flux_scan(target_dir):
 
     dx = (2*pi)/N
 
-    # F_Hplus_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-    # F_atp_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-    F_Hplus_array = array([0.0, 2.0, 4.0, 8.0])
-    F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
-
     fig, ax = subplots(
         F_Hplus_array.size, F_atp_array.size,
         figsize=(15,15), sharex='col', sharey='all'
@@ -419,11 +418,6 @@ def plot_power_scan(target_dir):
         ] = set_params()
 
     dx = (2*pi)/N
-
-    # F_Hplus_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-    # F_atp_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-    F_Hplus_array = array([0.0, 2.0, 4.0, 8.0])
-    F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
 
     fig, ax = subplots(
         F_Hplus_array.size, F_atp_array.size,
@@ -503,11 +497,6 @@ def plot_efficiency_scan(target_dir):
 
     dx = (2*pi)/N
 
-    # F_Hplus_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-    # F_atp_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-    F_Hplus_array = array([0.0, 2.0, 4.0, 8.0])
-    F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
-
     fig, ax = subplots(
         F_Hplus_array.size, F_atp_array.size,
         figsize=(15,15), sharex='col', sharey='all'
@@ -530,17 +519,6 @@ def plot_efficiency_scan(target_dir):
             ax[row_index, col_index].plot(
                 Ecouple_array, efficiency_ratio, lw=3.0
                 )
-
-            # if (row_index == 0):
-            #     ax[row_index, col_index].set_title(
-            #         "{}".format(F_Hplus), fontsize=20
-            #         )
-            # if (col_index == F_Hplus_array.size - 1):
-            #     ax[row_index, col_index].set_ylabel(
-            #         "{}".format(F_atp), fontsize=20
-            #         )
-
-            #     ax[row_index, col_index].yaxis.set_label_position("right")
 
     for i in range(F_atp_array.size):
         for j in range(F_Hplus_array.size):
