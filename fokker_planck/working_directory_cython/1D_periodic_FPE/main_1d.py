@@ -14,7 +14,7 @@ from utilities_1d import calc_flux_1d
 def get_params():
 
     # discretization parameters
-    dt = 0.01  # time discretization. Keep this number low
+    dt = 0.001  # time discretization. Keep this number low
     N = 360  # inverse space discretization. Keep this number high!
 
     # model-specific parameters
@@ -22,24 +22,28 @@ def get_params():
     beta = 1.0  # 1/kT
     m = 1.0  # mass
 
-    A = 8.0 # energy scale of system 
+    A = 4.0 # energy scale of system
 
     H = 8.0 # force on system by chemical bath B1
     atp = -2.0 # force on system by chemical bath B2
     overall = 6.0
 
+    num_minima = 3.0
+
     return (
         dt, N,
         gamma, beta, m,
-        A, H, atp, overall
+        A, H, atp, overall, num_minima
         )
 
 def save_data_reference(
-    A, H, atp, p_now, flux_array, p_equil, potential_at_pos, force_at_pos, N
+    target_dir,
+    A, H, atp, num_minima, p_now, flux_array, p_equil,
+    potential_at_pos, force_at_pos, N
     ):
 
-    target_dir = './master_output_dir/'
-    data_filename = '/reference_A_{0}_F_{1}_atp_{2}_outfile.dat'.format(A, H, atp)
+    # target_dir = './master_output_dir/'
+    data_filename = '/reference_E0_{0}_F_Hplus_{1}_F_atp_{2}_minima_{3}_outfile.dat'.format(A, H, atp, num_minima)
     data_total_path = target_dir + data_filename
 
     with open(data_total_path, 'w') as dfile:
@@ -53,10 +57,10 @@ def save_data_reference(
                 + '\n'
             )
 
-def main():
+def main(target_dir):
 
     # unload parameters
-    [dt, N, gamma, beta, m, A, H, atp, overall] = get_params()
+    [dt, N, gamma, beta, m, A, H, atp, overall, num_minima] = get_params()
 
     # calculate derived discretization parameters
     dx = (2*pi) / N  # space discretization: total distance / number of points
@@ -93,7 +97,8 @@ def main():
         p_now, p_last, p_last_ref,
         potential_at_pos,
         force_at_pos,
-        N, dx, check_step, A, H, atp, overall, dt, m, beta, gamma
+        N, dx, check_step, A, H, atp, overall,
+        num_minima, dt, m, beta, gamma
     )
     print("{} Reference simulation done!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
@@ -116,22 +121,23 @@ def main():
     print("{} Calculating flux...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
     calc_flux_1d(
-        positions, p_now, force_at_pos, flux_array, 
+        positions, p_now, force_at_pos, flux_array,
         m, gamma, beta, N, dx, dt
         )
-
-    print("Flux is: {0:.15e}".format(trapz(flux_array, dx=dx)/(2*pi)))
 
     print("{} Processing finished!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
     # write to file
     print("{} Saving data...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
     save_data_reference(
-        A, H, atp, p_now, flux_array, p_equil, potential_at_pos, force_at_pos, N
+        target_dir,
+        A, H, atp, num_minima, p_now, flux_array, p_equil,
+        potential_at_pos, force_at_pos, N
         )
     print("{} Saving completed!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
 
     print("Exiting...")
 
 if __name__ == "__main__":
-    main()
+    target_dir = "/Users/jlucero/data_to_not_upload/2019-03-20/"
+    main(target_dir)

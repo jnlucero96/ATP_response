@@ -14,8 +14,8 @@ def launchpad_reference(
     double[:] potential_at_pos,
     double[:] force_at_pos,
     int N, double dx, unsigned int check_step,
-    double A, double H, double atp, double overall, 
-    double dt, double m, double beta, double gamma
+    double A, double H, double atp, double overall,
+    double num_minima, double dt, double m, double beta, double gamma
     ):
 
     cdef:
@@ -25,8 +25,8 @@ def launchpad_reference(
 
     # populate the reference arrays
     for i in range(N):
-        potential_at_pos[i] = potential(positions[i], A, H)
-        force_at_pos[i] = force(positions[i], A, H, atp, overall)
+        potential_at_pos[i] = potential(positions[i], A, num_minima)
+        force_at_pos[i] = force(positions[i], A, H, atp, overall, num_minima)
 
     # calculate the partition function
     for i in range(N):
@@ -57,14 +57,14 @@ def launchpad_reference(
 
 cdef double force(
     double position,
-    double A, double H, double atp, double overall
+    double A, double H, double atp, double overall, double num_minima
     ) nogil: # force on system X
-    return (0.5)*(3*A*sin(3*position)) - overall
+    return (0.5)*(num_minima*A*sin(num_minima*position)) - (H+atp)
 
 cdef double potential(
-    double position, double A, double H
+    double position, double A, double num_minima
     ) nogil:
-    return 0.5*(A*(1-cos((3*position))))
+    return 0.5*(A*(1-cos((num_minima*position))))
 
 ###############################################################################
 ###############################################################################

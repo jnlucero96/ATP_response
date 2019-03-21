@@ -2,13 +2,14 @@
 from math import cos, sin, pi
 from numpy import (
     array, linspace, arange, loadtxt, vectorize, pi as npi, exp,
-    empty, log, log2, finfo, true_divide, asarray
+    empty, log, log2, finfo, true_divide, asarray, where
     )
 from scipy.integrate import trapz
 from matplotlib import rcParams, rc, ticker, colors, cm
 from matplotlib.style import use
 from matplotlib.pyplot import subplots, close
 from matplotlib.cm import get_cmap
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from os import getcwd
 from datetime import datetime
 
@@ -33,10 +34,10 @@ F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
 def set_params():
 
     N = 360
-    E0 = 2.0
-    Ecouple = 8.0
-    E1 = 2.0
-    F_Hplus = 0.0
+    E0 = 4.0
+    Ecouple = 128.0
+    E1 = 4.0
+    F_Hplus = 8.0
     F_atp = -2.0
     num_minima = 3.0
     phase_shift = 0.0
@@ -175,7 +176,7 @@ def calculate_flux_power_and_efficiency(target_dir=None):
 # ==============
 # ============================================================================
 
-def plot_energy():
+def plot_energy(target_dir):
 
     [
         N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
@@ -208,10 +209,79 @@ def plot_energy():
     fig.colorbar(ct, ax=ax)
     fig.tight_layout()
     fig.savefig(
-        "energy_" +
+        target_dir + "/energy_" +
         "E0_{0}_Ecouple_{1}_E1_{2}_E_Hplus_{3}_E_atp_{4}_minima_{5}_phase_{6}".format(
             E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
             ) + "_figure.pdf"
+        )
+
+def plot_probability_against_reference(ref_dir, target_dir):
+
+    [
+        N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        __, __, __, __
+        ] = set_params()
+
+    dx = 2*pi/N
+
+    ref_file_name = (
+        "/reference_"
+        + "E0_{0}_F_Hplus_{1}_F_atp_{2}_minima_{3}_outfile.dat".format(
+            E0, F_Hplus, F_atp, num_minima
+            )
+        )
+
+    input_file_name = (
+        "/reference_"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
+            E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+        ) + "_outfile.dat"
+        )
+
+    prob_array_2D = loadtxt(
+        target_dir + input_file_name,
+        usecols=(0,)
+        ).reshape((N, N));
+
+    marginal_prob_X = trapz(prob_array_2D, axis=1, dx=dx)
+    marginal_prob_Y = trapz(prob_array_2D, axis=0, dx=dx)
+
+    prob_array_1D = loadtxt(
+        ref_dir + ref_file_name,
+        usecols=(0,)
+    )
+
+    positions = linspace(0.0, 2*pi-dx, N)
+
+    fig, ax = subplots(1, 1, figsize=(10,10))
+
+    ax.semilogy(
+        positions*(180/npi), marginal_prob_X, lw=3.0, color='black', ls='-',
+        label=r"$\int\dd{y}\ P_{2\mathrm{D}}(x,y)$"
+        )
+    ax.semilogy(
+        positions*(180/npi), marginal_prob_Y, lw=3.0, color='darkgoldenrod', ls='dotted',
+        label=r"$\int\dd{x}\ P_{2\mathrm{D}}(x,y)$"
+        )
+    ax.semilogy(
+        positions*(180/npi), prob_array_1D, lw=3.0, color='red', ls='dashed',
+        label=r"$P_{1\mathrm{D}}(x,y)$"
+        )
+
+    ax.set_xticks(arange(0, 361, 60))
+    ax.set_xlim([0.0,360.0])
+    ax.set_ylabel(r"$P(x)$", fontsize=20)
+    ax.set_xlabel(r"$x$", fontsize=20)
+    ax.tick_params(labelsize=16, axis='both')
+    ax.grid(True)
+    ax.legend(loc=0, prop={"size":12})
+
+    fig.tight_layout()
+    fig.savefig(
+        target_dir + "/probability_comparison_" +
+        "E0_{0}_Ecouple_{1}_E1_{2}_E_Hplus_{3}_E_atp_{4}".format(
+            E0, Ecouple, E1, F_Hplus, F_atp
+            ) + "_sfigure.pdf"
         )
 
 def plot_probability(target_dir):
@@ -224,7 +294,7 @@ def plot_probability(target_dir):
     dx = 2*pi/N
 
     input_file_name = (
-        "reference_"
+        "/reference_"
         + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
             E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
         ) + "_outfile.dat")
@@ -269,10 +339,10 @@ def plot_probability(target_dir):
 
     fig.tight_layout()
     fig.savefig(
-        "probability_" +
+        target_dir + "/probability_" +
         "E0_{0}_Ecouple_{1}_E1_{2}_E_Hplus_{3}_E_atp_{4}".format(
             E0, Ecouple, E1, F_Hplus, F_atp
-            ) + "_figure.pdf"
+            ) + "_sfigure.pdf"
         )
 
 def plot_efficiency(target_dir):
@@ -319,6 +389,153 @@ def plot_efficiency(target_dir):
         "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
             E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
             ) + "_figure.pdf"
+        )
+
+def plot_efficiency_against_ratio(target_dir):
+
+    input_file_name = (
+        "/flux_power_efficiency_"
+        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "_outfile.dat"
+        )
+
+    [
+        N, E0, Ecouple, E1, __, __, num_minima, phase_shift,
+        __, __, __, __
+        ] = set_params()
+
+    dx = (2*pi)/N
+
+    x_array = empty(F_Hplus_array.size*F_atp_array.size)
+    efficiency = empty(F_Hplus_array.size*F_atp_array.size)
+
+    for ii, F_Hplus in enumerate(F_Hplus_array):
+        for jj, F_atp in enumerate(F_atp_array):
+
+            index = ii*F_Hplus_array.size + jj
+
+            Ecouple_array, efficiency_array = loadtxt(
+                target_dir + input_file_name.format(
+                    E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                    ),
+                unpack=True, usecols=(0,5)
+            )
+
+            if (abs(F_Hplus) < abs(F_atp)):
+                x_array[index] = (F_Hplus/F_atp)**2
+                efficiency[index] = efficiency_array[0]
+            elif (abs(F_Hplus) > abs(F_atp)):
+                x_array[index] = (F_atp/F_Hplus)**2
+                efficiency[index] = efficiency_array[0]
+            else:
+                continue
+
+    # print(x_array); print(efficiency); exit(0)
+
+    fig, ax = subplots(1, 1, figsize=(10,10))
+
+    l0 = ax.scatter(
+        x_array, efficiency
+        )
+
+    ax.set_ylabel(
+        r"$-\left(\mathcal{P}_{\mathrm{H}^{+}}/\mathcal{P}_{\mathrm{atp}}\right)$",
+        fontsize=20
+        )
+    ax.set_xlabel(
+        r"$\left(\mathrm{F}_{\mathrm{H}^{+}}/\mathrm{F}_{\mathrm{atp}}\right)^{2}$",
+        fontsize=20
+        )
+    ax.tick_params(labelsize=16, axis='both')
+    ax.grid(True)
+
+    fig.tight_layout()
+    fig.savefig(
+        target_dir + "/efficiency_against_ratio_" +
+        "E0_{0}_Ecouple_{1}_E1_{2}_minima_{3}_phase_{4}".format(
+            E0, Ecouple, E1, num_minima, phase_shift
+            ) + "_figure.pdf"
+        )
+
+def plot_lr(target_dir):
+
+    [
+        N, E0, Ecouple, E1, __, __, num_minima, phase_shift,
+        m1, m2, beta, gamma
+        ] = set_params()
+
+    dx = (2*pi)/N
+
+    positions = linspace(0.0, 2*pi-dx, N)
+
+    learning_rates = empty((F_atp_array.size,F_Hplus_array.size))
+
+    for ii, F_atp in enumerate(F_atp_array):
+        for jj, F_Hplus in enumerate(F_Hplus_array):
+
+            reference_file_name = (
+                "reference_"
+                + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
+                    E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                ) + "_outfile.dat")
+            prob_ss_array, __, __, force1_array, force2_array = loadtxt(
+                target_dir + reference_file_name.format(
+                    E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                    ), unpack=True
+            )
+
+            prob_ss_array = prob_ss_array.reshape((N,N))
+            force1_array = force1_array.reshape((N,N))
+            force2_array = force2_array.reshape((N,N))
+
+            flux_array = empty((2,N,N))
+            calc_flux(
+                positions, prob_ss_array, force1_array, force2_array,
+                flux_array, m1, m2, gamma, beta, N, dx, 0.001
+                )
+
+            Ly = empty((N,N))
+            calc_learning_rate(
+                prob_ss_array, prob_ss_array.sum(axis=1),
+                flux_array[1,:,:],
+                Ly,
+                N, dx
+               )
+
+            learning_rates[ii, jj] = trapz(trapz(Ly, axis=1, dx=dx), dx=dx)
+
+    vmin=learning_rates.min()
+    vmax=learning_rates.max()
+
+    limit=max(abs(vmin), abs(vmax))
+
+    # prepare figure
+    fig, ax = subplots(1, 1, figsize=(10,10))
+    im = ax.imshow(
+        learning_rates.T, cmap=cm.get_cmap('coolwarm'),
+        extent=(
+            F_atp_array[0], F_atp_array[-1],
+            F_Hplus_array[0], F_Hplus_array[-1]
+            ),
+        vmin=-limit, vmax=limit
+        )
+    ax.tick_params(labelsize=20)
+    ax.set_ylabel(r"$\mathrm{F}_{\mathrm{H}^{+}}$", fontsize=28)
+    ax.set_xlabel(r"$\mathrm{F}_{\mathrm{atp}}$", fontsize=28)
+
+
+    # create an axes on the right side of ax. The width of cax will be 5%
+    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+
+    fig.colorbar(im, ax=ax, cax=cax)
+    fig.savefig(
+        target_dir
+        + "learning_rate_E0_{0}_Ecouple_{1}_E1_{2}_minima_{3}_phase_{4}".format(
+                E0, Ecouple, E1, num_minima, phase_shift
+            )
+        + "_figure.pdf"
         )
 
 # ============================================================================
@@ -442,6 +659,170 @@ def plot_flux_scan(target_dir):
         )
 
     [
+        N, E0, Ecouple, E1, __, __, num_minima, phase_shift,
+        m1, m2, beta, gamma
+        ] = set_params()
+
+    dx = (2*pi)/N
+
+    fig, ax = subplots(
+        F_Hplus_array.size, F_atp_array.size,
+        figsize=(15,15), sharex='col', sharey='all'
+        )
+    fig2, ax2 = subplots(
+        F_Hplus_array.size, F_atp_array.size,
+        figsize=(15,15), sharex='col', sharey='all'
+        )
+
+    positions = linspace(0.0, 2*pi-dx, N)
+
+    flux1=[]
+    flux2=[]
+
+    for row_index, F_atp in enumerate(F_atp_array):
+        for col_index, F_Hplus in enumerate(F_Hplus_array):
+
+            input_file_name = (
+                "reference_"
+                + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
+                    E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                ) + "_outfile.dat")
+
+            prob_ss_array, __, __, force1_array, force2_array = loadtxt(
+                target_dir + input_file_name.format(
+                    E0,Ecouple,E1,F_Hplus,F_atp,num_minima,phase_shift
+                    ), unpack=True
+            )
+
+            prob_ss_array = prob_ss_array.reshape((N,N))
+            force1_array = force1_array.reshape((N,N))
+            force2_array = force2_array.reshape((N,N))
+
+            flux_array = empty((2,N,N))
+            calc_flux(
+                positions, prob_ss_array, force1_array, force2_array,
+                flux_array, m1, m2, gamma, beta, N, dx, 0.001
+                )
+
+            flux_array = asarray(flux_array)
+            flux1.append(flux_array[0,...])
+            flux2.append(flux_array[1,...])
+
+    flux1_min = min([flux1_array.min() for flux1_array in flux1])
+    flux1_max = max([flux1_array.max() for flux1_array in flux1])
+    flux2_min = min([flux2_array.min() for flux2_array in flux2])
+    flux2_max = max([flux2_array.max() for flux2_array in flux2])
+
+    limit = max(abs(flux1_min), abs(flux1_max), abs(flux2_min), abs(flux2_max))
+
+    for row_index, F_atp in enumerate(F_atp_array):
+        for col_index, F_Hplus in enumerate(F_Hplus_array):
+
+            ax[row_index, col_index].contourf(
+                positions, positions, (flux1[
+                    row_index*F_atp_array.size + col_index
+                    ]).T,
+                vmin=-limit, vmax=limit,
+                cmap=cm.get_cmap('seismic')
+                )
+
+            ax2[row_index, col_index].contourf(
+                positions, positions, (flux2[
+                    row_index*F_atp_array.size + col_index
+                    ]).T,
+                vmin=-limit, vmax=limit,
+                cmap=cm.get_cmap('seismic')
+                )
+
+            if (row_index == 0):
+                ax[row_index, col_index].set_title(
+                    "{}".format(F_Hplus), fontsize=20
+                    )
+
+                ax2[row_index, col_index].set_title(
+                    "{}".format(F_Hplus), fontsize=20
+                    )
+
+            if (col_index == F_Hplus_array.size - 1):
+                ax[row_index, col_index].set_ylabel(
+                    "{}".format(F_atp), fontsize=20
+                    )
+                ax[row_index, col_index].yaxis.set_label_position("right")
+
+                ax2[row_index, col_index].set_ylabel(
+                    "{}".format(F_atp), fontsize=20
+                    )
+                ax2[row_index, col_index].yaxis.set_label_position("right")
+
+    for i in range(F_atp_array.size):
+        for j in range(F_Hplus_array.size):
+            ax[i, j].grid(True)
+            ax[i, j].tick_params(labelsize=15)
+            ax[i, j].yaxis.offsetText.set_fontsize(12)
+            ax[i, j].ticklabel_format(style="sci", axis="y", scilimits=(0,0))
+
+            ax2[i, j].grid(True)
+            ax2[i, j].tick_params(labelsize=15)
+            ax2[i, j].yaxis.offsetText.set_fontsize(12)
+            ax2[i, j].ticklabel_format(style="sci", axis="y", scilimits=(0,0))
+
+    fig.text(
+        0.03, 0.51, r"$x_{2}$", fontsize=28, rotation="vertical"
+        )
+    fig.text(
+        0.96, 0.51, r"$F_{\mathrm{atp}}$", fontsize=28, rotation="vertical"
+        )
+    fig.text(0.49, 0.03, r"$x_{1}$", fontsize=28)
+    fig.text(0.50, 0.97, r"$F_{H^{+}}$", fontsize=28)
+
+    fig.tight_layout()
+
+    left=0.1
+    right=0.925
+    bottom=0.1
+    top=0.925
+    fig.subplots_adjust(left=left, right=right, bottom=bottom, top=top)
+
+    fig.savefig(
+        target_dir
+        + "/flux1_scan_E0_{0}_E1_{1}_minima_{2}_phase_{3}_figure.pdf".format(
+                E0, E1, num_minima, phase_shift
+            )
+        )
+
+    fig2.text(
+        0.03, 0.51, r"$\langle J\rangle$", fontsize=28, rotation="vertical"
+        )
+    fig2.text(
+        0.96, 0.51, r"$F_{\mathrm{atp}}$", fontsize=28, rotation="vertical"
+        )
+    fig2.text(0.49, 0.03, r"$E_{\mathrm{couple}}$", fontsize=28)
+    fig2.text(0.50, 0.97, r"$F_{H^{+}}$", fontsize=28)
+
+    fig2.tight_layout()
+
+    left=0.1
+    right=0.925
+    bottom=0.1
+    top=0.925
+    fig2.subplots_adjust(left=left, right=right, bottom=bottom, top=top)
+
+    fig2.savefig(
+        target_dir
+        + "/flux2_scan_E0_{0}_E1_{1}_minima_{2}_phase_{3}_figure.pdf".format(
+                E0, E1, num_minima, phase_shift
+            )
+        )
+
+def plot_integrated_flux_scan(target_dir):
+
+    input_file_name = (
+        "/flux_power_efficiency_"
+        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "_outfile.dat"
+        )
+
+    [
         N, E0, __, E1, F_Hplus, F_atp, num_minima, phase_shift,
         __, __, __, __
         ] = set_params()
@@ -511,7 +892,7 @@ def plot_flux_scan(target_dir):
 
     fig.savefig(
         target_dir
-        + "/flux_scan_E0_{0}_E1_{1}_minima_{2}_phase_{3}_figure.pdf".format(
+        + "/integrated_flux_scan_E0_{0}_E1_{1}_minima_{2}_phase_{3}_figure.pdf".format(
                 E0, E1, num_minima, phase_shift
             )
         )
@@ -689,68 +1070,19 @@ def plot_efficiency_scan(target_dir):
             )
         )
 
-def plot_lr_scan(target_dir):
-
-    [
-        N, E0, Ecouple, E1, __, __, num_minima, phase_shift,
-        m1, m2, beta, gamma
-        ] = set_params()
-
-    dx = (2*pi)/N
-
-    positions = linspace(0.0, 2*pi-dx, N)
-
-    learning_rates = empty((F_atp_array.size,F_Hplus_array.size))
-
-    for ii, F_atp in enumerate(F_atp_array):
-        for jj, F_Hplus in enumerate(F_Hplus_array):
-
-
-
-            reference_file_name = (
-                "reference_"
-                + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
-                    E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
-                ) + "_outfile.dat")
-            prob_ss_array, __, __, force1_array, force2_array = loadtxt(
-                target_dir + reference_file_name.format(
-                    E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
-                    ), unpack=True
-            )
-
-            prob_ss_array = prob_ss_array.reshape((N,N))
-            force1_array = force1_array.reshape((N,N))
-            force2_array = force2_array.reshape((N,N))
-
-            flux_array = empty((2,N,N))
-            calc_flux(
-                positions, prob_ss_array, force1_array, force2_array,
-                flux_array, m1, m2, gamma, beta, N, dx, 0.001
-                )
-
-            Ly = empty((N,N))
-            calc_learning_rate(
-                prob_ss_array, prob_ss_array.sum(axis=1),
-                flux_array[1,:,:],
-                Ly,
-                N, dx,
-                )
-
-            learning_rates[ii, jj] = trapz(trapz(Ly, axis=1, dx=dx), dx=dx)
-
-    # prepare figure
-    fig, ax = subplots(1, 1, figsize=(10,10))
-    ax.imshow(learning_rates)
-    fig.savefig("try.png")
 
 if __name__ == "__main__":
+    ref_dir = "/Users/jlucero/data_to_not_upload/2019-03-20/"
     target_dir = "/Users/jlucero/data_to_not_upload/2019-03-14/"
     # calculate_flux_power_and_efficiency(target_dir)
     # plot_energy()
     # plot_probability()
+    plot_probability_against_reference(ref_dir, target_dir)
     # plot_efficiency(target_dir)
+    # plot_efficiency_against_ratio(target_dir)
+    # plot_lr(target_dir)
     # plot_probability_scan(target_dir)
     # plot_flux_scan(target_dir)
+    # plot_integrated_flux_scan(target_dir)
     # plot_power_scan(target_dir)
     # plot_efficiency_scan(target_dir)
-    plot_lr_scan(target_dir)
