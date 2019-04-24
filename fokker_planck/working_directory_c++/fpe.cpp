@@ -5,227 +5,338 @@
 #include <cmath>
 #include <cstdarg>
 #include <vector>
+#include "math.h"
 using namespace std;
 
-double calc_flux(double);
-double mean(double *);
-void save_data(double *);
-void save_flux_data(double *);
-void run_calculation(
-    double [], long, double, double, double, double, 
-    double, double, double, double, double *
+// ==================== DECLARE GLOBAL VARIABLES ============================
+// yes, this is what you think it is
+const double pi = 3.14159265358979323846264338327950288419716939937510582;
+// float32 machine eps
+const double float32_eps = 1.1920928955078125e-07;
+// float64 machine eps
+const double float64_eps = 2.22044604925031308084726e-16;
+
+// ===========================================================================
+// ===========
+// =========== DECLARE PARAMETERS HERE
+// ===========
+// ===========================================================================
+
+// discretization parameters
+const double dt = 0.001; // time discretization. Keep this number low
+const double check_step = ((int) 1.0/dt); // check step counter
+
+const int N = 360; // inverse space discretization. Keep this number high!
+const double dx = (2.0*M_PI)/N; // space discretization
+
+//# model-specific parameters
+const double gamma_var = 1000.0; // drag
+const double beta_var = 1.0; // 1/kT
+const double m1 = 1.0; // mass of system 1
+const double m2 = 1.0; // mass of system 2
+
+const double E0 = 3.0; // energy scale of F0 sub-system
+const double Ecouple = 3.0; // energy scale of coupling between sub-systems F0 and F1
+const double E1 = 3.0; // energy scale of F1 sub-system
+const double F_Hplus = 3.0; // energy INTO (positive) F0 sub-system by H+ chemical bath
+const double F_atp = 3.0; // energy INTO (positive) F1 sub-system by ATP chemical bath
+
+const double num_minima = 3.0; // number of minima in the potential
+const double phase_shift = 0.0; // how much sub-systems are offset from one another
+
+// prototypes for functions
+double force1(
+    double, double
     );
+double force2(
+    double, double
+    );
+double potential(
+    double, double
+    );
+void update_probability_full(
+    double[][N], double[][N], double[][N], double[][N]
+    );
+void steady_state_initialize(
+    double[][N], double[][N], double[][N], double[][N], double[][N]
+    );
+void launchpad_reference(
+    double[N],
+    double[][N], double[][N], double[][N], double[][N], double[][N],
+    double[][N], double[][N]
+    );
+void linspace(double, double, double [N]);
 
 ofstream ofile;
 
 int main(int argc, char *argv[]) {
-    
-    // declare variables and associated values
-    string outputfilename = "output.dat"; // output file name
-    string outfluxfilename = "flux.dat"; // output file name
-    double output_list[4]; // list to keep outputs in
-    int N = 100; // declare discretization of space
-    int cycles = 10; // maximum number of cycles
-    int period = 0;
-    double m = 1.0; // mass
-    double gamma = 1000.0; // drag coefficient
-    double A = 0.0; // amplitude of perturbing potential
-    double k = 40.0; // tightness of curvature
-    double dt = 0.1; // how big time step
-    double beta = 1.0; // thermodynamic beta
-    double E_i; // energy of ith state
-    double dx = (2*M_PI) / ((double) N);
-    double time_check = (dx * m * gamma)/ (1.5 * A + 0.5 * k);
 
-    double work;
-    double heat; 
-    double flux[N];
+    double prob[N][N];
+    double p_now[N][N];
+    double p_last[N][N];
+    double p_last_ref[N][N];
+    double positions[N];
+    double potential_at_pos[N][N];
+    double force1_at_pos[N][N];
+    double force2_at_pos[N][N];
 
-    if (dt > time_check) {
-        cout << "Time Unstable. Will not start calculation." << endl;
-    } // end of if statement
+    size_t i, j;
 
-    // make list of positions, length N, from 0 to 2Pi-dx
-    double position[N];
-    double p_init[N];
-    double p_now[N];
-    for (int i=0; i<N; i++) {
-        position[i] = ((double) i) * ((2*M_PI) / (double) N);
+    // populate the positions array
+    linspace(0.0, (2.0*M_PI)-dx, positions);
+
+    // initialize all other arrays to zero
+    for (i=0; i<N; i++) {
+        for (j=0; j<N; j++) {
+            prob[i][j] = 0.0;
+            p_now[i][j] = 0.0;
+            p_last[i][j] = 0.0;
+            p_last_ref[i][j] = 0.0;
+            potential_at_pos[i][j] = 0.0;
+            force1_at_pos[i][j] = 0.0;
+            force2_at_pos[i][j] = 0.0;
+        }
     }
 
-    // initialize and calculate partition function
-    double Z = 0.0;
-    for (int i=0; i<N; i++) {
-        Z += exp(-beta*potential(0.0, position[i])) * dx;
-    }
-
-    // initialize and calculate the energies of the system
-    double E_initial = 0.0;
-    for (int i=0; i<N; i++) {
-        E_i = potential(0.0, position[i]);
-        p_init[i] += exp(-beta*E_i) * dx / Z;
-        E_initial += E_i;
-    } // end of for loop
-
-    copy(p_init+0, p_init + N, p_now); // copy the array
-
-    double E_0 = E_initial; // keep the initial energy
-
-    delete[] p_init;
-
-    run_calculation(
-        p_now, N, dx, dt, E_initial, 
-        ((double) cycles), ((double) period), m, gamma, beta, 
-        work, heat, flux
-        );
-
-    ofile.open(outputfilename);
-
-    save_flux_data(N, position, flux);
+    launchpad_reference(
+        positions, prob, p_now, p_last, p_last_ref, 
+        potential_at_pos, force1_at_pos, force2_at_pos
+    );
 
     return 0;
 }
 
-void run_calculation(
-    double p_now[], long N, double dx, double dt, double E_now, 
-    double cycles, double period, double m, double gamma, double beta,
-    double work, double heat, double *flux) 
-{
+void linspace(double a, double b, double array[N]) {
 
-    long last = N - 1;         // variable to get last entry of array
-    double E_change_potential; // energy of system after potential moves
-    double E_after_relax; // energy of system after relaxation step
-    // double work;
-    double work_inst;
-    // double heat;
-    double heat_inst;
-    // initialize flux array
-    // double flux[N];
-    double flux_now[N]; 
-    double p_last[N];
+    double delta=(b-a)/(N-1);
+
     for (int i=0; i<N; i++) {
-        flux[i] = 0.0;
+            array[i] = a + (i*delta);
+    }
+}
+
+void launchpad_reference(
+    double positions[N],
+    double prob[][N], double p_now[][N],
+    double p_last[][N], double p_last_ref[][N],
+    double potential_at_pos[][N],
+    double force1_at_pos[][N], double force2_at_pos[][N]
+    ) {
+    
+    double Z = 0.0;
+
+    size_t i, j; // declare iterator variables
+
+    // populate the reference arrays
+    for (i=0; i<N; i++) {
+        for (j=0; j<N; j++) {
+            potential_at_pos[i][j] = potential(positions[i], positions[j]);
+            force1_at_pos[i][j] = force1(positions[i], positions[j]);
+            force2_at_pos[i][j] = force2(positions[i], positions[j]);
+        }
     }
 
-    // initialize some tracking variables
-    double work;
-    double heat;
-    double t;
-    work = 0;
-    heat = 0;
-    t = 0;
-    long step_counter = 0;
-    long print_counter = 0;
+    // calculate the partition function
+    for (i=0; i<N; i++) {
+        for (j=0; j<N; j++) {
+            Z += exp(-beta_var*potential_at_pos[i][j]);
+        }
+    }
 
-    t += dt;
+    // calculate the boltzmann equilibrium function and the average energy
+    for (i=0; i<N; i++) {
+        for (j=0; j<N; j++) {
+            prob[i][j] = exp((-1.0)*beta_var*potential_at_pos[i][j])/Z;
+        }
+    }
 
-    while (t < (cycles*period+dt)) {
-        copy(p_now+0, p_now+N, p_last); // save previous distribution
-        // reset current distribution and instantaneous flux
-        for (int i=0; i<N; i++) {
-            p_now[i] = 0.0;
-            flux_now[i] = 0.0;
-        } // end of for loop
-        
-        E_change_potential = 0.0;
-        for (int i=0; i<N; i++) {
-            E_change_potential += potential(t, ((double) i)*dx) * p_last;
-        } // end of for loop
-        
-        work += (E_change_potential - E_now);
-        work_inst = E_change_potential - E_now;
-        
-        // periodic boundary conditions; do first and last point explicitly
-        p_now[0] = (
-            p_last 
-            + dt*(-force(t, dx)*p_last[1] + force(t, -dx)*p_last[N-1])/(2.0*dx+gamma*m)
-            + dt*(p_last[1]+p_last[N-1]-2*p_last[0])/ pow(beta*gamma*dx, 2.0)
-            );
+    // initialize the simulation to steady state distribution
+    for (i=0; i<N; i++) {
+        for (j=0; j<N; j++) {
+            p_now[i][j] = 1.0/(N*N);
+        }
+    }
 
-        flux[0] += calc_flux(0);
-        flux_now[0] = calc_flux(0);
-
-        p_now[last] = (
-            p_last[last]
-            + dt*(
-                -force(t, 0)*p_last[0] 
-                + force(t, (((double) N-1)-1)* dx) 
-                )/(2.0*dx+gamma*m)
-            + dt*(p_last[0]+p_last[last-1]-2*p_last[-1])/pow(beta*gamma*dx, 2.0)
-            );
-
-        flux[last] += (
-            force(t, ((((double) N)-1)*dx))*p_now[-1]/(m*gamma)
-            - (-p_now[0]-p_now[N-2])/(gamma*beta*2*dx)
-        )*dt/dx;
-        flux_now[last] = (
-            force(t, ((((double) N) - 1)*dx)) * p_now[last]/(m*gamma)
-            - (p_now[0]-p_now[-2])/(gamma*beta*2*dx)
-            )*dt/dx;
-
-        for (int i=1; i<last; i++) {
-            p_now[i] = (
-                p_last[i]
-                + dt*(
-                    -force(t, (((double) i)+1)*dx)*p_last[i+1]
-                    +force(t,(((double) i)-1)*dx)*p_last[i-1]
-                    )/(2.0*dx*gamma*m)
-                + dt*(p_last[i+1]+p_last[i-1]-2*p_last[i])/pow(beta*gamma*dx, 2.0)
-            );
-            flux[i] += calc_flux(i);
-            flux_now[i] = calc_flux(i);
-        } // end of for loop
-
-        E_after_relax = 0.0;
-        for (int i=0; i<N; i++) {
-            E_after_relax += potential(t, ((double) i)*dx)*p_now[i];
-        }// end of for loop
-
-        heat += (E_after_relax-E_change_potential); // add to cumulative heat
-        heat_inst = (E_after_relax - E_change_potential);
-
-        t += dt;
-    } // end of while loop
-
+    steady_state_initialize(
+        p_now, p_last, p_last_ref,
+        force1_at_pos, force2_at_pos
+    );
 }
 
-double mean(int count, double *array) {
-    double mean_val = 0.0;
-
-    for (int i=0; i<count; i++) {
-        mean_val += array[i];
-    } // end of for loop
-
-    mean_val /= ((double) count);
-
-    return mean_val;
+double force1( double position1, double position2) {
+    return (0.5)*(Ecouple*sin(position1-position2)
+        + (num_minima*E0*sin((num_minima*position1)-(phase_shift)))) 
+        - F_Hplus;
 }
 
-void save_data(int count, ...) {
-
-    ofile << setiosflags(ios::showpoint|ios::scientific);
-
-    va_list args;
-    va_start(args, count);
-
-    for (int i=0; i<count; i++) {
-        ofile << setw(15) << setprecision(20) << va_arg(args, double);
-    } // end of for loop
-    va_end(args);
-
-    ofile << endl;
-
+double force2( double position1, double position2) {
+    return (0.5)*((-1.0)*Ecouple*sin(position1-position2)
+        + (num_minima*E1*sin(num_minima*position2))) 
+        - F_atp;
 }
 
-void save_flux_data(int count, double *theta0_array, double *flux_array) {
+double potential( double position1, double position2) {
+    return 0.5*(
+        E0*(1-cos((num_minima*position1-phase_shift)))
+        + Ecouple*(1-cos(position1-position2)) 
+        + E1*(1-cos((num_minima*position2)))
+        );
+}
 
-    ofile << setiosflags(ios::showpoint|ios::scientific);
+void steady_state_initialize(
+    double p_now[][N],
+    double p_last[][N],
+    double p_last_ref[][N],
+    double force1_at_pos[][N],
+    double force2_at_pos[][N]
+    ) {
 
-    for (int i=0; i<count; i++) {
-        ofile << setw(15) << setprecision(20) << theta0_array[i] << flux_array[i] << endl;
+    double tot_var_dist = 0.0;
+    int continue_condition = 1;
+    double check_norm = 0.0;
+
+    // counters
+    size_t i, j;
+    unsigned long step_counter = 0;
+
+    while (continue_condition) {
+
+        for (i=0; i<N; i++) {
+            for (j=0; j<N; j++) {
+                // save previous distribution
+                p_last[i][j] = p_now[i][j];
+                // reset to zero
+                p_now[i][j] = 0.0;
+            }
+        }
+
+        // advance probability one time step
+        update_probability_full(
+            p_now, p_last,
+            force1_at_pos, force2_at_pos
+            );
+
+        if (step_counter == check_step) {
+            for (i=0; i<N; i++) {
+                for (j=0; j<N; j++) {
+                    tot_var_dist += 0.5*fabs(p_last_ref[i][j] - p_now[i][j]);
+                }
+            }
+
+            for (i=0; i<N; i++) {
+                for (j=0; j<N; j++) {
+                    check_norm += p_now[i][j];
+                }
+            }
+
+            cout << step_counter << "\t" << tot_var_dist << "\t" << check_norm << endl;
+
+            // check condition
+            if (tot_var_dist < float64_eps) {
+                continue_condition = 0;
+            } else {
+                tot_var_dist = 0.0; // reset total variation distance
+                step_counter = 0; // reset step counter
+                check_norm = 0.0;
+                // make current distribution the reference distribution
+                for (i=0; i<N; i++) {
+                    for (j=0; j<N; j++) {
+                        p_last_ref[i][j] = p_now[i][j];
+                    }
+                }
+            }
+        }
+
+        step_counter += 1;
+    }
+}   
+
+void update_probability_full(
+    double p_now[][N],
+    double p_last[][N],
+    double force1_at_pos[][N],
+    double force2_at_pos[][N]
+    ) {
+
+    // declare iterator variables
+    int i, j;
+
+    // Periodic boundary conditions:
+    // Explicity update FPE for the corners
+    p_now[0][0] = (
+        p_last[0][0]
+        + dt*(force1_at_pos[1][0]*p_last[1][0]-force1_at_pos[N-1][0]*p_last[N-1][0])/(gamma_var*m1*2.0*dx)
+        + dt*(p_last[1][0]-2.0*p_last[0][0]+p_last[N-1][0])/(beta_var*gamma_var*m1*(dx*dx))
+        + dt*(force2_at_pos[0][1]*p_last[0][1]-force2_at_pos[0][N-1]*p_last[0][N-1])/(gamma_var*m2*2.0*dx)
+        + dt*(p_last[0][1]-2.0*p_last[0][0]+p_last[0][N-1])/(beta_var*gamma_var*m2*(dx*dx))
+        ); // checked
+    p_now[0][N-1] = (
+        p_last[0][N-1]
+        + dt*(force1_at_pos[1][N-1]*p_last[1][N-1]-force1_at_pos[N-1][N-1]*p_last[N-1][N-1])/(gamma_var*m1*2.0*dx)
+        + dt*(p_last[1][N-1]-2.0*p_last[0][N-1]+p_last[N-1][N-1])/(beta_var*gamma_var*m1*(dx*dx))
+        + dt*(force2_at_pos[0][0]*p_last[0][0]-force2_at_pos[0][N-2]*p_last[0][N-2])/(gamma_var*m2*2.0*dx)
+        + dt*(p_last[0][0]-2.0*p_last[0][N-1]+p_last[0][N-2])/(beta_var*gamma_var*m2*(dx*dx))
+        ); // checked
+    p_now[N-1][0] = (
+        p_last[N-1][0]
+        + dt*(force1_at_pos[0][0]*p_last[0][0]-force1_at_pos[N-2][0]*p_last[N-2][0])/(gamma_var*m1*2.0*dx)
+        + dt*(p_last[0][0]-2.0*p_last[N-1][0]+p_last[N-2][0])/(beta_var*gamma_var*m1*(dx*dx))
+        + dt*(force2_at_pos[N-1][1]*p_last[N-1][1]-force2_at_pos[N-1][N-1]*p_last[N-1][N-1])/(gamma_var*m2*2.0*dx)
+        + dt*(p_last[N-1][1]-2.0*p_last[N-1][0]+p_last[N-1][N-1])/(beta_var*gamma_var*m2*(dx*dx))
+        ); // checked
+    p_now[N-1][N-1] = (
+        p_last[N-1][N-1]
+        + dt*(force1_at_pos[0][N-1]*p_last[0][N-1]-force1_at_pos[N-2][N-1]*p_last[N-2][N-1])/(gamma_var*m1*2.0*dx)
+        + dt*(p_last[0][N-1]-2.0*p_last[N-1][N-1]+p_last[N-2][N-1])/(beta_var*gamma_var*m1*(dx*dx))
+        + dt*(force2_at_pos[N-1][0]*p_last[N-1][0]-force2_at_pos[N-1][N-2]*p_last[N-1][N-2])/(gamma_var*m2*2.0*dx)
+        + dt*(p_last[N-1][0]-2.0*p_last[N-1][N-1]+p_last[N-1][N-2])/(beta_var*gamma_var*m2*(dx*dx))
+        ); // checked
+
+    // iterate through all the coordinates, not on the corners, for both variables
+    for (i=0; i<N; i++) {
+        // Periodic boundary conditions:
+        // Explicitly update FPE for edges not corners
+        p_now[0][i] = (
+            p_last[0][i]
+            + dt*(force1_at_pos[1][i]*p_last[1][i]-force1_at_pos[N-1][i]*p_last[N-1][i])/(gamma_var*m1*2.0*dx)
+            + dt*(p_last[1][i]-2*p_last[0][i]+p_last[N-1][i])/(beta_var*gamma_var*m1*(dx*dx))
+            + dt*(force2_at_pos[0][i+1]*p_last[0][i+1]-force2_at_pos[0][i-1]*p_last[0][i-1])/(gamma_var*m2*2.0*dx)
+            + dt*(p_last[0][i+1]-2*p_last[0][i]+p_last[0][i-1])/(beta_var*gamma_var*m2*(dx*dx))
+            ); // checked
+        p_now[i][0] = (
+            p_last[i][0]
+            + dt*(force1_at_pos[i+1][0]*p_last[i+1][0]-force1_at_pos[i-1][0]*p_last[i-1][0])/(gamma_var*m1*2.0*dx)
+            + dt*(p_last[i+1][0]-2*p_last[i][0]+p_last[i-1][0])/(beta_var*gamma_var*m1*(dx*dx))
+            + dt*(force2_at_pos[i][1]*p_last[i][1]-force2_at_pos[i][N-1]*p_last[i][N-1])/(gamma_var*m2*2.0*dx)
+            + dt*(p_last[i][1]-2*p_last[i][0]+p_last[i][N-1])/(beta_var*gamma_var*m2*(dx*dx))
+            ); // checked
+
+        // all points with well defined neighbours go like so:
+        for (j=0; j<N; j++) { 
+            p_now[i][j] = (
+                p_last[i][j]
+                + dt*(force1_at_pos[i+1][j]*p_last[i+1][j]-force1_at_pos[i-1][j]*p_last[i-1][j])/(gamma_var*m1*2.0*dx)
+                + dt*(p_last[i+1][j]-2.0*p_last[i][j]+p_last[i-1][j])/(beta_var*gamma_var*m1*(dx*dx))
+                + dt*(force2_at_pos[i][j+1]*p_last[i][j+1]-force2_at_pos[i][j-1]*p_last[i][j-1])/(gamma_var*m2*2.0*dx)
+                + dt*(p_last[i][j+1]-2.0*p_last[i][j]+p_last[i][j-1])/(beta_var*gamma_var*m2*(dx*dx))
+                ); // checked
+        }
+
+        // Explicitly update FPE for rest of edges not corners
+        p_now[N-1][i] = (
+            p_last[N-1][i]
+            + dt*(force1_at_pos[0][i]*p_last[0][i]-force1_at_pos[N-2][i]*p_last[N-2][i])/(gamma_var*m1*2.0*dx)
+            + dt*(p_last[0][i]-2.0*p_last[N-1][i]+p_last[N-2][i])/(beta_var*gamma_var*m1*(dx*dx))
+            + dt*(force2_at_pos[N-1][i+1]*p_last[N-1][i+1]-force2_at_pos[N-1][i-1]*p_last[N-1][i-1])/(gamma_var*m2*2.0*dx)
+            + dt*(p_last[N-1][i+1]-2.0*p_last[N-1][i]+p_last[N-1][i-1])/(beta_var*gamma_var*m2*(dx*dx))
+            ); // checked
+        p_now[i][N-1] = (
+            p_last[i][N-1]
+            + dt*(force1_at_pos[i+1][N-1]*p_last[i+1][N-1]-force1_at_pos[i-1][N-1]*p_last[i-1][N-1])/(gamma_var*m1*2.0*dx)
+            + dt*(p_last[i+1][N-1]-2.0*p_last[i][N-1]+p_last[i-1][N-1])/(beta_var*gamma_var*m1*(dx*dx))
+            + dt*(force2_at_pos[i][0]*p_last[i][0]-force2_at_pos[i][N-2]*p_last[i][N-2])/(gamma_var*m2*2.0*dx)
+            + dt*(p_last[i][0]-2.0*p_last[i][N-1]+p_last[i][N-2])/(beta_var*gamma_var*m2*(dx*dx))
+            ); // checked
     } // end of for loop
-
-    ofile << endl;
-
 }
 
