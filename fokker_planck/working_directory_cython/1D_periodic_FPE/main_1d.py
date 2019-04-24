@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from math import pi
 from numpy import (
     array, arange, empty, finfo, pi as npi, log, true_divide, asarray,
