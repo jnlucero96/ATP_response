@@ -69,7 +69,7 @@ cdef double force1(
     # Returns the force on system F0. H+ chemical potential set up so that
     # postive values of chemical potential returns postive values of the flux
     # for F0
-    return (0.5)*(Ecouple*sin(position1-position2)+(3*E0*sin((num_minima*position1)-(phase_shift)))) - F_Hplus
+    return (0.5)*(Ecouple*sin(position1-position2)+(num_minima*E0*sin((num_minima*position1)-(phase_shift)))) - F_Hplus
 
 cdef double force2(
     double position1, double position2,
@@ -78,7 +78,7 @@ cdef double force2(
     # Returns the force on system F1. Chemical potential set up so that
     # postive values of chemical potential returns positive values of the of
     # the flux for F1
-    return (0.5)*((-1.0)*Ecouple*sin(position1-position2)+(3*E1*sin(num_minima*position2))) - F_atp
+    return (0.5)*((-1.0)*Ecouple*sin(position1-position2)+(num_minima*E1*sin(num_minima*position2))) - F_atp
 
 cdef double potential(
     double position1, double position2, double num_minima, double phase_shift,
@@ -106,10 +106,6 @@ cdef void steady_state_initialize(
     ) nogil:
 
     cdef:
-        double              work               = 0.0  # Cumulative work
-        double              heat               = 0.0  # Cumulative heat
-        double              E_last             = 0.0
-        double              E_change_pot       = 0.0
         double              m1                 = m
         double              m2                 = m
         double              tot_var_dist       = 0.0
