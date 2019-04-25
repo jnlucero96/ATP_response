@@ -161,6 +161,8 @@ void launchpad_reference(
         p_now, p_last, p_last_ref,
         force1_at_pos, force2_at_pos
     );
+
+    //TODO: add a write out to file here.
 }
 
 double force1( double position1, double position2) {
@@ -228,8 +230,9 @@ void steady_state_initialize(
                     check_norm += p_now[i][j];
                 }
             }
-
-            cout << step_counter << "\t" << tot_var_dist << "\t" << check_norm << endl;
+            
+            // bail at the first sign of trouble
+            if (fabs(check_norm-1.0) <= float32_eps) {exit(1);}
 
             // check condition
             if (tot_var_dist < float64_eps) {
