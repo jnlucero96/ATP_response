@@ -293,7 +293,7 @@ void update_probability_full(
         ); // checked
 
     // iterate through all the coordinates, not on the corners, for both variables
-    for (i=0; i<N; i++) {
+    for (i=1; i<N-1; i++) {
         // Periodic boundary conditions:
         // Explicitly update FPE for edges not corners
         p_now[0][i] = (
@@ -312,7 +312,7 @@ void update_probability_full(
             ); // checked
 
         // all points with well defined neighbours go like so:
-        for (j=0; j<N; j++) { 
+        for (j=1; j<N-1; j++) { 
             p_now[i][j] = (
                 p_last[i][j]
                 + dt*(force1_at_pos[i+1][j]*p_last[i+1][j]-force1_at_pos[i-1][j]*p_last[i-1][j])/(gamma_var*m1*2.0*dx)
