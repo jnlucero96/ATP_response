@@ -1,101 +1,229 @@
 program main
-    implicit none
+implicit none
 
-    real, parameter :: pi = 3.14159265358979323846264338327950288419716939937510582
+! this is what you think it is
+real, parameter :: pi = 3.14159265358979323846264338327950288419716939937510582
+! float64 machine eps
+real, parameter :: float64_eps = 2.22044604925031308084726e-16
 
-    real, dimension (N, N) p_now
+! ============================================================================
+! ===========
+! =========== SIMULATION PARAMETERS
+! ===========
+! ============================================================================
 
-    print *, "F1=", force1(0.00, 2.00, 1.00, 1000.0, 1.0, 1.0)
-    print *, "F2=", force2(0.00, 2.00, 1.00, 1000.0, 1.0, 1.0)
+! discretization parameters
+real, parameter :: dt = 0.001  ! time discretization. Keep this number low
+integer, parameter :: check_step = int(1.0/dt)
+integer, parameter :: n = 360  ! inverse space discretization. Keep this number high!
+real, parameter :: dx = (2.0*pi)/n
 
-    do
-        p_now[0, 0]=(
-                p_last[0, 0]
-                + dt*(force1(dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[1, 0] - force1(-dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[N-1, 0])/(2.0*dx)
-                + dt*(p_last[1, 0]-2.0*p_last[0, 0]+p_last[N-1, 0])/(beta*gamma*m1*(dx*dx))
-                + dt*(force2(0.0, dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[0, 1] - force2(0.0, -dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[0, N-1])/(2.0*dx)
-                + dt*(p_last[0, 1]-2.0*p_last[0, 0]+p_last[0, N-1])/(beta*gamma*m2*(dx*dx))
-                ) # checked
-        p_now[0, N-1]=(
-            p_last[0, N-1]
-            + dt*(force1(dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[1, N-1] - force1(-dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[N-1, N-1])/(2.0*dx)
-            + dt*(p_last[1, N-1]-2.0*p_last[0, N-1]+p_last[N-1, N-1])/(beta*gamma*m1*(dx*dx))
-            + dt*(force2(0.0, 0.0, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[0, 0] - force2(0.0, -2.0*dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[0, N-2])/(2.0*dx)
-            + dt*(p_last[0, 0]-2.0*p_last[0, N-1]+p_last[0, N-2])/(beta*gamma*m2*(dx*dx))
-            ) # checked
-        p_now[N-1, 0]=(
-            p_last[N-1, 0]
-            + dt*(force1(0.0, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[0, 0] - force1(-2.0*dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[N-2, 0])/(2.0*dx)
-            + dt*(p_last[0, 0]-2.0*p_last[N-1, 0]+p_last[N-2, 0])/(beta*gamma*m1*(dx*dx))
-            + dt*(force2(-dx, dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[N-1, 1] - force2(-dx, -dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[N-1, N-1])/(2.0*dx)
-            + dt*(p_last[N-1, 1]-2.0*p_last[N-1, 0]+p_last[N-1, N-1])/(beta*gamma*m2*(dx*dx))
-            ) # checked
-        p_now[N-1, N-1]=(
-            p_last[N-1, N-1]
-            + dt*(force1(0.0, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[0, N-1] - force1(-2.0*dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[N-2, N-1])/(2.0*dx)
-            + dt*(p_last[0, N-1]-2.0*p_last[N-1, N-1]+p_last[N-2, N-1])/(beta*gamma*m1*(dx*dx))
-            + dt*(force2(-dx, 0.0, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[N-1, 0] - force2(-dx, -2.0*dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[N-1, N-2])/(2.0*dx)
-            + dt*(p_last[N-1, 0]-2.0*p_last[N-1, N-1]+p_last[N-1, N-2])/(beta*gamma*m2*(dx*dx))
-            ) #checked
+! model-specific parameters
+real, parameter :: gamma = 1000.0  ! drag
+real, parameter :: beta = 1.0  ! 1/kT
+real, parameter :: m1 = 1.0  ! mass of system 1
+real, parameter :: m2 = 1.0  ! mass of system 2
 
-        ! iterate through all the coordinates, not on the corners, for both variables
-        do i = 2, N
-            ! Periodic boundary conditions:
-            ! Explicitly update FPE for edges not corners
-            p_now[0, i]=(
-                p_last[0, i]
-                + dt*(force1(dx, i*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[1, i] - force1(-dx, i*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[N-1, i])/(2.0*dx)
-                + dt*(p_last[1, i]-2*p_last[0, i]+p_last[N-1, i])/(beta*gamma*m1*(dx*dx))
-                + dt*(force2(0.0, i*dx+dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[0, i+1] - force2(0.0, i*dx-dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[0, i-1])/(2.0*dx)
-                + dt*(p_last[0, i+1]-2*p_last[0, i]+p_last[0, i-1])/(beta*gamma*m2*(dx*dx))
-                ) # checked
-            p_now[i, 0]=(
-                p_last[i, 0]
-                + dt*(force1(i*dx+dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[i+1, 0] - force1(i*dx-dx, 0.0, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[i-1, 0])/(2.0*dx)
-                + dt*(p_last[i+1, 0]-2*p_last[i, 0]+p_last[i-1, 0])/(beta*gamma*m1*(dx*dx))
-                + dt*(force2(i*dx, dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[i, 1] - force2(i*dx, -dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[i, N-1])/(2.0*dx)
-                + dt*(p_last[i, 1]-2*p_last[i, 0]+p_last[i, N-1])/(beta*gamma*m2*(dx*dx))
-                ) # checked
+real, parameter :: E0 = 3.0 ! energy scale of F0 sub-system
+real, parameter :: Ecouple = 3.0 ! energy scale of coupling between sub-systems F0 and F1
+real, parameter :: E1 = 3.0 ! energy scale of F1 sub-system
+real, parameter :: F_Hplus = 3.0 !  energy INTO (positive) F0 sub-system by H+ chemical bath
+real, parameter :: F_atp = -3.0 ! energy INTO (positive) F1 sub-system by ATP chemical bath
 
-            ! all points with well defined neighbours go like so:
-            do j = 1, N-1
-                p_now[i, j]= (
-                    p_last[i, j]
-                    + dt*(force1(i*dx+dx, j*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[i+1, j] - force1(i*dx-dx, j*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[i-1, j])/(2.0*dx)
-                    + dt*(p_last[i+1, j]-2.0*p_last[i, j]+p_last[i-1, j])/(beta*gamma*m1*(dx*dx))
-                    + dt*(force2(i*dx, j*dx+dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[i, j+1] - force2(i*dx, j*dx-dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[i, j-1])/(2.0*dx)
-                    + dt*(p_last[i, j+1]-2.0*p_last[i, j]+p_last[i, j-1])/(beta*gamma*m2*(dx*dx))
-                    ) # checked
+real, parameter :: num_minima = 3.0 ! number of minima in the potential
+real, parameter :: phase_shift = 0.0 ! how much sub-systems are offset from one another
 
-            ! Explicitly update FPE for rest of edges not corners
-            p_now[N-1, i]=(
-                p_last[N-1, i]
-                + dt*(force1(0.0, i*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[0, i] - force1(-2.0*dx, i*dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[N-2, i])/(2.0*dx)
-                + dt*(p_last[0, i]-2.0*p_last[N-1, i]+p_last[N-2, i])/(beta*gamma*m1*(dx*dx))
-                + dt*(force2(-dx, i*dx+dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[N-1, i+1] - force2(-dx, i*dx-dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[N-1, i-1])/(2.0*dx)
-                + dt*(p_last[N-1, i+1]-2.0*p_last[N-1, i]+p_last[N-1, i-1])/(beta*gamma*m2*(dx*dx))
-                ) # checked
-            p_now[i, N-1]=(
-                p_last[i, N-1]
-                + dt*(force1(i*dx+dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[i+1, N-1] - force1(i*dx-dx, -dx, period, M_tot, m1, gamma, Ax, Axy, Ay)*p_last[i-1, N-1])/(2.0*dx)
-                + dt*(p_last[i+1, N-1]-2.0*p_last[i, N-1]+p_last[i-1, N-1])/(beta*gamma*m1*(dx*dx))
-                + dt*(force2(i*dx, 0.0, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[i, 0] - force2(i*dx, -2.0*dx, period, M_tot, m2, gamma, Ax, Axy, Ay)*p_last[i, N-2])/(2.0*dx)
-                + dt*(p_last[i, 0]-2.0*p_last[i, N-1]+p_last[i, N-2])/(beta*gamma*m2*(dx*dx))
-                ) # checked
+! declare other variables to be used
+real Z 
+
+! declare iterator variables
+integer i, j
+
+! ============================================================================
+! ===========
+! =========== ARRAY INITIALIZATIONS
+! ===========
+! ============================================================================
+
+! declare arrays to be used for simulation
+
+real prob(n,n), p_now(n,n), p_last(n,n), p_last_ref(n,n), positions(n)
+real potential_at_pos(n,n), force1_at_pos(n,n), force2_at_pos(n,n)
+real p_now_t(n,n)
+
+do j=1,n
+    do i=1,n
+        potential_at_pos(i,j) = potential(positions(i), positions(j))
+        force1_at_pos(i,j) = force1(positions(i), positions(j))
+        write(*,*) force1(positions(i), positions(j)), force2(positions(i), positions(j))
+        force2_at_pos(i,j) = force2(positions(i), positions(j))
+    end do
+end do
+
+! define the Gibbs-Boltzmann Equilibrium distribution
+Z = sum(exp(-beta*potential_at_pos))
+prob = exp(-beta*potential_at_pos)/Z
+
+p_now = 1.0/(n*n)
+
+call steady_state_initialize(p_now, p_last, p_last_ref, force1_at_pos, force2_at_pos)
+
+p_now_t = transpose(p_now)
+
+do j=1,n; do i=1,n
+    write(*,*) p_now_t(j,i)
+enddo; enddo
+
+contains
+
+pure function force1(position1, position2); intent(in) position1, position2
+    real position1, position2, force1
+    force1 = (0.5)*(Ecouple*sin(position1-position2)+(num_minima*E0*sin((num_minima*position1)-(phase_shift)))) - F_Hplus
+end function force1
+
+pure function force2(position1, position2); intent(in) position1, position2
+    real position1, position2, force2
+    force2 = (0.5)*((-1.0)*Ecouple*sin(position1-position2)+(num_minima*E1*sin(num_minima*position2))) - F_atp
+end function force2
+
+pure function potential(position1, position2); intent(in) position1, position2
+    real position1, position2, potential
+    potential = 0.5*(E0*(1-cos((num_minima*position1-phase_shift)))+Ecouple*(1-cos(position1-position2))+E1*(1-cos((num_minima*position2))))
+end function potential
+
+subroutine steady_state_initialize( &
+    p_now, p_last, p_last_ref, force1_at_pos, force2_at_pos &
+    )
+    intent(in) force1_at_pos, force2_at_pos
+    intent(inout) p_now, p_last, p_last_ref 
+
+    real p_now(n,n), p_last(n,n), p_last_ref(n,n)
+    real force1_at_pos(n,n), force2_at_pos(n,n)
+    logical continue_condition
+    integer step_counter
+    real tot_var_dist
+    integer iterator
+
+    continue_condition = .TRUE.
+    step_counter = 0
+    iterator = 0
+
+    do while (continue_condition)
+        ! save previous distribution and zero out current ones
+        p_last = p_now; p_now = 0.0 
+
+        call update_probability_full( &
+            p_now, p_last, force1_at_pos, force2_at_pos &
+            )
+        
+        if (step_counter == check_step) then
+            tot_var_dist = 0.5*sum(abs(p_last_ref-p_now))
+
+            ! write(*,*) iterator, tot_var_dist, sum(p_now)
+
+            if (tot_var_dist < float64_eps) then
+                continue_condition = .FALSE.
+            else
+                ! reset variables
+                tot_var_dist = 0.0; step_counter = 0
+                p_last_ref = p_now ! make current distribution reference
+            end if
+        end if
+
+        step_counter = step_counter + 1 
+        iterator = iterator + 1
+    end do 
+
+end subroutine steady_state_initialize
+
+subroutine update_probability_full( &
+    p_now, p_last, force1_at_pos, force2_at_pos &
+    )
+
+    ! declare size of incoming arrays
+    real p_now(n,n), p_last(n,n)
+    real force1_at_pos(n,n), force2_at_pos(n,n)
+
+    ! declare iterators 
+    integer i, j
+
+    !! Periodic boundary conditions:
+    !! Explicity update FPE for the corners
+    p_now(1,1) = ( &
+        p_last(1,1) &
+        + dt*(force1_at_pos(2,1)*p_last(2,1)-force1_at_pos(n,1)*p_last(n,1))/(gamma*m1*2.0*dx) &
+        + dt*(p_last(2,1)-2.0*p_last(1,1)+p_last(n,1))/(beta*gamma*m1*(dx*dx)) &
+        + dt*(force2_at_pos(1,1)*p_last(1,2)-force2_at_pos(1,n)*p_last(1,n))/(gamma*m2*2.0*dx) &
+        + dt*(p_last(1,2)-2.0*p_last(1,1)+p_last(1,n))/(beta*gamma*m2*(dx*dx)) &
+        ) ! checked
+    p_now(1,n) = ( &
+        p_last(1,n) &
+        + dt*(force1_at_pos(2,n)*p_last(2,n)-force1_at_pos(n,n)*p_last(n,n))/(gamma*m1*2.0*dx) &
+        + dt*(p_last(2,n)-2.0*p_last(1,n)+p_last(n,n))/(beta*gamma*m1*(dx*dx)) &
+        + dt*(force2_at_pos(2,2)*p_last(2,2)-force2_at_pos(1,n-1)*p_last(1,n-1))/(gamma*m2*2.0*dx) &
+        + dt*(p_last(1,1)-2.0*p_last(1,n)+p_last(1,n-1))/(beta*gamma*m2*(dx*dx)) &
+        ) ! checked
+    p_now(n,1) = ( &
+        p_last(n,1) &
+        + dt*(force1_at_pos(1,1)*p_last(1,1)-force1_at_pos(n-1,1)*p_last(n-1,1))/(gamma*m1*2.0*dx) &
+        + dt*(p_last(1,1)-2.0*p_last(n,1)+p_last(n-1,1))/(beta*gamma*m1*(dx*dx)) &
+        + dt*(force2_at_pos(n,2)*p_last(n,2)-force2_at_pos(n,n)*p_last(n,n))/(gamma*m2*2.0*dx) &
+        + dt*(p_last(n,2)-2.0*p_last(n,1)+p_last(n,n))/(beta*gamma*m2*(dx*dx)) &
+        ) ! checked
+    p_now(n,n) = ( &
+        p_last(n,n) &
+        + dt*(force1_at_pos(1,n)*p_last(1,n)-force1_at_pos(n-1,n)*p_last(n-1,n))/(gamma*m1*2.0*dx) &
+        + dt*(p_last(1,n)-2.0*p_last(n,n)+p_last(n-1,n))/(beta*gamma*m1*(dx*dx)) &
+        + dt*(force2_at_pos(n,1)*p_last(n,1)-force2_at_pos(n,n-1)*p_last(n,n-1))/(gamma*m2*2.0*dx) &
+        + dt*(p_last(n,1)-2.0*p_last(n,n)+p_last(n,n-1))/(beta*gamma*m2*(dx*dx)) &
+        ) !checked
+
+    ! iterate through all the coordinates,not on the corners,for both variables
+    do i=2,n-1
+        !! Periodic boundary conditions:
+        !! Explicitly update FPE for edges not corners
+        p_now(1,i) = ( &
+            p_last(1,i) &
+            + dt*(force1_at_pos(2,i)*p_last(2,i)-force1_at_pos(n,i)*p_last(n,i))/(gamma*m1*2.0*dx) &
+            + dt*(p_last(2,i)-2*p_last(1,i)+p_last(n,i))/(beta*gamma*m1*(dx*dx)) &
+            + dt*(force2_at_pos(1,i+1)*p_last(1,i+1)-force2_at_pos(1,i-1)*p_last(1,i-1))/(gamma*m2*2.0*dx) &
+            + dt*(p_last(1,i+1)-2*p_last(1,i)+p_last(1,i-1))/(beta*gamma*m2*(dx*dx)) &
+            ) ! checked
+        p_now(i,1) = ( &
+            p_last(i,1) &
+            + dt*(force1_at_pos(i+1,1)*p_last(i+1,1)-force1_at_pos(i-1,1)*p_last(i-1,1))/(gamma*m1*2.0*dx) &
+            + dt*(p_last(i+1,1)-2*p_last(i,1)+p_last(i-1,1))/(beta*gamma*m1*(dx*dx)) &
+            + dt*(force2_at_pos(i,2)*p_last(i,2)-force2_at_pos(i,n)*p_last(i,n))/(gamma*m2*2.0*dx) &
+            + dt*(p_last(i,2)-2*p_last(i,1)+p_last(i,n))/(beta*gamma*m2*(dx*dx)) &
+            ) ! checked
+
+        !! all points with well defined neighbours go like so:
+        do j=2,n-1
+            p_now(i,j) = ( &
+                p_last(i,j) &
+                + dt*(force1_at_pos(i+1,j)*p_last(i+1,j)-force1_at_pos(i-1,j)*p_last(i-1,j))/(gamma*m1*2.0*dx) &
+                + dt*(p_last(i+1,j)-2.0*p_last(i,j)+p_last(i-1,j))/(beta*gamma*m1*(dx*dx)) &
+                + dt*(force2_at_pos(i,j+1)*p_last(i,j+1)-force2_at_pos(i,j-1)*p_last(i,j-1))/(gamma*m2*2.0*dx) &
+                + dt*(p_last(i,j+1)-2.0*p_last(i,j)+p_last(i,j-1))/(beta*gamma*m2*(dx*dx)) &
+                ) ! checked
         end do
 
-    contains
-
-    function force1(position1, position2, m1, gamma, Ax, Axy) result(f1)
-        real, intent(in) :: position1, position2, m1, gamma, Ax, Axy
-        real :: f1
-        f1 = 0.5*(-1)*((1.0*Axy*sin(position1-position2)) + (3*Ax*sin((3*position1)-(2*pi/3))))/(2*gamma*m1)
-    end function force1
-
-    function force2(position1, position2, m2, gamma, Axy, Ay) result(f2)
-        real, intent(in) :: position1, position2, m2, gamma, Axy, Ay
-        real :: f2
-        f2 = 0.5*((1.0*Axy*sin(position1-position2)) - (3*Ay*sin(3*position2)))/(2*gamma*m2)
-    end function force2
+        !! Explicitly update FPE for rest of edges not corners
+        p_now(n,i) = ( &
+            p_last(n,i) &
+            + dt*(force1_at_pos(1,i)*p_last(1,i)-force1_at_pos(n-1,i)*p_last(n-1,i))/(gamma*m1*2.0*dx) &
+            + dt*(p_last(1,i)-2.0*p_last(n,i)+p_last(n-1,i))/(beta*gamma*m1*(dx*dx)) &
+            + dt*(force2_at_pos(n,i+1)*p_last(n,i+1)-force2_at_pos(n,i-1)*p_last(n,i-1))/(gamma*m2*2.0*dx) &
+            + dt*(p_last(n,i+1)-2.0*p_last(n,i)+p_last(n,i-1))/(beta*gamma*m2*(dx*dx)) &
+            ) ! checked
+        p_now(i,n) = ( &
+            p_last(i,n) &
+            + dt*(force1_at_pos(i+1,n)*p_last(i+1,n)-force1_at_pos(i-1,n)*p_last(i-1,n))/(gamma*m1*2.0*dx) &
+            + dt*(p_last(i+1,n)-2.0*p_last(i,n)+p_last(i-1,n))/(beta*gamma*m1*(dx*dx)) &
+            + dt*(force2_at_pos(i,1)*p_last(i,1)-force2_at_pos(i,n-1)*p_last(i,n-1))/(gamma*m2*2.0*dx) &
+            + dt*(p_last(i,1)-2.0*p_last(i,n)+p_last(i,n-1))/(beta*gamma*m2*(dx*dx)) &
+            ) ! checked
+    end do
+end subroutine update_probability_full
 
 end program main
