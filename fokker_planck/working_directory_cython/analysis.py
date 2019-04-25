@@ -2,8 +2,10 @@
 from math import cos, sin, pi, sqrt
 from numpy import (
     array, linspace, arange, loadtxt, vectorize, pi as npi, exp, zeros,
-    empty, log, log2, finfo, true_divide, asarray, where, partition, isnan, nan
+    empty, log, log2, finfo, true_divide, asarray, where, partition, isnan, nan,
+    ones
     )
+from numpy.random import random
 from scipy.integrate import trapz
 from scipy.signal import correlate2d
 from matplotlib import rcParams, rc, ticker, colors, cm
@@ -37,11 +39,11 @@ F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
 def set_params():
 
     N = 360
-    E0 = 4.0
-    Ecouple = 16.0
-    E1 = 4.0
-    F_Hplus = 8.0
-    F_atp = -2.0
+    E0 = 2.0
+    Ecouple = 0.0
+    E1 = 2.0
+    F_Hplus = -1.0
+    F_atp = -1.0
     num_minima = 3.0
     phase_shift = 0.0
 
@@ -139,7 +141,7 @@ def calculate_flux_power_and_efficiency(target_dir=None):
 
                     calc_flux(
                         positions, prob_ss_array, force1_array, force2_array,
-                        flux_array, m1, m2, gamma, beta, N, dx, 0.001
+                        flux_array, m1, m2, gamma, beta, N, dx
                         )
 
                     flux_array = asarray(flux_array)
@@ -557,8 +559,6 @@ def plot_flux(target_dir):
         + "_outfile.dat"
         )
 
-    learning_rates = empty((F_atp_array.size,F_Hplus_array.size))
-
     prob_ss_array, __, __, force1_array, force2_array = loadtxt(
         target_dir + reference_file_name.format(
             E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
@@ -570,45 +570,79 @@ def plot_flux(target_dir):
     positions = linspace(0.0, 2*pi-dx, N)
     positions_deg = positions*(180.0/npi)
 
-    prob_ss_array = prob_ss_array.reshape((N,N))
-    force1_array = force1_array.reshape((N,N))
-    force2_array = force2_array.reshape((N,N))
+    prob_ss_array = prob_ss_array.reshape((N, N))
+    force1_array = force1_array.reshape((N, N))
+    force2_array = force2_array.reshape((N, N))
 
-    flux_array = empty((2,N,N))
+    flux_array = empty((2, N, N))
+    # flux_array = ones((2,N,N))
     calc_flux(
         positions, prob_ss_array, force1_array, force2_array,
-        flux_array, m1, m2, gamma, beta, N, dx, 0.001
+        flux_array, m1, m2, gamma, beta, N, dx
         )
 
     limit=flux_array.__abs__().max()
 
     # prepare figure
-    fig, ax = subplots(1, 1, figsize=(10,10))
-    im = ax.contourf(
-        positions_deg, positions_deg, flux_array[1, ...].T, 30,
-        cmap=cm.get_cmap("summer")
+    fig, ax = subplots(1, 2, figsize=(20,10), sharey='row')
+    ax[0].contourf(
+        positions_deg, positions_deg, flux_array[0, ...].T, 30,
+        vmin=-limit, vmax=limit, cmap=cm.get_cmap("summer")
         )
-    ax.set_yticks(arange(0, 361, 60))
-    ax.set_xticks(arange(0, 361, 60))
-    ax.tick_params(labelsize=30)
-    # ax.set_ylabel(r"$\mathrm{F}_{\mathrm{H}^{+}}$", fontsize=28)
-    # ax.set_xlabel(r"$\mathrm{F}_{\mathrm{atp}}$", fontsize=28)
+    ax[0].set_title(r"$J_{1}(\vb{x})$", fontsize=32)
+    im = ax[1].contourf(
+        positions_deg, positions_deg, flux_array[1, ...].T, 30,
+        vmin=-limit, vmax=limit, cmap=cm.get_cmap("summer")
+        )
+    ax[1].set_title(r"$J_{2}(\vb{x})$", fontsize=32)
+    
+    for axis in ax:
+        axis.set_yticks(arange(0, 361, 60))
+        axis.set_xticks(arange(0, 361, 60))
+        axis.tick_params(labelsize=30)
 
-    # create an axes on the right side of ax. The width of cax will be 5%
-    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-
-    cbar=fig.colorbar(im, ax=ax, cax=cax)
-    cbar.ax.tick_params(labelsize=24, axis='y')
-    cbar.ax.yaxis.offsetText.set_fontsize(18)
-
+    cax = fig.add_axes([0.90, 0.12, 0.01, 0.8])
+    cbar1 = fig.colorbar(
+        im, cax=cax, orientation='vertical',
+        ax=ax
+    )
+    cbar1.set_label(
+        r"$J_{i}(\vb{x})$",
+        fontsize=32
+        )
+    # cbar1.ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    cbar1.formatter.set_scientific(True)
+    cbar1.formatter.set_powerlimits((0,0))
+    cbar1.ax.tick_params(labelsize=24)
+    cbar1.ax.yaxis.offsetText.set_fontsize(24)
+    cbar1.ax.yaxis.offsetText.set_x(5.0)
+    cbar1.update_ticks()
     fig.tight_layout()
+
+    # y-axis label
+    fig.text(
+        0.025, 0.51,
+        r'$x_{2}\ (\mathrm{units\ of\ }\mathrm{deg})$',
+        fontsize=36, rotation='vertical', va='center', ha='center'
+    )
+    # x-axis label
+    fig.text(
+        0.48, 0.03,
+        r'$x_{1} (\mathrm{units\ of\ }\mathrm{deg})$',
+        fontsize=36, va='center', ha='center'
+    )
+
+    left = 0.1  # the left side of the subplots of the figure
+    right = 0.89    # the right side of the subplots of the figure
+    bottom = 0.12 # the bottom of the subplots of the figure
+    top = 0.92     # the top of the subplots of the figure
+    # wspace = 0.2  # the amount of width reserved for blank space between subplots
+    # hspace = 0.2  # the amount of height reserved for white space between subplots
+    fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
+
     fig.savefig(
         target_dir
-        + "flux2_E0_{0}_Ecouple_{1}_E1_{2}_minima_{3}_phase_{4}".format(
-                E0, Ecouple, E1, num_minima, phase_shift
-            )
+        + f"flux_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_F_Hplus_{F_Hplus}_F_atp_{F_atp}_minima_{num_minima}_phase_{phase_shift}"
         + "_figure.pdf"
         )
 
@@ -649,7 +683,7 @@ def plot_lr(target_dir):
             flux_array = empty((2,N,N))
             calc_flux(
                 positions, prob_ss_array, force1_array, force2_array,
-                flux_array, m1, m2, gamma, beta, N, dx, 0.001
+                flux_array, m1, m2, gamma, beta, N, dx
                 )
 
             Ly = empty((N,N))
@@ -1056,7 +1090,7 @@ def plot_flux_scan(target_dir):
             flux_array = empty((2,N,N))
             calc_flux(
                 positions, prob_ss_array, force1_array, force2_array,
-                flux_array, m1, m2, gamma, beta, N, dx, 0.001
+                flux_array, m1, m2, gamma, beta, N, dx
                 )
 
             flux_array = asarray(flux_array)
@@ -1885,7 +1919,7 @@ def plot_lr_scan(target_dir):
                 flux_array = empty((2,N,N))
                 calc_flux(
                     positions, prob_ss_array, force1_array, force2_array,
-                    flux_array, m1, m2, gamma, beta, N, dx, 0.001
+                    flux_array, m1, m2, gamma, beta, N, dx
                     )
 
                 Dpxgy = empty((N,N))
@@ -2024,7 +2058,7 @@ def plot_lr_efficiency_correlation(target_dir):
                 flux_array = empty((2,N,N))
                 calc_flux(
                     positions, prob_ss_array, force1_array, force2_array,
-                    flux_array, m1, m2, gamma, beta, N, dx, 0.001
+                    flux_array, m1, m2, gamma, beta, N, dx
                     )
 
                 Dpxgy = empty((N,N))
@@ -2135,7 +2169,7 @@ def plot_lr_efficiency_scatter(target_dir):
                 flux_array = empty((2,N,N))
                 calc_flux(
                     positions, prob_ss_array, force1_array, force2_array,
-                    flux_array, m1, m2, gamma, beta, N, dx, 0.001
+                    flux_array, m1, m2, gamma, beta, N, dx
                     )
 
                 Dpxgy = empty((N,N))
@@ -2499,7 +2533,7 @@ if __name__ == "__main__":
     # plot_power(target_dir)
     # plot_efficiency(target_dir)
     # plot_efficiency_against_ratio(target_dir)
-    # plot_flux(target_dir)
+    plot_flux(target_dir)
     # plot_lr(target_dir)
     # plot_energy_scan(target_dir)
     # plot_probability_eq_scan(target_dir)
@@ -2510,7 +2544,7 @@ if __name__ == "__main__":
     # plot_efficiency_scan(target_dir)
     # plot_efficiency_scan_compare(target_dir)
     # plot_efficiencies_lr_scan(target_dir)
-    plot_relative_entropy_lr_scan(target_dir)
+    # plot_relative_entropy_lr_scan(target_dir)
     # plot_nostalgia_scan(target_dir)
     # plot_lr_scan(target_dir)
     # plot_lr_efficiency_correlation(target_dir)

@@ -17,12 +17,12 @@ def calc_flux(
     double[:] positions, double[:, :] p_now,
     double[:, :] force1_at_pos, double[:, :] force2_at_pos,
     double[:, :, :] flux_array,
-    double m1, double m2, double gamma, double beta, int N, double dx, double dt
+    double m1, double m2, double gamma, double beta, int N, double dx
     ):
 
     calc_flux_func(
         positions, p_now, force1_at_pos, force2_at_pos, flux_array,
-        m1, m2, gamma, beta, N, dx, dt
+        m1, m2, gamma, beta, N, dx
         )
 
 def calc_learning_rate(
@@ -64,7 +64,7 @@ cdef void calc_flux_func(
     double[:] positions, double[:, :] p_now,
     double[:, :] force1_at_pos, double[:, :] force2_at_pos,
     double[:, :, :] flux_array,
-    double m1, double m2, double gamma, double beta, int N, double dx, double dt
+    double m1, double m2, double gamma, double beta, int N, double dx
     ) nogil:
 
     cdef Py_ssize_t i,j
