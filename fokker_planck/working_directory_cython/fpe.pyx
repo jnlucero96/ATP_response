@@ -48,7 +48,7 @@ def launchpad_reference(
             p_now[i, j] = 1.0/(N*N)
 
     steady_state_initialize(
-        positions, p_now, p_last, p_last_ref,
+        p_now, p_last, p_last_ref,
         force1_at_pos, force2_at_pos,
         N, dx, dt, check_step,
         m, gamma, beta
@@ -95,7 +95,6 @@ cdef double potential(
 ###############################################################################
 
 cdef void steady_state_initialize(
-    double[:] positions,
     double[:, :] p_now,
     double[:, :] p_last,
     double[:, :] p_last_ref,
@@ -126,7 +125,7 @@ cdef void steady_state_initialize(
 
         # advance probability one time step
         update_probability_full(
-            positions, p_now, p_last,
+            p_now, p_last,
             force1_at_pos, force2_at_pos,
             m1, m2, gamma, beta,
             N, dx, dt
@@ -151,7 +150,6 @@ cdef void steady_state_initialize(
         step_counter += 1
 
 cdef void update_probability_full(
-    double[:] positions,
     double[:, :] p_now,
     double[:, :] p_last,
     double[:, :] force1_at_pos,
@@ -201,16 +199,16 @@ cdef void update_probability_full(
         p_now[0, i] = (
             p_last[0, i]
             + dt*(force1_at_pos[1, i]*p_last[1, i]-force1_at_pos[N-1, i]*p_last[N-1, i])/(gamma*m1*2.0*dx)
-            + dt*(p_last[1, i]-2*p_last[0, i]+p_last[N-1, i])/(beta*gamma*m1*(dx*dx))
+            + dt*(p_last[1, i]-2.0*p_last[0, i]+p_last[N-1, i])/(beta*gamma*m1*(dx*dx))
             + dt*(force2_at_pos[0, i+1]*p_last[0, i+1]-force2_at_pos[0, i-1]*p_last[0, i-1])/(gamma*m2*2.0*dx)
-            + dt*(p_last[0, i+1]-2*p_last[0, i]+p_last[0, i-1])/(beta*gamma*m2*(dx*dx))
+            + dt*(p_last[0, i+1]-2.0*p_last[0, i]+p_last[0, i-1])/(beta*gamma*m2*(dx*dx))
             ) # checked
         p_now[i, 0] = (
             p_last[i, 0]
             + dt*(force1_at_pos[i+1, 0]*p_last[i+1, 0]-force1_at_pos[i-1, 0]*p_last[i-1, 0])/(gamma*m1*2.0*dx)
-            + dt*(p_last[i+1, 0]-2*p_last[i, 0]+p_last[i-1, 0])/(beta*gamma*m1*(dx*dx))
+            + dt*(p_last[i+1, 0]-2.0*p_last[i, 0]+p_last[i-1, 0])/(beta*gamma*m1*(dx*dx))
             + dt*(force2_at_pos[i, 1]*p_last[i, 1]-force2_at_pos[i, N-1]*p_last[i, N-1])/(gamma*m2*2.0*dx)
-            + dt*(p_last[i, 1]-2*p_last[i, 0]+p_last[i, N-1])/(beta*gamma*m2*(dx*dx))
+            + dt*(p_last[i, 1]-2.0*p_last[i, 0]+p_last[i, N-1])/(beta*gamma*m2*(dx*dx))
             ) # checked
 
         ## all points with well defined neighbours go like so:
