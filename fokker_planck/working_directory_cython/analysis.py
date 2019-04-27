@@ -39,10 +39,10 @@ F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
 def set_params():
 
     N = 360
-    E0 = 2.0
+    E0 = 0.0
     Ecouple = 0.0
-    E1 = 2.0
-    F_Hplus = -1.0
+    E1 = 0.0
+    F_Hplus = 4.0
     F_atp = -1.0
     num_minima = 3.0
     phase_shift = 0.0
@@ -335,20 +335,20 @@ def plot_probability(target_dir):
 
     fig, ax = subplots(1, 1, figsize=(10,10))
 
-    # cl0 = ax.contourf(
-    #     positions, positions, prob_eq_array.T, 30,
-    #     vmin=vmin, vmax=vmax, cmap=cm.get_cmap("gnuplot")
-    #     )
-    # pxgy = (prob_array/(prob_array.sum(axis=0)))
-    # print(pxgy.sum(axis=0))
+    cl0 = ax.contourf(
+        positions, positions, prob_eq_array.T, 30,
+        vmin=vmin, vmax=vmax, cmap=cm.get_cmap("gnuplot")
+        )
+    pxgy = (prob_array/(prob_array.sum(axis=0)))
+    print(pxgy.sum(axis=0))
 
     cl0=ax.contourf(
         positions_deg, positions_deg, prob_eq_array.T, 30,
         vmin=vmin, vmax=vmax, cmap=cm.get_cmap("gnuplot")
         )
-    ax.contour(
+    cl0=ax.contourf(
         positions_deg, positions_deg, prob_array.T, 30,
-        vmin=vmin, vmax=vmax, cmap=cm.get_cmap("cool")
+        vmin=vmin, vmax=vmax, cmap=cm.get_cmap("gnuplot")
         )
 
     ax.set_xticks(arange(0, 361, 60))
@@ -963,17 +963,28 @@ def plot_probability_scan(target_dir):
 
             to_plot.append(prob_array)
 
-    vmin_ss = min([array_to_plot.min() for array_to_plot in to_plot])
-    vmax_ss = max([array_to_plot.max() for array_to_plot in to_plot])
+    abs_array_maxes = [array_to_plot.__abs__().max() for array_to_plot in to_plot]
+    vmax_ss = max(abs_array_maxes)
+    # find the argmax of the probability arrays
+    f = lambda i: abs_array_maxes[i] 
+    vmax_ss_loc = max(range(len(abs_array_maxes)), key=f)
 
     for row_index, F_atp in enumerate(F_atp_array):
         for col_index, F_Hplus in enumerate(F_Hplus_array):
 
-            cs=ax[row_index, col_index].contourf(
-                positions, positions,
-                (to_plot[row_index*F_atp_array.size + col_index]).T, 30,
-                vmin=vmin_ss, vmax=vmax_ss, cmap=cm.get_cmap("gnuplot")
-                )
+            loc = row_index*F_atp_array.size + col_index
+            if (loc == vmax_ss_loc): 
+                cs=ax[row_index, col_index].contourf(
+                    positions, positions,
+                    (to_plot[loc]).T, 30,
+                    vmin=0.0, vmax=vmax_ss, cmap=cm.get_cmap("gnuplot")
+                    )
+            else:
+                ax[row_index, col_index].contourf(
+                    positions, positions,
+                    (to_plot[loc]).T, 30,
+                    vmin=0.0, vmax=vmax_ss, cmap=cm.get_cmap("gnuplot")
+                    )
 
             if (row_index == 0):
                 ax[row_index, col_index].set_title(
@@ -996,10 +1007,10 @@ def plot_probability_scan(target_dir):
     cbar = fig.colorbar(
         cs, cax=cax, orientation='vertical', ax=ax
     )
-    ticks = [
-        0.0, 0.5e-04, 1.0e-04, 1.5e-04
-        ]
-    cbar.set_ticks(ticks)
+    # ticks = [
+    #     0.0, 0.5e-04, 1.0e-04, 1.5e-04
+    #     ]
+    # cbar.set_ticks(ticks)
     cbar.set_label(r'$\rho^{\mathrm{SS}}(\vb{x})$', fontsize=32)
     cbar.formatter.set_scientific(True)
     cbar.formatter.set_powerlimits((0,0))
@@ -1093,7 +1104,7 @@ def plot_flux_scan(target_dir):
                 flux_array, m1, m2, gamma, beta, N, dx
                 )
 
-            flux_array = asarray(flux_array)
+            flux_array = asarray(flux_array)/(dx*dx)
             flux1.append(flux_array[0,...])
             flux2.append(flux_array[1,...])
 
@@ -2533,12 +2544,12 @@ if __name__ == "__main__":
     # plot_power(target_dir)
     # plot_efficiency(target_dir)
     # plot_efficiency_against_ratio(target_dir)
-    plot_flux(target_dir)
+    # plot_flux(target_dir)
     # plot_lr(target_dir)
     # plot_energy_scan(target_dir)
     # plot_probability_eq_scan(target_dir)
     # plot_probability_scan(target_dir)
-    # plot_flux_scan(target_dir)
+    plot_flux_scan(target_dir)
     # plot_integrated_flux_scan(target_dir)
     # plot_power_scan(target_dir)
     # plot_efficiency_scan(target_dir)

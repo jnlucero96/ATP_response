@@ -5,34 +5,33 @@ implicit none
 real, parameter :: pi = 3.14159265358979323846264338327950288419716939937510582
 ! float32 machine eps
 real, parameter :: float32_eps = 1.1920928955078125e-07
-! float64 machine eps
-real, parameter :: float64_eps = 2.22044604925031308084726e-16
-
-! ============================================================================
-! ===========
+! float64 machine eps 
+real, parameter :: float64_eps = 2.22044604925031308084726e-16 
+! ============================================================================ 
+! =========== 
 ! =========== SIMULATION PARAMETERS
 ! ===========
 ! ============================================================================
 
 ! discretization parameters
-real, parameter :: dt = 0.001  ! time discretization. Keep this number low
+real, parameter :: dt = 0.001 ! time discretization. Keep this number low
 integer, parameter :: check_step = int(1.0/dt)
-integer, parameter :: n = 360  ! inverse space discretization. Keep this number high!
+integer, parameter :: n = 360*(2**4) ! inverse space discretization. Keep this number high!
 real, parameter :: dx = (2.0*pi)/n
 
 ! model-specific parameters
-real, parameter :: gamma = 1000.0  ! drag
-real, parameter :: beta = 1.0  ! 1/kT
+real, parameter :: gamma = 30 !1000.0  ! drag
+real, parameter :: beta = 1.0/4.11  ! 1/kT
 real, parameter :: m1 = 1.0  ! mass of system 1
 real, parameter :: m2 = 1.0  ! mass of system 2
 
-real, parameter :: E0 = 1.0 ! energy scale of F0 sub-system
-real, parameter :: Ecouple = 1.0 ! energy scale of coupling between sub-systems F0 and F1
-real, parameter :: E1 = 1.0 ! energy scale of F1 sub-system
-real, parameter :: F_Hplus = 5.0 !  energy INTO (positive) F0 sub-system by H+ chemical bath
-real, parameter :: F_atp = -5.0 ! energy INTO (positive) F1 sub-system by ATP chemical bath
+real, parameter :: E0 = 3.0 ! energy scale of F0 sub-system
+real, parameter :: Ecouple = 3.0 ! energy scale of coupling between sub-systems F0 and F1
+real, parameter :: E1 = 3.0 ! energy scale of F1 sub-system
+real, parameter :: F_Hplus = 3.0 !  energy INTO (positive) F0 sub-system by H+ chemical bath
+real, parameter :: F_atp = 3.0 ! energy INTO (positive) F1 sub-system by ATP chemical bath
 
-real, parameter :: num_minima = 50.0 ! number of minima in the potential
+real, parameter :: num_minima = 3.0 ! number of minima in the potential
 real, parameter :: phase_shift = 0.0 ! how much sub-systems are offset from one another
 
 ! declare other variables to be used
@@ -49,10 +48,14 @@ integer i, j
 
 ! declare arrays to be used for simulation
 
-real prob(n,n), p_now(n,n), p_last(n,n), p_last_ref(n,n), positions(n)
-real potential_at_pos(n,n), force1_at_pos(n,n), force2_at_pos(n,n)
+real, dimension(:), allocatable :: positions
+real, dimension(:,:), allocatable :: prob, p_now, p_last, p_last_ref
+real, dimension(:,:), allocatable :: potential_at_pos, force1_at_pos, force2_at_pos
 ! real p_now_t(n,n), prob_t(n,n), potential_at_pos_t(n,n)
 ! real force1_at_pos_t(n,n), force2_at_pos_t(n,n)
+
+allocate(prob(n,n), p_now(n,n), p_last(n,n), p_last_ref(n,n), positions(n))
+allocate(potential_at_pos(n,n), force1_at_pos(n,n), force2_at_pos(n,n))
 
 positions = linspace(0.0, (2*pi)-dx, n)
 
@@ -281,7 +284,6 @@ subroutine update_probability_full(p_now, p_last, force1_at_pos, force2_at_pos)
             + dt*(p_last(i,1)-2.0*p_last(i,n)+p_last(i,n-1))/(beta*gamma*m2*(dx*dx)) &
             ) ! checked
     end do
-
 end subroutine update_probability_full
 
 end program main
