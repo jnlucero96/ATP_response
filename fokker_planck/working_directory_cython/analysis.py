@@ -3,7 +3,7 @@ from math import cos, sin, pi, sqrt
 from numpy import (
     array, linspace, arange, loadtxt, vectorize, pi as npi, exp, zeros,
     empty, log, log2, finfo, true_divide, asarray, where, partition, isnan, nan,
-    ones
+    ones, argmax, argmin, set_printoptions, diagonal
     )
 from numpy.random import random
 from scipy.integrate import trapz
@@ -28,6 +28,8 @@ rcParams['text.latex.preamble'] = [
     r"\usepackage{siunitx}", r"\usepackage{units}",
     r"\usepackage{physics}", r"\usepackage{bm}"
 ]
+set_printoptions(linewidth=512)
+
 
 # declare global arrays
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
@@ -39,9 +41,9 @@ F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
 def set_params():
 
     N = 360
-    E0 = 0.0
-    Ecouple = 0.0
-    E1 = 0.0
+    E0 = 4.0
+    Ecouple = 16.0
+    E1 = 4.0
     F_Hplus = 4.0
     F_atp = -1.0
     num_minima = 3.0
@@ -138,6 +140,8 @@ def calculate_flux_power_and_efficiency(target_dir=None):
                     prob_ss_array = prob_ss_array.reshape((N,N))
                     force1_array = force1_array.reshape((N,N))
                     force2_array = force2_array.reshape((N,N))
+                    p_ss_x = prob_ss_array.sum(axis=1)
+                    p_ss_y = prob_ss_array.sum(axis=0)
 
                     calc_flux(
                         positions, prob_ss_array, force1_array, force2_array,
@@ -148,6 +152,12 @@ def calculate_flux_power_and_efficiency(target_dir=None):
                     force1_array = asarray(force1_array)
                     force2_array = asarray(force2_array)
 
+                    # integrate_flux_X[ii] = trapz(
+                    #     trapz(flux_array[0,...], dx=dx, axis=1), dx=dx
+                    #     )
+                    # integrate_flux_Y[ii] = trapz(
+                    #     trapz(flux_array[1,...], dx=dx, axis=0), dx=dx
+                    #     )
                     integrate_flux_X[ii] = flux_array[0,...].sum(axis=None)/(N*N)
                     integrate_flux_Y[ii] = flux_array[1,...].sum(axis=None)/(N*N)
                     integrate_power_X[ii] = integrate_flux_X[ii]*F_Hplus
@@ -1073,14 +1083,19 @@ def plot_flux_scan(target_dir):
         F_Hplus_array.size, F_atp_array.size,
         figsize=(15,15), sharex='col', sharey='all'
         )
+    temp_fig, temp_ax = subplots(1,1)
 
     positions = linspace(0.0, 2*pi-dx, N)
 
-    flux1=[]
-    flux2=[]
+    flux1=empty((F_atp_array.size*F_Hplus_array.size,N,N))
+    flux2=empty((F_atp_array.size*F_Hplus_array.size,N,N))
+
+    flux1_maxloc = 0; flux2_maxloc = 0; f1_curr_max = 0.0; f2_curr_max = 0.0
 
     for row_index, F_atp in enumerate(F_atp_array):
         for col_index, F_Hplus in enumerate(F_Hplus_array):
+
+            curr_loc = row_index*F_atp_array.size + col_index
 
             input_file_name = (
                 "reference_"
@@ -1104,34 +1119,43 @@ def plot_flux_scan(target_dir):
                 flux_array, m1, m2, gamma, beta, N, dx
                 )
 
+            # zero out any values that are beyond machine precision
+            flux_array[flux_array.__abs__() <= finfo('float64').eps] = 0.0
+
             flux_array = asarray(flux_array)/(dx*dx)
-            flux1.append(flux_array[0,...])
-            flux2.append(flux_array[1,...])
 
-    flux1_min = min([flux1_array.min() for flux1_array in flux1])
-    flux1_max = max([flux1_array.max() for flux1_array in flux1])
-    flux2_min = min([flux2_array.min() for flux2_array in flux2])
-    flux2_max = max([flux2_array.max() for flux2_array in flux2])
+            if (flux_array[0,...].__abs__().max() > f1_curr_max): 
+                f1_curr_max = flux_array[0,...].__abs__().max()
+                flux1_maxloc = curr_loc
+            if (flux_array[1,...].__abs__().max() > f2_curr_max): 
+                f1_curr_max = flux_array[1,...].__abs__().max()
+                flux2_maxloc = curr_loc
 
-    limit = max(abs(flux1_min), abs(flux1_max), abs(flux2_min), abs(flux2_max))
+            flux1[curr_loc,...] = flux_array[0,...]
+            flux2[curr_loc,...] = flux_array[1,...]
+
+    limit = max(flux1.__abs__().max(), flux2.__abs__().max())
+
+    cs = temp_ax.contourf(
+        positions, positions, linspace((-1.05)*limit,(1.05)*limit,N*N).reshape(N,N), 
+        30, vmin=-limit, vmax=limit, cmap=cm.get_cmap("coolwarm")
+        )
 
     for row_index, F_atp in enumerate(F_atp_array):
         for col_index, F_Hplus in enumerate(F_Hplus_array):
 
+            loc = row_index*F_atp_array.size+col_index
+
             ax[row_index, col_index].contourf(
-                positions, positions, (flux1[
-                    row_index*F_atp_array.size + col_index
-                    ]).T,
+                positions, positions, flux1[loc, ...].T, 30,
                 vmin=-limit, vmax=limit,
-                cmap=cm.get_cmap('seismic')
+                cmap=cm.get_cmap("coolwarm")
                 )
 
             ax2[row_index, col_index].contourf(
-                positions, positions, (flux2[
-                    row_index*F_atp_array.size + col_index
-                    ]).T,
+                positions, positions, flux2[loc, ...].T, 30,
                 vmin=-limit, vmax=limit,
-                cmap=cm.get_cmap('seismic')
+                cmap=cm.get_cmap("coolwarm")
                 )
 
             if (row_index == 0):
@@ -1166,52 +1190,72 @@ def plot_flux_scan(target_dir):
             ax2[i, j].yaxis.offsetText.set_fontsize(12)
             ax2[i, j].ticklabel_format(style="sci", axis="y", scilimits=(0,0))
 
+    cax1 = fig.add_axes([0.88, 0.10, 0.02, 0.825])
+    cbar1 = fig.colorbar(
+        cs, cax=cax1, orientation='vertical', ax=ax2
+    )
+    cbar1.set_label(r'$J_{1}(\vb{x})$', fontsize=32)
+    cbar1.formatter.set_scientific(True)
+    cbar1.formatter.set_powerlimits((0,0))
+    cbar1.ax.tick_params(labelsize=24)
+    cbar1.ax.yaxis.offsetText.set_fontsize(24)
+    cbar1.ax.yaxis.offsetText.set_x(2.75)
+    cbar1.update_ticks()
+
     fig.text(
         0.03, 0.51, r"$x_{2}$", fontsize=28, rotation="vertical"
         )
     fig.text(
-        0.96, 0.51, r"$F_{\mathrm{atp}}$", fontsize=28, rotation="vertical"
+        0.86, 0.51, r"$\beta\psi_{2}$", fontsize=28, rotation="vertical"
         )
     fig.text(0.49, 0.03, r"$x_{1}$", fontsize=28)
-    fig.text(0.50, 0.97, r"$F_{H^{+}}$", fontsize=28)
+    fig.text(0.50, 0.97, r"$\beta\psi_{1}$", fontsize=28)
 
     fig.tight_layout()
 
     left=0.1
-    right=0.925
+    right=0.85
     bottom=0.1
     top=0.925
     fig.subplots_adjust(left=left, right=right, bottom=bottom, top=top)
 
     fig.savefig(
         target_dir
-        + "/flux1_scan_E0_{0}_E1_{1}_minima_{2}_phase_{3}_figure.pdf".format(
-                E0, E1, num_minima, phase_shift
-            )
+        + f"/flux1_scan_E0_{E0}_E1_{E1}_Ecouple_{Ecouple}_minima_{num_minima}_phase_{phase_shift}_figure.pdf"
         )
 
+    cax2 = fig2.add_axes([0.88, 0.10, 0.02, 0.825])
+    cbar2 = fig2.colorbar(
+        cs, cax=cax2, orientation='vertical', ax=ax2
+    )
+    cbar2.set_label(r'$J_{2}(\vb{x})$', fontsize=32)
+    cbar2.formatter.set_scientific(True)
+    cbar2.formatter.set_powerlimits((0,0))
+    cbar2.ax.tick_params(labelsize=24)
+    cbar2.ax.yaxis.offsetText.set_fontsize(24)
+    cbar2.ax.yaxis.offsetText.set_x(2.75)
+    cbar2.update_ticks()
+
     fig2.text(
-        0.03, 0.51, r"$\langle J\rangle$", fontsize=28, rotation="vertical"
+        0.03, 0.51, r"$x_{2}$", fontsize=28, rotation="vertical"
         )
     fig2.text(
-        0.96, 0.51, r"$F_{\mathrm{atp}}$", fontsize=28, rotation="vertical"
+        0.86, 0.51, r"$\beta\psi_{2}$", fontsize=28, rotation="vertical"
         )
-    fig2.text(0.49, 0.03, r"$E_{\mathrm{couple}}$", fontsize=28)
-    fig2.text(0.50, 0.97, r"$F_{H^{+}}$", fontsize=28)
+    fig2.text(0.49, 0.03, r"$x_{1}$", fontsize=28)
+    fig2.text(0.50, 0.97, r"$\beta\psi_{1}$", fontsize=28)
 
     fig2.tight_layout()
 
     left=0.1
-    right=0.925
+    right=0.85
     bottom=0.1
     top=0.925
     fig2.subplots_adjust(left=left, right=right, bottom=bottom, top=top)
 
     fig2.savefig(
         target_dir
-        + "/flux2_scan_E0_{0}_E1_{1}_minima_{2}_phase_{3}_figure.pdf".format(
-                E0, E1, num_minima, phase_shift
-            )
+        + f"/flux2_scan_E0_{E0}_E1_{E1}_Ecouple_{Ecouple}_minima_{num_minima}_phase_{phase_shift}_figure.pdf"
         )
 
 def plot_integrated_flux_scan(target_dir):
@@ -1942,7 +1986,9 @@ def plot_lr_scan(target_dir):
 
                 learning = flux_array[1,...]*Dpxgy
 
-                learning_rates[ee, ii, jj] = learning.sum(axis=None)
+                learning_rates[ee, ii, jj] = trapz(
+                    trapz(learning, dx=dx, axis=1), dx=dx
+                    )
 
     limit=learning_rates.__abs__().max()
 
@@ -2299,6 +2345,8 @@ def plot_flux_lr_scan(target_dir):
             fontsize=32
             )
 
+    cbar_ticks = array([-5.0, -2.5, 0.0, 2.5, 5.0])*1e-3
+
     cax1 = fig1.add_axes([0.90, 0.12, 0.01, 0.77])
     cbar1 = fig1.colorbar(
         im1, cax=cax1, orientation='vertical', ax=ax1
@@ -2306,10 +2354,12 @@ def plot_flux_lr_scan(target_dir):
     cbar1.set_label(
         r'$\mathcal{J}_{1}^{\mathrm{int}}\ (\mathrm{units\ of\ }\mathrm{s}^{-1})$', fontsize=32
         )
+    cbar1.set_ticks(cbar_ticks)
     cbar1.ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     cbar1.ax.tick_params(labelsize=24)
     cbar1.ax.yaxis.offsetText.set_fontsize(24)
     cbar1.ax.yaxis.offsetText.set_x(5.0)
+    cbar1.ax.yaxis.offsetText.set_y(5.0)
     fig1.tight_layout()
 
     # y-axis label
@@ -2340,6 +2390,7 @@ def plot_flux_lr_scan(target_dir):
     cbar2.set_label(
         r'$\mathcal{J}_{2}^{\mathrm{int}}\ (\mathrm{units\ of\ }\mathrm{s}^{-1})$', fontsize=32
         )
+    cbar2.set_ticks(cbar_ticks)
     cbar2.ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     cbar2.ax.tick_params(labelsize=24)
     cbar2.ax.yaxis.offsetText.set_fontsize(24)
@@ -2534,6 +2585,71 @@ def plot_power_lr_scan(target_dir):
         + "_figure.pdf"
         )
 
+def plot_emma_compare(target_dir):
+
+    [
+        N, E0, __, E1, __, __, num_minima, phase_shift,
+        m1, m2, beta, gamma
+        ] = set_params()
+
+    emma_file_template = "Emma_Flux_Ecouple_Fx_{0}_Fy{1}.dat"
+    my_file_template = (
+        "flux_power_efficiency_" 
+        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}_outfile.dat"
+    )
+
+    F_atp_vals = [-2.0, -4.0]
+    F_Hplus_vals = [2.0, 4.0]
+
+    dx = (2*pi)/N
+
+    fig, ax = subplots(
+        len(F_atp_vals), len(F_Hplus_vals), figsize=(10,10), 
+        sharey='row', sharex='col'
+        )
+
+    for i, F_atp in enumerate(F_atp_vals):
+        for j, F_Hplus in enumerate(F_Hplus_vals):
+
+            try:
+                e_Ecouple, e_Jx, e_Jy = loadtxt(
+                    target_dir + emma_file_template.format(F_Hplus, F_atp), unpack=True
+                    )
+                j_Ecouple, j_Jx, j_Jy = loadtxt(
+                    target_dir + 
+                    my_file_template.format(E0, E1, F_Hplus, F_atp, num_minima, phase_shift),
+                    usecols=(0,1,2), unpack=True
+                )
+
+                e_Jx_reduced = empty(j_Ecouple.size)
+                e_Jy_reduced = empty(j_Ecouple.size)
+                counter = 0
+
+                for ii, Ecouple in enumerate(e_Ecouple):
+                    if Ecouple in j_Ecouple:
+                        e_Jx_reduced[counter] = e_Jx[ii]
+                        e_Jy_reduced[counter] = e_Jy[ii]
+                        counter += 1
+
+                if (i==j): 
+                    print(e_Jx[0], j_Jx[0], e_Jx[0]/(j_Jx[0]*(N/(dx))))
+
+                # ax[i, j].plot(
+                #     j_Ecouple[:counter], e_Jx_reduced[:counter], 'k-', 
+                #     j_Ecouple[:counter], e_Jy_reduced[:counter], 'r-', 
+                #     lw=3.0
+                #     )
+                ax[i, j].plot(j_Ecouple, 3*j_Jx, 'k--', j_Ecouple, 3*j_Jy, 'r--', lw=3.0)
+                ax[i, j].plot(e_Ecouple, e_Jx, 'k', e_Ecouple, e_Jy, 'r', lw=3.0)
+            except OSError:
+                continue
+            
+            ax[i, j].set_xlim([0.0, 40.0])
+
+    fig.tight_layout()
+    fig.savefig(target_dir + "Joseph_Emma_compare_figure.pdf")
+
+
 if __name__ == "__main__":
     target_dir = "/Users/jlucero/data_dir/2019-04-09/"
     # target_dir = "./"
@@ -2549,7 +2665,7 @@ if __name__ == "__main__":
     # plot_energy_scan(target_dir)
     # plot_probability_eq_scan(target_dir)
     # plot_probability_scan(target_dir)
-    plot_flux_scan(target_dir)
+    # plot_flux_scan(target_dir)
     # plot_integrated_flux_scan(target_dir)
     # plot_power_scan(target_dir)
     # plot_efficiency_scan(target_dir)
@@ -2562,3 +2678,4 @@ if __name__ == "__main__":
     # plot_lr_efficiency_scatter(target_dir)
     # plot_flux_lr_scan(target_dir)
     # plot_power_lr_scan(target_dir)
+    plot_emma_compare(target_dir)
