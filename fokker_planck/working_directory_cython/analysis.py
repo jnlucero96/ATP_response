@@ -41,9 +41,9 @@ F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
 def set_params():
 
     N = 360
-    E0 = 4.0
+    E0 = 0.0
     Ecouple = 16.0
-    E1 = 4.0
+    E1 = 0.0
     F_Hplus = 4.0
     F_atp = -1.0
     num_minima = 3.0
@@ -140,26 +140,24 @@ def calculate_flux_power_and_efficiency(target_dir=None):
                     prob_ss_array = prob_ss_array.reshape((N,N))
                     force1_array = force1_array.reshape((N,N))
                     force2_array = force2_array.reshape((N,N))
-                    p_ss_x = prob_ss_array.sum(axis=1)
-                    p_ss_y = prob_ss_array.sum(axis=0)
 
                     calc_flux(
                         positions, prob_ss_array, force1_array, force2_array,
                         flux_array, m1, m2, gamma, beta, N, dx
                         )
 
-                    flux_array = asarray(flux_array)
+                    flux_array = asarray(flux_array)/(dx*dx)
                     force1_array = asarray(force1_array)
                     force2_array = asarray(force2_array)
 
-                    # integrate_flux_X[ii] = trapz(
-                    #     trapz(flux_array[0,...], dx=dx, axis=1), dx=dx
-                    #     )
-                    # integrate_flux_Y[ii] = trapz(
-                    #     trapz(flux_array[1,...], dx=dx, axis=0), dx=dx
-                    #     )
-                    integrate_flux_X[ii] = flux_array[0,...].sum(axis=None)/(N*N)
-                    integrate_flux_Y[ii] = flux_array[1,...].sum(axis=None)/(N*N)
+                    integrate_flux_X[ii] = (1./(2*pi))*trapz(
+                        trapz(flux_array[0,...], dx=dx, axis=1), dx=dx
+                        )
+                    integrate_flux_Y[ii] = (1./(2*pi))*trapz(
+                        trapz(flux_array[1,...], dx=dx, axis=0), dx=dx
+                        )
+                    # integrate_flux_X[ii] = flux_array[0,...].sum(axis=None)/(N*N)
+                    # integrate_flux_Y[ii] = flux_array[1,...].sum(axis=None)/(N*N)
                     integrate_power_X[ii] = integrate_flux_X[ii]*F_Hplus
                     integrate_power_Y[ii] = integrate_flux_Y[ii]*F_atp
 
@@ -2595,7 +2593,7 @@ def plot_emma_compare(target_dir):
     emma_file_template = "Emma_Flux_Ecouple_Fx_{0}_Fy{1}.dat"
     my_file_template = (
         "flux_power_efficiency_" 
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}_outfile.dat"
+        + "E0_0.0_E1_0.0_F_Hplus_{0}_F_atp_{1}_minima_{2}_phase_{3}_outfile.dat"
     )
 
     F_atp_vals = [-2.0, -4.0]
@@ -2617,7 +2615,7 @@ def plot_emma_compare(target_dir):
                     )
                 j_Ecouple, j_Jx, j_Jy = loadtxt(
                     target_dir + 
-                    my_file_template.format(E0, E1, F_Hplus, F_atp, num_minima, phase_shift),
+                    my_file_template.format(F_Hplus, F_atp, num_minima, phase_shift),
                     usecols=(0,1,2), unpack=True
                 )
 
@@ -2631,16 +2629,12 @@ def plot_emma_compare(target_dir):
                         e_Jy_reduced[counter] = e_Jy[ii]
                         counter += 1
 
-                if (i==j): 
-                    print(e_Jx[0], j_Jx[0], e_Jx[0]/(j_Jx[0]*(N/(dx))))
-
-                # ax[i, j].plot(
-                #     j_Ecouple[:counter], e_Jx_reduced[:counter], 'k-', 
-                #     j_Ecouple[:counter], e_Jy_reduced[:counter], 'r-', 
-                #     lw=3.0
-                #     )
-                ax[i, j].plot(j_Ecouple, 3*j_Jx, 'k--', j_Ecouple, 3*j_Jy, 'r--', lw=3.0)
-                ax[i, j].plot(e_Ecouple, e_Jx, 'k', e_Ecouple, e_Jy, 'r', lw=3.0)
+                ax[i, j].plot(
+                    j_Ecouple[:counter], e_Jx_reduced[:counter], 'k-', 
+                    j_Ecouple[:counter], e_Jy_reduced[:counter], 'r-', 
+                    lw=3.0
+                    )
+                ax[i, j].plot(j_Ecouple, j_Jx, 'k--', j_Ecouple, j_Jy, 'r--', lw=3.0)
             except OSError:
                 continue
             
