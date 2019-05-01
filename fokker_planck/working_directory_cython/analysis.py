@@ -41,9 +41,9 @@ F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
 def set_params():
 
     N = 360
-    E0 = 0.0
-    Ecouple = 16.0
-    E1 = 0.0
+    E0 = 4.0
+    Ecouple = 0.0
+    E1 = 4.0
     F_Hplus = 4.0
     F_atp = -1.0
     num_minima = 3.0
@@ -156,8 +156,6 @@ def calculate_flux_power_and_efficiency(target_dir=None):
                     integrate_flux_Y[ii] = (1./(2*pi))*trapz(
                         trapz(flux_array[1,...], dx=dx, axis=0), dx=dx
                         )
-                    # integrate_flux_X[ii] = flux_array[0,...].sum(axis=None)/(N*N)
-                    # integrate_flux_Y[ii] = flux_array[1,...].sum(axis=None)/(N*N)
                     integrate_power_X[ii] = integrate_flux_X[ii]*F_Hplus
                     integrate_power_Y[ii] = integrate_flux_Y[ii]*F_atp
 
@@ -237,66 +235,69 @@ def plot_energy(target_dir):
             ) + "_figure.pdf"
         )
 
-def plot_probability_against_reference(ref_dir, target_dir):
+def plot_probability_against_reference(target_dir):
 
     [
         N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
         __, __, __, __
         ] = set_params()
 
-    dx = 2*pi/N
+    dx = (2*pi)/N
 
-    ref_file_name = (
+    # ref_file_name = (
+    #     "/reference_"
+    #     + "E0_{0}_F_Hplus_{1}_F_atp_{2}_minima_{3}_outfile.dat".format(
+    #         2.0*E0, F_Hplus, F_atp, num_minima
+    #         )
+    #     )
+
+    reference_file_name = (
         "/reference_"
-        + "E0_{0}_F_Hplus_{1}_F_atp_{2}_minima_{3}_outfile.dat".format(
-            2.0*E0, F_Hplus, F_atp, num_minima
-            )
+        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
+            E0, 0.0, E1, 4.0, -1.0, num_minima, phase_shift
+        ) + "_outfile.dat"
         )
 
     input_file_name = (
         "/reference_"
         + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
-            E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+            E0, 0.0, E1, 4.0, -2.0, num_minima, phase_shift
         ) + "_outfile.dat"
         )
+
+    ref_prob_array_2D = loadtxt(
+        target_dir + reference_file_name,
+        usecols=(0,)
+        ).reshape((N, N));
 
     prob_array_2D = loadtxt(
         target_dir + input_file_name,
         usecols=(0,)
         ).reshape((N, N));
 
-    marginal_prob_X = trapz(prob_array_2D, axis=1, dx=dx)
-    marginal_prob_Y = trapz(prob_array_2D, axis=0, dx=dx)
-
-    prob_array_1D = loadtxt(
-        ref_dir + ref_file_name,
-        usecols=(0,)
-    )
+    limit = max(prob_array_2D.__abs__().max(), ref_prob_array_2D.__abs__().max())
 
     positions = linspace(0.0, 2*pi-dx, N)
 
     fig, ax = subplots(1, 1, figsize=(10,10))
 
-    ax.semilogy(
-        positions*(180/npi), prob_array_2D.sum(axis=1), lw=3.0, color='black', ls='-',
-        label=r"$\int\dd{y}\ P_{2\mathrm{D}}(x,y)$"
+    ax.contourf(
+        positions*(180/npi), positions*(180/npi), ref_prob_array_2D.T, 30,
+        vmin=0.0, vmax=limit,
+        cmap=cm.get_cmap("gnuplot")
         )
-    ax.semilogy(
-        positions*(180/npi), prob_array_2D.sum(axis=0), lw=3.0, color='darkgoldenrod', ls='dotted',
-        label=r"$\int\dd{x}\ P_{2\mathrm{D}}(x,y)$"
-        )
-    ax.semilogy(
-        positions*(180/npi), prob_array_1D, lw=3.0, color='red', ls='dashed',
-        label=r"$P_{1\mathrm{D}}(x,y)$"
+    ax.contour(
+        positions*(180/npi), positions*(180/npi), prob_array_2D.T, 30,
+        vmin=0.0, vmax=limit,
+        cmap=cm.get_cmap("cool")
         )
 
     ax.set_xticks(arange(0, 361, 60))
     ax.set_xlim([0.0,360.0])
-    ax.set_ylabel(r"$P(x)$", fontsize=20)
-    ax.set_xlabel(r"$x$", fontsize=20)
+    ax.set_ylabel(r"$x_{2}$", fontsize=20)
+    ax.set_xlabel(r"$x_{1}$", fontsize=20)
     ax.tick_params(labelsize=16, axis='both')
     ax.grid(True)
-    ax.legend(loc=0, prop={"size":12})
 
     fig.tight_layout()
     fig.savefig(
@@ -2650,7 +2651,7 @@ if __name__ == "__main__":
     # calculate_flux_power_and_efficiency(target_dir)
     # plot_energy(target_dir)
     # plot_probability(target_dir)
-    # plot_probability_against_reference(ref_dir, target_dir)
+    plot_probability_against_reference(target_dir)
     # plot_power(target_dir)
     # plot_efficiency(target_dir)
     # plot_efficiency_against_ratio(target_dir)
@@ -2672,4 +2673,4 @@ if __name__ == "__main__":
     # plot_lr_efficiency_scatter(target_dir)
     # plot_flux_lr_scan(target_dir)
     # plot_power_lr_scan(target_dir)
-    plot_emma_compare(target_dir)
+    # plot_emma_compare(target_dir)

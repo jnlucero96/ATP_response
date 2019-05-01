@@ -9,7 +9,8 @@ cdef double float32_eps = 1.1920928955078125e-07
 cdef double float64_eps = 2.22044604925031308084726e-16
 
 def launchpad_reference(
-    double num_minima, double phase_shift,
+    double num_minima1, double num_minima2, 
+    double phase_shift,
     double[:] positions,
     double[:, :] prob, double[:, :] p_now,
     double[:, :] p_last, double[:, :] p_last_ref,
@@ -28,9 +29,18 @@ def launchpad_reference(
     # populate the reference arrays
     for i in range(N):
         for j in range(N):
-            potential_at_pos[i, j] = potential(positions[i], positions[j], num_minima, phase_shift, E0, Ecouple, E1)
-            force1_at_pos[i, j] = force1(positions[i], positions[j], num_minima, phase_shift, E0, Ecouple, F_Hplus)
-            force2_at_pos[i, j] = force2(positions[i], positions[j], num_minima, E1, Ecouple, F_atp)
+            potential_at_pos[i, j] = potential(
+                positions[i], positions[j], 
+                num_minima1, num_minima2, phase_shift, E0, Ecouple, E1
+                )
+            force1_at_pos[i, j] = force1(
+                positions[i], positions[j], 
+                num_minima1, num_minima2, phase_shift, E0, Ecouple, F_Hplus
+                )
+            force2_at_pos[i, j] = force2(
+                positions[i], positions[j], 
+                num_minima1, num_minima2, E1, Ecouple, F_atp
+                )
 
     # calculate the partition function
     for i in range(N):
@@ -63,7 +73,9 @@ def launchpad_reference(
 ###############################################################################
 
 cdef double force1(
-    double position1, double position2, double num_minima, double phase_shift,
+    double position1, double position2, 
+    double num_minima1, double num_minima2, 
+    double phase_shift,
     double E0, double Ecouple, double F_Hplus
     ) nogil:
     # Returns the force on system F0. H+ chemical potential set up so that
@@ -71,29 +83,31 @@ cdef double force1(
     # for F0
     return (0.5)*(
         Ecouple*sin(position1-position2)
-        + (num_minima*E0*sin((num_minima*position1)-(phase_shift)))
+        + (num_minima1*E0*sin((num_minima1*position1)-(phase_shift)))
         ) - F_Hplus
 
 cdef double force2(
     double position1, double position2,
-    double num_minima, double E1, double Ecouple, double F_atp
+    double num_minima1, double num_minima2,
+    double E1, double Ecouple, double F_atp
     ) nogil:
     # Returns the force on system F1. Chemical potential set up so that
     # postive values of chemical potential returns positive values of the of
     # the flux for F1
     return (0.5)*(
         (-1.0)*Ecouple*sin(position1-position2)
-        + (num_minima*E1*sin(num_minima*position2))
+        + (num_minima2*E1*sin(num_minima2*position2))
         ) - F_atp
 
 cdef double potential(
-    double position1, double position2, double num_minima, double phase_shift,
-    double E0, double Ecouple, double E1
+    double position1, double position2, 
+    double num_minima1, double num_minima2,
+    double phase_shift, double E0, double Ecouple, double E1
     ) nogil:
     return 0.5*(
-        E0*(1-cos((num_minima*position1-phase_shift)))
+        E0*(1-cos((num_minima1*position1-phase_shift)))
         + Ecouple*(1-cos(position1-position2))
-        + E1*(1-cos((num_minima*position2)))
+        + E1*(1-cos((num_minima2*position2)))
         )
 
 ###############################################################################

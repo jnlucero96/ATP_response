@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from math import pi
 from numpy import (
     array, arange, empty, finfo, log, true_divide, asarray,
@@ -24,35 +25,43 @@ def get_params():
     F_Hplus = 3.0 #  energy INTO (positive) F0 sub-system by H+ chemical bath
     F_atp = 3.0 # energy INTO (positive) F1 sub-system by ATP chemical bath
 
-    num_minima = 3.0 # number of minima in the potential
+    num_minima1 = 3.0 # number of minima in the potential of system 1
+    num_minima2 = 3.0 # number of minima in the potential of system 2
     phase_shift = 0.0 # how much sub-systems are offset from one another
 
     return (
         dt, N,
-        gamma, beta, m, num_minima, phase_shift,
-        E0, E1, Ecouple, F_Hplus, F_atp
+        gamma, beta, m, 
+        num_minima1, num_minima2,
+        phase_shift, E0, E1, Ecouple, F_Hplus, F_atp
         )
 
 def save_data_reference(
-    num_minima, phase_shift,
+    num_minima1, num_minima2,
+    phase_shift,
     E0, Ecouple, E1, F_Hplus, F_atp, p_now, p_equil,
     potential_at_pos, force1_at_pos, force2_at_pos,
     N
     ):
 
     target_dir = './master_output_dir/'
-    data_filename = '/reference_E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}_outfile.dat'.format(E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift)
+    data_filename = (
+        f"/reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
+        + f"F_Hplus_{F_Hplus}_F_atp_{F_atp}_" 
+        + f"n1_{num_minima1}_n2_{num_minima2}_phase_{phase_shift}_"
+        + "outfile.dat"
+        )
     data_total_path = target_dir + data_filename
 
     with open(data_total_path, 'w') as dfile:
         for i in range(N):
             for j in range(N):
                 dfile.write(
-                    '{0:.15e}'.format(p_now[i, j])
-                    + '\t' + '{0:.15e}'.format(p_equil[i, j])
-                    + '\t' + '{0:.15e}'.format(potential_at_pos[i, j])
-                    + '\t' + '{0:.15e}'.format(force1_at_pos[i, j])
-                    + '\t' + '{0:.15e}'.format(force2_at_pos[i, j])
+                    f'{p_now[i, j]:.15e}'
+                    + '\t' + f'{p_equil[i, j]:.15e}'
+                    + '\t' + f'{potential_at_pos[i, j]:.15e}'
+                    + '\t' + f'{force1_at_pos[i, j]:.15e}'
+                    + '\t' + f'{force2_at_pos[i, j]:.15e}'
                     + '\n'
                 )
 
@@ -60,8 +69,8 @@ def main():
 
     # unload parameters
     [
-        dt, N, gamma, beta, m, num_minima, phase_shift, E0, E1, Ecouple,
-        F_Hplus, F_atp
+        dt, N, gamma, beta, m, num_minima1, num_minima2, 
+        phase_shift, E0, E1, Ecouple, F_Hplus, F_atp
         ] = get_params()
 
     # calculate derived discretization parameters
@@ -74,6 +83,7 @@ def main():
         time_check = dx*m*gamma / (3*(E0 + E1))
 
     if dt > time_check:
+        # bail if user is stupid
         print("!!!TIME UNSTABLE!!! No use in going on. Aborting...\n")
         exit(1)
 
@@ -81,7 +91,7 @@ def main():
     # enforce steady state convergence check every unit time
     check_step = int(1.0/dt)
 
-    print("Number of times before check = {0}".format(check_step))
+    print(f"Number of times before check = {check_step}")
 
     prob = zeros((N, N))
     p_now = zeros((N, N))
@@ -92,18 +102,19 @@ def main():
     force1_at_pos = zeros((N, N))
     force2_at_pos = zeros((N, N))
 
-    print("{} Launching coupled simulation...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
+    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Launching coupled simulation...")
     launchpad_reference(
-        num_minima, phase_shift,
+        num_minima1, num_minima2,
+        phase_shift,
         positions, prob, p_now, p_last, p_last_ref,
         potential_at_pos, force1_at_pos, force2_at_pos,
         N, dx, check_step,
         E0, Ecouple, E1, F_Hplus, F_atp,
         dt, m, beta, gamma
     )
-    print("{} Coupled simulation done!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
+    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Coupled simulation done!")
 
-    print("{} Processing data...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
+    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Processing data...")
     # recast everything into a numpy array
     p_now = asarray(p_now)
     p_equil = asarray(prob)
@@ -114,22 +125,23 @@ def main():
     # for checking normalization
     check_sum = p_now.sum(axis=None)
 
-    # checks to make sure nothing went weird
+    # checks to make sure nothing went weird: bail at first sign of trouble
     assert (p_now >= 0.0).all(), \
         "ABORT: Probability density has negative values!"
     assert ((check_sum - 1.0).__abs__() <= finfo('float32').eps), \
         "ABORT: Probability density is not normalized!"
 
-    print("{} Processing finished!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
+    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Processing finished!")
 
     # write to file
-    print("{} Saving data...".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
+    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving data...")
     save_data_reference(
-        num_minima, phase_shift,
+        num_minima1, num_minima2,
+        phase_shift,
         E0, Ecouple, E1, F_Hplus, F_atp, p_now, p_equil,
         potential_at_pos, force1_at_pos, force2_at_pos, N
         )
-    print("{} Saving completed!".format(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")))
+    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving completed!")
     print("Exiting...")
 
 if __name__ == "__main__":
