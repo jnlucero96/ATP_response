@@ -22,8 +22,8 @@ def get_params():
     E0 = 3.0 # energy scale of F0 sub-system
     Ecouple = 3.0 # energy scale of coupling between sub-systems F0 and F1
     E1 = 3.0 # energy scale of F1 sub-system
-    F_Hplus = 3.0 #  energy INTO (positive) F0 sub-system by H+ chemical bath
-    F_atp = 3.0 # energy INTO (positive) F1 sub-system by ATP chemical bath
+    psi_1 = 3.0 #  energy INTO (positive) F0 sub-system by H+ chemical bath
+    psi_2 = 3.0 # energy INTO (positive) F1 sub-system by ATP chemical bath
 
     num_minima1 = 3.0 # number of minima in the potential of system 1
     num_minima2 = 3.0 # number of minima in the potential of system 2
@@ -36,14 +36,14 @@ def get_params():
         dt, N,
         gamma, beta, m, 
         num_minima1, num_minima2,
-        phase_shift, E0, E1, Ecouple, F_Hplus, F_atp, 
+        phase_shift, E0, E1, Ecouple, psi_1, psi_2, 
         rotate_deg
         )
 
 def save_data_reference(
     num_minima1, num_minima2,
     phase_shift,
-    E0, Ecouple, E1, F_Hplus, F_atp, p_now, p_equil,
+    E0, Ecouple, E1, psi_1, psi_2, p_now, p_equil,
     potential_at_pos, force1_at_pos, force2_at_pos,
     N
     ):
@@ -51,7 +51,7 @@ def save_data_reference(
     target_dir = './master_output_dir/'
     data_filename = (
         f"/reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
-        + f"F_Hplus_{F_Hplus}_F_atp_{F_atp}_" 
+        + f"psi_1_{psi_1}_psi_2_{psi_2}_" 
         + f"n1_{num_minima1}_n2_{num_minima2}_phase_{phase_shift}_"
         + "outfile.dat"
         )
@@ -74,7 +74,7 @@ def main():
     # unload parameters
     [
         dt, N, gamma, beta, m, num_minima1, num_minima2, 
-        phase_shift, E0, E1, Ecouple, F_Hplus, F_atp, rotate_deg
+        phase_shift, E0, E1, Ecouple, psi_1, psi_2, rotate_deg
         ] = get_params()
 
     # calculate derived discretization parameters
@@ -87,7 +87,7 @@ def main():
     else:
         time_check = (
             (dx*m*gamma) / 
-            (Ecouple + 0.5*(E0*num_minima1 + E1*num_minima2) - (F_Hplus+F_atp))
+            (Ecouple + 0.5*(E0*num_minima1 + E1*num_minima2) - (psi_1+psi_2))
             )
 
     if dt > time_check:
@@ -119,7 +119,7 @@ def main():
         potential_at_pos, force1_at_pos, force2_at_pos,
         rotation_check,
         N, dx, check_step,
-        E0, Ecouple, E1, F_Hplus, F_atp,
+        E0, Ecouple, E1, psi_1, psi_2,
         dt, m, beta, gamma, rotation_index
     )
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Coupled simulation done!")
@@ -148,7 +148,7 @@ def main():
     save_data_reference(
         num_minima1, num_minima2,
         phase_shift,
-        E0, Ecouple, E1, F_Hplus, F_atp, p_now, p_equil,
+        E0, Ecouple, E1, psi_1, psi_2, p_now, p_equil,
         potential_at_pos, force1_at_pos, force2_at_pos, N
         )
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving completed!")

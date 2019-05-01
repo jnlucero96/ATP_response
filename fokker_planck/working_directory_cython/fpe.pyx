@@ -18,7 +18,7 @@ def launchpad_reference(
     double[:, :] force1_at_pos, double[:, :] force2_at_pos,
     double[:, :] rotation_check,
     int N, double dx, unsigned int check_step,
-    double E0, double Ecouple, double E1, double F_Hplus, double F_atp,
+    double E0, double Ecouple, double E1, double psi_1, double psi_2,
     double dt, double m, double beta, double gamma, int rotation_index
     ):
 
@@ -36,11 +36,11 @@ def launchpad_reference(
                 )
             force1_at_pos[i, j] = force1(
                 positions[i], positions[j], 
-                num_minima1, num_minima2, phase_shift, E0, Ecouple, F_Hplus
+                num_minima1, num_minima2, phase_shift, E0, Ecouple, psi_1
                 )
             force2_at_pos[i, j] = force2(
                 positions[i], positions[j], 
-                num_minima1, num_minima2, E1, Ecouple, F_atp
+                num_minima1, num_minima2, E1, Ecouple, psi_2
                 )
 
     # calculate the partition function
@@ -78,7 +78,7 @@ cdef double force1(
     double position1, double position2, 
     double num_minima1, double num_minima2, 
     double phase_shift,
-    double E0, double Ecouple, double F_Hplus
+    double E0, double Ecouple, double psi_1
     ) nogil:
     # Returns the force on system F0. H+ chemical potential set up so that
     # postive values of chemical potential returns postive values of the flux
@@ -86,12 +86,12 @@ cdef double force1(
     return (0.5)*(
         Ecouple*sin(position1-position2)
         + (num_minima1*E0*sin((num_minima1*position1)-(phase_shift)))
-        ) - F_Hplus
+        ) - psi_1
 
 cdef double force2(
     double position1, double position2,
     double num_minima1, double num_minima2,
-    double E1, double Ecouple, double F_atp
+    double E1, double Ecouple, double psi_2
     ) nogil:
     # Returns the force on system F1. Chemical potential set up so that
     # postive values of chemical potential returns positive values of the of
@@ -99,7 +99,7 @@ cdef double force2(
     return (0.5)*(
         (-1.0)*Ecouple*sin(position1-position2)
         + (num_minima2*E1*sin(num_minima2*position2))
-        ) - F_atp
+        ) - psi_2
 
 cdef double potential(
     double position1, double position2, 
