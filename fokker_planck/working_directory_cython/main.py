@@ -29,11 +29,15 @@ def get_params():
     num_minima2 = 3.0 # number of minima in the potential of system 2
     phase_shift = 0.0 # how much sub-systems are offset from one another
 
+    # degree to which distribution should be rotated for check 
+    rotate_deg = 120.0
+
     return (
         dt, N,
         gamma, beta, m, 
         num_minima1, num_minima2,
-        phase_shift, E0, E1, Ecouple, F_Hplus, F_atp
+        phase_shift, E0, E1, Ecouple, F_Hplus, F_atp, 
+        rotate_deg
         )
 
 def save_data_reference(
@@ -70,11 +74,12 @@ def main():
     # unload parameters
     [
         dt, N, gamma, beta, m, num_minima1, num_minima2, 
-        phase_shift, E0, E1, Ecouple, F_Hplus, F_atp
+        phase_shift, E0, E1, Ecouple, F_Hplus, F_atp, rotate_deg
         ] = get_params()
 
     # calculate derived discretization parameters
     dx = (2*pi) / N  # space discretization: total distance / number of points
+    rotation_index = int(rotate_deg*N/360)
 
     # provide CSL criteria to make sure simulation doesn't blow up
     if E0 == 0.0 and E1 == 0.0:
@@ -101,6 +106,7 @@ def main():
     potential_at_pos = zeros((N, N))
     force1_at_pos = zeros((N, N))
     force2_at_pos = zeros((N, N))
+    rotation_check = zeros((N, N))
 
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Launching coupled simulation...")
     launchpad_reference(
@@ -108,9 +114,10 @@ def main():
         phase_shift,
         positions, prob, p_now, p_last, p_last_ref,
         potential_at_pos, force1_at_pos, force2_at_pos,
+        rotation_check,
         N, dx, check_step,
         E0, Ecouple, E1, F_Hplus, F_atp,
-        dt, m, beta, gamma
+        dt, m, beta, gamma, rotation_index
     )
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Coupled simulation done!")
 

@@ -16,9 +16,10 @@ def launchpad_reference(
     double[:, :] p_last, double[:, :] p_last_ref,
     double[:, :] potential_at_pos,
     double[:, :] force1_at_pos, double[:, :] force2_at_pos,
+    double[:, :] rotation_check,
     int N, double dx, unsigned int check_step,
     double E0, double Ecouple, double E1, double F_Hplus, double F_atp,
-    double dt, double m, double beta, double gamma
+    double dt, double m, double beta, double gamma, int rotation_index
     ):
 
     cdef:
@@ -60,8 +61,9 @@ def launchpad_reference(
     steady_state_initialize(
         p_now, p_last, p_last_ref,
         force1_at_pos, force2_at_pos,
+        rotation_check,
         N, dx, dt, check_step,
-        m, gamma, beta
+        m, gamma, beta, rotation_index
     )
 
 ###############################################################################
@@ -124,18 +126,20 @@ cdef void steady_state_initialize(
     double[:, :] p_last_ref,
     double[:, :] force1_at_pos,
     double[:, :] force2_at_pos,
+    double[:, :] rotation_check,
     int N, double dx, double dt, unsigned int check_step,
-    double m, double gamma, double beta
+    double m, double gamma, double beta, int rotation_index
     ) nogil:
 
     cdef:
         double              m1                 = m
         double              m2                 = m
         double              tot_var_dist       = 0.0
+        double              rot_var_dist       = 0.0
         int                 continue_condition = 1
 
         # counters
-        Py_ssize_t          i, j
+        Py_ssize_t          i, j, ii, jj
         unsigned long       step_counter       = 0
 
     while continue_condition:
@@ -158,11 +162,31 @@ cdef void steady_state_initialize(
         if step_counter == check_step:
             for i in range(N):
                 for j in range(N):
-                    tot_var_dist += 0.5*fabs(p_last_ref[i, j] - p_now[i, j])
+                    tot_var_dist += 0.5*fabs(p_last_ref[i, j]-p_now[i, j])
 
-            # check condition
+            # check convergence criteria #1
             if tot_var_dist < float64_eps:
-                continue_condition = 0
+
+                rotate_distribution(N, rotation_index, rotation_check, p_now)
+
+                # check convergence criteria #2
+                for ii in range(N):
+                    for jj in range(N):
+                        rot_var_dist += 0.5*fabs(rotation_check[i, j]-p_now[i, j])
+                
+                if rot_var_dist < float64_eps:
+                    continue_condition = 0
+                else: 
+                    tot_var_dist = 0.0 # reset total variation distance
+                    step_counter = 0 # reset step counter
+                    for i in range(N):
+                        for j in range(N):
+                            # make current distribution the reference 
+                            # distribution
+                            p_last_ref[i, j] = p_now[i, j]
+                            # reset rotation_check
+                            rotation_check[i, j] = 0.0
+
             else:
                 tot_var_dist = 0.0 # reset total variation distance
                 step_counter = 0 # reset step counter
@@ -172,6 +196,17 @@ cdef void steady_state_initialize(
                         p_last_ref[i, j] = p_now[i, j]
 
         step_counter += 1
+
+cdef void rotate_distribution(
+    int N, int rotation_index, double[:, :] rotation_check, 
+    double[:, :] p_now
+    ) nogil:
+
+    cdef Py_ssize_t i, j
+
+    for i in range(N): 
+        for j in range(N):
+            rotation_check[i, j] = p_now[(i-rotation_index) % N, (j-rotation_index) % N]
 
 cdef void update_probability_full(
     double[:, :] p_now,
