@@ -85,7 +85,10 @@ def main():
     if E0 == 0.0 and E1 == 0.0:
         time_check = 100000000.0
     else:
-        time_check = dx*m*gamma / (3*(E0 + E1))
+        time_check = (
+            (dx*m*gamma) / 
+            (Ecouple + 0.5*(E0*num_minima1 + E1*num_minima2) - (F_Hplus+F_atp))
+            )
 
     if dt > time_check:
         # bail if user is stupid
