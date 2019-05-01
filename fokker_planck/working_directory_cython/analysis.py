@@ -42,7 +42,7 @@ def set_params():
 
     N = 360
     E0 = 4.0
-    Ecouple = 0.0
+    Ecouple = 8.0
     E1 = 4.0
     F_Hplus = 4.0
     F_atp = -1.0
@@ -956,6 +956,8 @@ def plot_probability_scan(target_dir):
     for row_index, F_atp in enumerate(F_atp_array):
         for col_index, F_Hplus in enumerate(F_Hplus_array):
 
+            # prob_array = empty((N,N))
+
             input_file_name = (
                 "reference_"
                 + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
@@ -966,9 +968,15 @@ def plot_probability_scan(target_dir):
                 target_dir + input_file_name,
                 usecols=(0,)
                 ).reshape((N, N));
-            prob_eq_array = loadtxt(
-                target_dir + input_file_name, usecols=(1,)
-                ).reshape((N, N));
+            # prob_array_nr = loadtxt(
+            #     target_dir + input_file_name,
+            #     usecols=(0,)
+            #     ).reshape((N, N));
+
+            # for i in range(N):
+            #     for j in range(N):
+            #         prob_array[i, j] = prob_array_nr[i, j] 
+                    # prob_array[i, j] = prob_array_nr[i, j] - prob_array_nr[i-120, j-120]
 
             to_plot.append(prob_array)
 
@@ -987,12 +995,14 @@ def plot_probability_scan(target_dir):
                     positions, positions,
                     (to_plot[loc]).T, 30,
                     vmin=0.0, vmax=vmax_ss, cmap=cm.get_cmap("gnuplot")
+                    # vmin=-vmax_ss, vmax=vmax_ss, cmap=cm.get_cmap("coolwarm")
                     )
             else:
                 ax[row_index, col_index].contourf(
                     positions, positions,
                     (to_plot[loc]).T, 30,
                     vmin=0.0, vmax=vmax_ss, cmap=cm.get_cmap("gnuplot")
+                    # vmin=-vmax_ss, vmax=vmax_ss, cmap=cm.get_cmap("coolwarm")
                     )
 
             if (row_index == 0):
@@ -1021,6 +1031,7 @@ def plot_probability_scan(target_dir):
     #     ]
     # cbar.set_ticks(ticks)
     cbar.set_label(r'$\rho^{\mathrm{SS}}(\vb{x})$', fontsize=32)
+    # cbar.set_label(r'$\rho^{\mathrm{SS}}(\vb{x})-\rho^{\mathrm{SS}}_{\mathrm{rot}}(\vb{x})$', fontsize=32)
     cbar.formatter.set_scientific(True)
     cbar.formatter.set_powerlimits((0,0))
     cbar.ax.tick_params(labelsize=24)
@@ -1055,6 +1066,7 @@ def plot_probability_scan(target_dir):
     fig.savefig(
         target_dir
         + "/probability_scan_E0_{0}_E1_{1}_Ecouple_{2}_minima_{3}_phase_{4}_figure.pdf".format(
+        # + "/probability_scan_E0_{0}_E1_{1}_Ecouple_{2}_minima_{3}_phase_{4}_dfigure.pdf".format(
                 E0, E1, Ecouple, num_minima, phase_shift
             )
         )
@@ -2651,7 +2663,7 @@ if __name__ == "__main__":
     # calculate_flux_power_and_efficiency(target_dir)
     # plot_energy(target_dir)
     # plot_probability(target_dir)
-    plot_probability_against_reference(target_dir)
+    # plot_probability_against_reference(target_dir)
     # plot_power(target_dir)
     # plot_efficiency(target_dir)
     # plot_efficiency_against_ratio(target_dir)
@@ -2659,7 +2671,7 @@ if __name__ == "__main__":
     # plot_lr(target_dir)
     # plot_energy_scan(target_dir)
     # plot_probability_eq_scan(target_dir)
-    # plot_probability_scan(target_dir)
+    plot_probability_scan(target_dir)
     # plot_flux_scan(target_dir)
     # plot_integrated_flux_scan(target_dir)
     # plot_power_scan(target_dir)
