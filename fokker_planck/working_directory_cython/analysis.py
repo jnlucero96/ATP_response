@@ -33,20 +33,22 @@ set_printoptions(linewidth=512)
 
 # declare global arrays
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
-# F_Hplus_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-# F_atp_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-F_Hplus_array = array([0.0, 2.0, 4.0, 8.0])
-F_atp_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
+# psi_1_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
+# psi_2_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
+psi_1_array = array([0.0, 2.0, 4.0, 8.0])
+psi_2_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
 
 def set_params():
 
-    N = 360
-    E0 = 4.0
+    N = 720
+    E0 = 0.0
     Ecouple = 8.0
-    E1 = 4.0
-    F_Hplus = 4.0
-    F_atp = -1.0
-    num_minima = 3.0
+    E1 = 0.0
+    psi_1 = 4.0
+    psi_2 = -1.0
+
+    num_minima1 = 3.0
+    num_minima2 = 3.0
     phase_shift = 0.0
 
     m1 = 1.0
@@ -55,7 +57,8 @@ def set_params():
     gamma = 1000.0
 
     return (
-        N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        N, E0, Ecouple, E1, psi_1, psi_2, 
+        num_minima1, num_minima2, phase_shift,
         m1, m2, beta, gamma
         )
 
@@ -72,16 +75,16 @@ def landscape(E0, Ecouple, E1, num_minima, phase_shift, position1, position2):
         +E1*(1-cos((num_minima*position2)))
         )
 
-def force1(E0, Ecouple, F_Hplus, num_minima, phase_shift, position1, position2):  # force on system X
+def force1(E0, Ecouple, psi_1, num_minima, phase_shift, position1, position2):  # force on system X
     return (0.5)*(
         Ecouple*sin(position1-position2)
         +(num_minima*E0*sin(num_minima*position1-phase_shift))
-        ) - F_Hplus
+        ) - psi_1
 
-def force2(E1, Ecouple, F_atp, num_minima, position1, position2):  # force on system Y
+def force2(E1, Ecouple, psi_2, num_minima, position1, position2):  # force on system Y
     return (0.5)*(
         (-1.0)*Ecouple*sin(position1-position2)+(num_minima*E1*sin(num_minima*position2))
-        ) - F_atp
+        ) - psi_2
 
 # ============================================================================
 # ==============
@@ -93,87 +96,92 @@ def calculate_flux_power_and_efficiency(target_dir=None):
 
     input_file_name = (
         "/reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_n1_{5}_n2_{6}_phase_{7}"
         + "_outfile.dat"
         )
     output_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_n1_{4}_n2_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
     [
-        N, E0, __, E1, __, __, num_minima, phase_shift,
+        N, E0, __, E1, __, __, num_minima1, num_minima2, phase_shift,
         m1, m2, beta, gamma
         ] = set_params()
-
 
     dx = (2*pi)/N
 
     positions = linspace(0.0,2*pi-dx,N)
 
-    for F_atp in F_atp_array:
-        for F_Hplus in F_Hplus_array:
+    for psi_2 in psi_2_array:
+        for psi_1 in psi_1_array:
             integrate_flux_X = empty(Ecouple_array.size)
             integrate_flux_Y = empty(Ecouple_array.size)
             integrate_power_X = empty(Ecouple_array.size)
             integrate_power_Y = empty(Ecouple_array.size)
             efficiency_ratio = empty(Ecouple_array.size)
 
+            for ii, Ecouple in enumerate(Ecouple_array):
+
+                print(
+                    "Calculating flux for "
+                    + f"psi_2 = {psi_2}, psi_1 = {psi_1}, "
+                    + f"Ecouple = {Ecouple}"
+                    )
+
+                flux_array = empty((2,N,N))
+                data_array = loadtxt(
+                    target_dir + input_file_name.format(
+                        E0, Ecouple, E1, psi_1, psi_2,
+                        num_minima1, num_minima2, phase_shift
+                        ), usecols=(0,3,4,5,6,7,8)
+                )
+
+                prob_ss_array = data_array[:,0].reshape((N,N))
+                drift_at_pos = data_array[:,1:3].reshape((2,N,N))
+                diffusion_at_pos = data_array[:,3:].reshape((4,N,N))
+
+                calc_flux(
+                    positions, prob_ss_array, drift_at_pos, 
+                    diffusion_at_pos, flux_array, m1, m2, gamma, beta, N, dx
+                    )
+
+                flux_array = asarray(flux_array)/(dx*dx)
+
+                integrate_flux_X[ii] = (1./(2*pi))*trapz(
+                    trapz(flux_array[0,...], dx=dx, axis=1), dx=dx
+                    )
+                integrate_flux_Y[ii] = (1./(2*pi))*trapz(
+                    trapz(flux_array[1,...], dx=dx, axis=0), dx=dx
+                    )
+                integrate_power_X[ii] = integrate_flux_X[ii]*psi_1
+                integrate_power_Y[ii] = integrate_flux_Y[ii]*psi_2
+
+            if (abs(psi_1) <= abs(psi_2)):
+                efficiency_ratio = -(integrate_power_X/integrate_power_Y)
+            else:
+                efficiency_ratio = -(integrate_power_Y/integrate_power_X)
+
             with open(
                 target_dir + output_file_name.format(
-                    E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                    E0, E1, psi_1, psi_2, 
+                    num_minima1, num_minima2, phase_shift
                     ), "w"
                     ) as ofile:
 
                 for ii, Ecouple in enumerate(Ecouple_array):
 
-                    print(f"Calculating flux for F_atp = {F_atp}, F_Hplus = {F_Hplus}, Ecouple = {Ecouple}")
-
-                    flux_array = empty((2,N,N))
-                    prob_ss_array, __, __, force1_array, force2_array = loadtxt(
-                        target_dir + input_file_name.format(
-                            E0,Ecouple,E1,F_Hplus,F_atp,num_minima,phase_shift
-                            ), unpack=True
-                    )
-
-                    prob_ss_array = prob_ss_array.reshape((N,N))
-                    force1_array = force1_array.reshape((N,N))
-                    force2_array = force2_array.reshape((N,N))
-
-                    calc_flux(
-                        positions, prob_ss_array, force1_array, force2_array,
-                        flux_array, m1, m2, gamma, beta, N, dx
-                        )
-
-                    flux_array = asarray(flux_array)/(dx*dx)
-                    force1_array = asarray(force1_array)
-                    force2_array = asarray(force2_array)
-
-                    integrate_flux_X[ii] = (1./(2*pi))*trapz(
-                        trapz(flux_array[0,...], dx=dx, axis=1), dx=dx
-                        )
-                    integrate_flux_Y[ii] = (1./(2*pi))*trapz(
-                        trapz(flux_array[1,...], dx=dx, axis=0), dx=dx
-                        )
-                    integrate_power_X[ii] = integrate_flux_X[ii]*F_Hplus
-                    integrate_power_Y[ii] = integrate_flux_Y[ii]*F_atp
-
-                if (abs(F_Hplus) <= abs(F_atp)):
-                    efficiency_ratio = -(integrate_power_X/integrate_power_Y)
-                else:
-                    efficiency_ratio = -(integrate_power_Y/integrate_power_X)
-
-                for ii, Ecouple in enumerate(Ecouple_array):
-
                     ofile.write(
-                        "{0:.15e}".format(Ecouple) + "\t"
-                        + "{0:.15e}".format(integrate_flux_X[ii]) + "\t"
-                        + "{0:.15e}".format(integrate_flux_Y[ii]) + "\t"
-                        + "{0:.15e}".format(integrate_power_X[ii]) + "\t"
-                        + "{0:.15e}".format(integrate_power_Y[ii]) + "\t"
-                        + "{0:.15e}".format(efficiency_ratio[ii]) + "\n"
+                        f"{Ecouple:.15e}" + "\t"
+                        + f"{integrate_flux_X[ii]:.15e}" + "\t"
+                        + f"{integrate_flux_Y[ii]:.15e}" + "\t" 
+                        + f"{integrate_power_X[ii]:.15e}" + "\t"
+                        + f"{integrate_power_Y[ii]:.15e}" + "\t"
+                        + f"{efficiency_ratio[ii]:.15e}" + "\n"
                     )
+                
+                ofile.flush()
 
 # ============================================================================
 # ==============
@@ -184,7 +192,7 @@ def calculate_flux_power_and_efficiency(target_dir=None):
 def plot_energy(target_dir):
 
     [
-        N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        N, E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift,
         __, __, __, __
         ] = set_params()
 
@@ -231,14 +239,14 @@ def plot_energy(target_dir):
     fig.savefig(
         target_dir + "/energy_" +
         "E0_{0}_Ecouple_{1}_E1_{2}_E_Hplus_{3}_E_atp_{4}_minima_{5}_phase_{6}".format(
-            E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+            E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
             ) + "_figure.pdf"
         )
 
 def plot_probability_against_reference(target_dir):
 
     [
-        N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        N, E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift,
         __, __, __, __
         ] = set_params()
 
@@ -246,21 +254,21 @@ def plot_probability_against_reference(target_dir):
 
     # ref_file_name = (
     #     "/reference_"
-    #     + "E0_{0}_F_Hplus_{1}_F_atp_{2}_minima_{3}_outfile.dat".format(
-    #         2.0*E0, F_Hplus, F_atp, num_minima
+    #     + "E0_{0}_psi_1_{1}_psi_2_{2}_minima_{3}_outfile.dat".format(
+    #         2.0*E0, psi_1, psi_2, num_minima
     #         )
     #     )
 
     reference_file_name = (
         "/reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
             E0, 0.0, E1, 4.0, -1.0, num_minima, phase_shift
         ) + "_outfile.dat"
         )
 
     input_file_name = (
         "/reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
             E0, 0.0, E1, 4.0, -2.0, num_minima, phase_shift
         ) + "_outfile.dat"
         )
@@ -302,15 +310,15 @@ def plot_probability_against_reference(target_dir):
     fig.tight_layout()
     fig.savefig(
         target_dir + "/probability_comparison_" +
-        "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}".format(
-            E0, Ecouple, E1, F_Hplus, F_atp
+        "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}".format(
+            E0, Ecouple, E1, psi_1, psi_2
             ) + "_sfigure.pdf"
         )
 
 def plot_probability(target_dir):
 
     [
-        N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        N, E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift,
         __, __, __, __
         ] = set_params()
 
@@ -318,8 +326,8 @@ def plot_probability(target_dir):
 
     input_file_name = (
         "/reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
-            E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+            E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
         ) + "_outfile.dat")
 
     prob_array = loadtxt(
@@ -377,7 +385,7 @@ def plot_probability(target_dir):
     fig.savefig(
         target_dir + "/probability_" +
         "E0_{0}_Ecouple_{1}_E1_{2}_E_Hplus_{3}_E_atp_{4}".format(
-            E0, Ecouple, E1, F_Hplus, F_atp
+            E0, Ecouple, E1, psi_1, psi_2
             ) + "_sfigure.pdf"
         )
 
@@ -385,12 +393,12 @@ def plot_power(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
     [
-        N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        N, E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift,
         __, __, __, __
         ] = set_params()
 
@@ -398,7 +406,7 @@ def plot_power(target_dir):
 
     Ecouple_array, integrate_power_X, integrate_power_Y = loadtxt(
         target_dir + input_file_name.format(
-            E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+            E0, E1, psi_1, psi_2, num_minima, phase_shift
             ),
         unpack=True, usecols=(0,3,4)
     )
@@ -435,8 +443,8 @@ def plot_power(target_dir):
     fig.tight_layout()
     fig.savefig(
         target_dir + "/power_" +
-        "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
-            E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+        "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+            E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
             ) + "_sfigure.pdf"
         )
 
@@ -444,12 +452,12 @@ def plot_efficiency(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
     [
-        N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        N, E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift,
         __, __, __, __
         ] = set_params()
 
@@ -457,7 +465,7 @@ def plot_efficiency(target_dir):
 
     Ecouple_array, efficiency_ratio = loadtxt(
         target_dir + input_file_name.format(
-            E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+            E0, E1, psi_1, psi_2, num_minima, phase_shift
             ),
         unpack=True, usecols=(0,5)
     )
@@ -486,8 +494,8 @@ def plot_efficiency(target_dir):
     fig.tight_layout()
     fig.savefig(
         target_dir + "/efficiency_" +
-        "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
-            E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+        "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+            E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
             ) + "_figure.pdf"
         )
 
@@ -495,7 +503,7 @@ def plot_efficiency_against_ratio(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -506,26 +514,26 @@ def plot_efficiency_against_ratio(target_dir):
 
     dx = (2*pi)/N
 
-    x_array = empty(F_Hplus_array.size*F_atp_array.size)
-    efficiency = empty(F_Hplus_array.size*F_atp_array.size)
+    x_array = empty(psi_1_array.size*psi_2_array.size)
+    efficiency = empty(psi_1_array.size*psi_2_array.size)
 
-    for ii, F_Hplus in enumerate(F_Hplus_array):
-        for jj, F_atp in enumerate(F_atp_array):
+    for ii, psi_1 in enumerate(psi_1_array):
+        for jj, psi_2 in enumerate(psi_2_array):
 
-            index = ii*F_Hplus_array.size + jj
+            index = ii*psi_1_array.size + jj
 
             Ecouple_array, efficiency_array = loadtxt(
                 target_dir + input_file_name.format(
-                    E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                    E0, E1, psi_1, psi_2, num_minima, phase_shift
                     ),
                 unpack=True, usecols=(0,5)
             )
 
-            if (abs(F_Hplus) < abs(F_atp)):
-                x_array[index] = (F_Hplus/F_atp)**2
+            if (abs(psi_1) < abs(psi_2)):
+                x_array[index] = (psi_1/psi_2)**2
                 efficiency[index] = efficiency_array[0]
-            elif (abs(F_Hplus) > abs(F_atp)):
-                x_array[index] = (F_atp/F_Hplus)**2
+            elif (abs(psi_1) > abs(psi_2)):
+                x_array[index] = (psi_2/psi_1)**2
                 efficiency[index] = efficiency_array[0]
             else:
                 continue
@@ -558,19 +566,19 @@ def plot_efficiency_against_ratio(target_dir):
 def plot_flux(target_dir):
 
     [
-        __, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        __, E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift,
         m1, m2, beta, gamma
         ] = set_params()
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
     prob_ss_array, __, __, force1_array, force2_array = loadtxt(
         target_dir + reference_file_name.format(
-            E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+            E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
             ), unpack=True
     )
 
@@ -651,7 +659,7 @@ def plot_flux(target_dir):
 
     fig.savefig(
         target_dir
-        + f"flux_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_F_Hplus_{F_Hplus}_F_atp_{F_atp}_minima_{num_minima}_phase_{phase_shift}"
+        + f"flux_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_psi_1_{psi_1}_psi_2_{psi_2}_minima_{num_minima}_phase_{phase_shift}"
         + "_figure.pdf"
         )
 
@@ -665,18 +673,18 @@ def plot_lr(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
-    learning_rates = empty((F_atp_array.size,F_Hplus_array.size))
+    learning_rates = empty((psi_2_array.size,psi_1_array.size))
 
-    for ii, F_atp in enumerate(F_atp_array):
-        for jj, F_Hplus in enumerate(F_Hplus_array):
+    for ii, psi_2 in enumerate(psi_2_array):
+        for jj, psi_1 in enumerate(psi_1_array):
 
             prob_ss_array, __, __, force1_array, force2_array = loadtxt(
                 target_dir + reference_file_name.format(
-                    E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                    E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
                     ), unpack=True
             )
 
@@ -717,10 +725,10 @@ def plot_lr(target_dir):
         vmin=-limit, vmax=limit,
         cmap=cm.get_cmap("coolwarm")
         )
-    ax.set_yticks(list(range(F_Hplus_array.size)))
-    ax.set_yticklabels(F_Hplus_array)
-    ax.set_xticks(list(range(F_atp_array.size)))
-    ax.set_xticklabels(F_atp_array)
+    ax.set_yticks(list(range(psi_1_array.size)))
+    ax.set_yticklabels(psi_1_array)
+    ax.set_xticks(list(range(psi_2_array.size)))
+    ax.set_xticklabels(psi_2_array)
     ax.tick_params(labelsize=20)
     ax.set_ylabel(r"$\mathrm{F}_{\mathrm{H}^{+}}$", fontsize=28)
     ax.set_xlabel(r"$\mathrm{F}_{\mathrm{atp}}$", fontsize=28)
@@ -840,7 +848,7 @@ def plot_probability_eq_scan(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -933,19 +941,19 @@ def plot_probability_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
     [
-        N, E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        N, E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift,
         __, __, __, __
         ] = set_params()
 
     dx = (2*pi)/N
 
     fig, ax = subplots(
-        F_atp_array.size, F_Hplus_array.size,
+        psi_2_array.size, psi_1_array.size,
         figsize=(15,15), sharex='col', sharey='all'
         )
 
@@ -953,15 +961,15 @@ def plot_probability_scan(target_dir):
 
     to_plot = []
 
-    for row_index, F_atp in enumerate(F_atp_array):
-        for col_index, F_Hplus in enumerate(F_Hplus_array):
+    for row_index, psi_2 in enumerate(psi_2_array):
+        for col_index, psi_1 in enumerate(psi_1_array):
 
             # prob_array = empty((N,N))
 
             input_file_name = (
                 "reference_"
-                + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
-                    E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+                    E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
                 ) + "_outfile.dat")
 
             prob_array = loadtxt(
@@ -986,10 +994,10 @@ def plot_probability_scan(target_dir):
     f = lambda i: abs_array_maxes[i] 
     vmax_ss_loc = max(range(len(abs_array_maxes)), key=f)
 
-    for row_index, F_atp in enumerate(F_atp_array):
-        for col_index, F_Hplus in enumerate(F_Hplus_array):
+    for row_index, psi_2 in enumerate(psi_2_array):
+        for col_index, psi_1 in enumerate(psi_1_array):
 
-            loc = row_index*F_atp_array.size + col_index
+            loc = row_index*psi_2_array.size + col_index
             if (loc == vmax_ss_loc): 
                 cs=ax[row_index, col_index].contourf(
                     positions, positions,
@@ -1007,16 +1015,16 @@ def plot_probability_scan(target_dir):
 
             if (row_index == 0):
                 ax[row_index, col_index].set_title(
-                    "{}".format(int(F_Hplus)), fontsize=28
+                    "{}".format(int(psi_1)), fontsize=28
                     )
-            if (col_index == F_Hplus_array.size - 1):
+            if (col_index == psi_1_array.size - 1):
                 ax[row_index, col_index].set_ylabel(
-                    "{}".format(int(F_atp)), fontsize=28
+                    "{}".format(int(psi_2)), fontsize=28
                     )
                 ax[row_index, col_index].yaxis.set_label_position("right")
 
-    for i in range(F_atp_array.size):
-        for j in range(F_Hplus_array.size):
+    for i in range(psi_2_array.size):
+        for j in range(psi_1_array.size):
 
             ax[i, j].tick_params(labelsize=22)
             ax[i, j].set_xticks(range(0,360,120))
@@ -1075,49 +1083,51 @@ def plot_flux_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_n1_{4}_n2_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
     [
-        N, E0, Ecouple, E1, __, __, num_minima, phase_shift,
+        N, E0, Ecouple, E1, __, __, num_minima1, num_minima2, phase_shift,
         m1, m2, beta, gamma
         ] = set_params()
 
     dx = (2*pi)/N
 
     fig, ax = subplots(
-        F_Hplus_array.size, F_atp_array.size,
+        psi_1_array.size, psi_2_array.size,
         figsize=(15,15), sharex='col', sharey='all'
         )
     fig2, ax2 = subplots(
-        F_Hplus_array.size, F_atp_array.size,
+        psi_1_array.size, psi_2_array.size,
         figsize=(15,15), sharex='col', sharey='all'
         )
     temp_fig, temp_ax = subplots(1,1)
 
     positions = linspace(0.0, 2*pi-dx, N)
 
-    flux1=empty((F_atp_array.size*F_Hplus_array.size,N,N))
-    flux2=empty((F_atp_array.size*F_Hplus_array.size,N,N))
+    flux1=empty((psi_2_array.size*psi_1_array.size,N,N))
+    flux2=empty((psi_2_array.size*psi_1_array.size,N,N))
 
     flux1_maxloc = 0; flux2_maxloc = 0; f1_curr_max = 0.0; f2_curr_max = 0.0
 
-    for row_index, F_atp in enumerate(F_atp_array):
-        for col_index, F_Hplus in enumerate(F_Hplus_array):
+    for row_index, psi_2 in enumerate(psi_2_array):
+        for col_index, psi_1 in enumerate(psi_1_array):
 
-            curr_loc = row_index*F_atp_array.size + col_index
+            curr_loc = row_index*psi_2_array.size + col_index
 
             input_file_name = (
                 "reference_"
-                + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}".format(
-                    E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
-                ) + "_outfile.dat")
-
-            prob_ss_array, __, __, force1_array, force2_array = loadtxt(
+                + f"E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_psi_1_{psi_1}_psi_2_{psi_2}_"
+                + f"n1_{num_minima1}_n2_{num_minima2}_phase_{phase_shift}" 
+                + "_outfile.dat"
+                ) 
+            
+            prob_ss_array, force1_array, force2_array = loadtxt(
                 target_dir + input_file_name.format(
-                    E0,Ecouple,E1,F_Hplus,F_atp,num_minima,phase_shift
-                    ), unpack=True
+                    E0, Ecouple, E1,
+                    psi_1, psi_2, num_minima1, num_minima2, phase_shift
+                    ), usecols=(0,3,4), unpack=True
             )
 
             prob_ss_array = prob_ss_array.reshape((N,N))
@@ -1152,10 +1162,10 @@ def plot_flux_scan(target_dir):
         30, vmin=-limit, vmax=limit, cmap=cm.get_cmap("coolwarm")
         )
 
-    for row_index, F_atp in enumerate(F_atp_array):
-        for col_index, F_Hplus in enumerate(F_Hplus_array):
+    for row_index, psi_2 in enumerate(psi_2_array):
+        for col_index, psi_1 in enumerate(psi_1_array):
 
-            loc = row_index*F_atp_array.size+col_index
+            loc = row_index*psi_2_array.size+col_index
 
             ax[row_index, col_index].contourf(
                 positions, positions, flux1[loc, ...].T, 30,
@@ -1171,26 +1181,26 @@ def plot_flux_scan(target_dir):
 
             if (row_index == 0):
                 ax[row_index, col_index].set_title(
-                    "{}".format(F_Hplus), fontsize=20
+                    "{}".format(psi_1), fontsize=20
                     )
 
                 ax2[row_index, col_index].set_title(
-                    "{}".format(F_Hplus), fontsize=20
+                    "{}".format(psi_1), fontsize=20
                     )
 
-            if (col_index == F_Hplus_array.size - 1):
+            if (col_index == psi_1_array.size - 1):
                 ax[row_index, col_index].set_ylabel(
-                    "{}".format(F_atp), fontsize=20
+                    "{}".format(psi_2), fontsize=20
                     )
                 ax[row_index, col_index].yaxis.set_label_position("right")
 
                 ax2[row_index, col_index].set_ylabel(
-                    "{}".format(F_atp), fontsize=20
+                    "{}".format(psi_2), fontsize=20
                     )
                 ax2[row_index, col_index].yaxis.set_label_position("right")
 
-    for i in range(F_atp_array.size):
-        for j in range(F_Hplus_array.size):
+    for i in range(psi_2_array.size):
+        for j in range(psi_1_array.size):
             ax[i, j].grid(True)
             ax[i, j].tick_params(labelsize=15)
             ax[i, j].yaxis.offsetText.set_fontsize(12)
@@ -1232,7 +1242,8 @@ def plot_flux_scan(target_dir):
 
     fig.savefig(
         target_dir
-        + f"/flux1_scan_E0_{E0}_E1_{E1}_Ecouple_{Ecouple}_minima_{num_minima}_phase_{phase_shift}_figure.pdf"
+        + f"/flux1_scan_E0_{E0}_E1_{E1}_Ecouple_{Ecouple}_"
+        + f"n1_{num_minima1}_n2_{num_minima2}_phase_{phase_shift}_figure.pdf"
         )
 
     cax2 = fig2.add_axes([0.88, 0.10, 0.02, 0.825])
@@ -1266,76 +1277,80 @@ def plot_flux_scan(target_dir):
 
     fig2.savefig(
         target_dir
-        + f"/flux2_scan_E0_{E0}_E1_{E1}_Ecouple_{Ecouple}_minima_{num_minima}_phase_{phase_shift}_figure.pdf"
+        + f"/flux2_scan_E0_{E0}_E1_{E1}_Ecouple_{Ecouple}_" 
+        + f"n1_{num_minima1}_n2_{num_minima2}_phase_{phase_shift}_figure.pdf"
         )
 
 def plot_integrated_flux_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_n1_{4}_n2_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
     [
-        N, E0, __, E1, F_Hplus, F_atp, num_minima, phase_shift,
+        N, E0, __, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift,
         __, __, __, __
         ] = set_params()
 
     dx = (2*pi)/N
 
     fig, ax = subplots(
-        F_Hplus_array.size, F_atp_array.size,
+        psi_1_array.size, psi_2_array.size,
         figsize=(15,15), sharex='col', sharey='all'
         )
 
     positions = linspace(0.0, 2*pi-dx, N)
 
-    for row_index, F_atp in enumerate(F_atp_array):
-        for col_index, F_Hplus in enumerate(F_Hplus_array):
+    for row_index, psi_2 in enumerate(psi_2_array):
+        for col_index, psi_1 in enumerate(psi_1_array):
             Ecouple_array, integrate_flux_X, integrate_flux_Y = loadtxt(
                 target_dir + input_file_name.format(
-                    E0,E1,F_Hplus,F_atp,num_minima,phase_shift
+                    E0, E1, psi_1, psi_2, 
+                    num_minima1, num_minima2, phase_shift
                     ),
                 unpack=True, usecols=(0,1,2)
             )
 
             ax[row_index, col_index].plot(
                 Ecouple_array, integrate_flux_X,
-                lw=3.0, label=r"$J_{\mathrm{H}^{+}}$"
+                lw=3.0, label=r"$J_{1}$"
                 )
             ax[row_index, col_index].plot(
                 Ecouple_array, integrate_flux_Y,
-                lw=3.0, label=r"$J_{\mathrm{atp}}$"
+                lw=3.0, label=r"$J_{2}$"
                 )
 
             if (row_index == 0):
                 ax[row_index, col_index].set_title(
-                    "{}".format(F_Hplus), fontsize=20
+                    "{}".format(psi_1), fontsize=20
                     )
-            if (col_index == F_Hplus_array.size - 1):
+            if (col_index == psi_1_array.size - 1):
                 ax[row_index, col_index].set_ylabel(
-                    "{}".format(F_atp), fontsize=20
+                    "{}".format(psi_2), fontsize=20
                     )
                 ax[row_index, col_index].yaxis.set_label_position("right")
 
-    for i in range(F_atp_array.size):
-        for j in range(F_Hplus_array.size):
+    for i in range(psi_2_array.size):
+        for j in range(psi_1_array.size):
             ax[i, j].grid(True)
-            ax[i, j].tick_params(labelsize=15)
-            ax[i, j].yaxis.offsetText.set_fontsize(12)
+            ax[i, j].set_xticks(arange(0, 21, 5))
+            ax[i, j].tick_params(labelsize=24)
+            ax[i, j].set_xlim([0.0, 20.0])
+            ax[i, j].yaxis.offsetText.set_fontsize(24)
             if (i==j):
-                ax[i, j].legend(loc=0, prop={"size": 10})
+                ax[i, j].legend(loc=0, prop={"size": 18})
             ax[i, j].ticklabel_format(style="sci", axis="y", scilimits=(0,0))
 
     fig.text(
         0.03, 0.51, r"$\langle J\rangle$", fontsize=28, rotation="vertical"
         )
     fig.text(
-        0.96, 0.51, r"$F_{\mathrm{atp}}$", fontsize=28, rotation="vertical"
+        0.96, 0.51, r"$\beta\psi_{2}$", fontsize=28, rotation="vertical"
         )
     fig.text(0.49, 0.03, r"$E_{\mathrm{couple}}$", fontsize=28)
-    fig.text(0.50, 0.97, r"$F_{H^{+}}$", fontsize=28)
+    fig.text(0.50, 0.97, r"$\beta\psi_{1}$", fontsize=28)
 
     fig.tight_layout()
 
@@ -1347,78 +1362,88 @@ def plot_integrated_flux_scan(target_dir):
 
     fig.savefig(
         target_dir
-        + "/integrated_flux_scan_E0_{0}_E1_{1}_minima_{2}_phase_{3}_figure.pdf".format(
-                E0, E1, num_minima, phase_shift
-            )
+        + "/integrated_flux_scan_"
+        + f"E0_{E0}_E1_{E1}_n1_{num_minima1}_n2_{num_minima2}_phase_{phase_shift}"
+        + "_figure.pdf"
         )
 
 def plot_power_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_n1_{4}_n2_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
     [
-        N, E0, __, E1, __, __, num_minima, phase_shift,
+        N, E0, __, E1, __, __, num_minima1, num_minima2, phase_shift,
         __, __, __, __
         ] = set_params()
 
     dx = (2*pi)/N
 
     fig, ax = subplots(
-        F_Hplus_array.size, F_atp_array.size,
+        psi_1_array.size, psi_2_array.size,
         figsize=(15,15), sharex='col', sharey='all'
         )
 
     positions = linspace(0.0, 2*pi-dx, N)
 
-    for row_index, F_atp in enumerate(F_atp_array):
-        for col_index, F_Hplus in enumerate(F_Hplus_array):
+    for row_index, psi_2 in enumerate(psi_2_array):
+        for col_index, psi_1 in enumerate(psi_1_array):
             Ecouple_array, integrate_power_X, integrate_power_Y = loadtxt(
                 target_dir + input_file_name.format(
-                    E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                    E0, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift
                     ),
                 unpack=True, usecols=(0,3,4)
             )
 
             ax[row_index, col_index].plot(
                 Ecouple_array, integrate_power_X,
-                lw=3.0, label=r"$\mathcal{P}_{\mathrm{H}^{+}}$"
+                lw=3.0, label=r"$\mathcal{P}_{1}^{\mathrm{int}}$"
                 )
             ax[row_index, col_index].plot(
                 Ecouple_array, integrate_power_Y,
-                lw=3.0, label=r"$\mathcal{P}_{\mathrm{atp}}$"
+                lw=3.0, label=r"$\mathcal{P}_{2}^{\mathrm{int}}$"
                 )
 
             if (row_index == 0):
                 ax[row_index, col_index].set_title(
-                    "{}".format(F_Hplus), fontsize=20
+                    "{}".format(psi_1), fontsize=28
                     )
-            if (col_index == F_Hplus_array.size - 1):
+            if (col_index == psi_1_array.size - 1):
                 ax[row_index, col_index].set_ylabel(
-                    "{}".format(F_atp), fontsize=20
+                    "{}".format(psi_2), fontsize=28
                     )
                 ax[row_index, col_index].yaxis.set_label_position("right")
 
-    for i in range(F_atp_array.size):
-        for j in range(F_Hplus_array.size):
+    for i in range(psi_2_array.size):
+        for j in range(psi_1_array.size):
             ax[i, j].grid(True)
-            ax[i, j].tick_params(labelsize=15)
-            ax[i, j].yaxis.offsetText.set_fontsize(12)
+            ax[i, j].set_xticks(arange(0, 21, 5))
+            ax[i, j].tick_params(labelsize=24)
+            ax[i, j].yaxis.offsetText.set_fontsize(24)
             if (i==j):
-                ax[i, j].legend(loc=0, prop={"size": 10})
+                ax[i, j].legend(loc=0, prop={"size": 18})
             ax[i, j].ticklabel_format(style="sci", axis="y", scilimits=(0,0))
+            ax[i, j].set_xlim([0.0, 20.0])
 
     fig.text(
-        0.03, 0.51, r"$\mathcal{P}$", fontsize=28, rotation="vertical"
+        0.03, 0.51, r"$\mathcal{P}^{\mathrm{int}}$", fontsize=36, rotation="vertical",
+        va='center', ha='center'
         )
     fig.text(
-        0.96, 0.51, r"$F_{\mathrm{atp}}$", fontsize=28, rotation="vertical"
+        0.97, 0.51, r"$\beta\psi_{2}$", fontsize=36, rotation="vertical",
+        va='center', ha='center'
         )
-    fig.text(0.49, 0.03, r"$E_{\mathrm{couple}}$", fontsize=28)
-    fig.text(0.50, 0.97, r"$F_{H^{+}}$", fontsize=28)
+    fig.text(
+        0.51, 0.03, r"$E_{\mathrm{couple}}$", fontsize=36,
+        va='center', ha='center'
+        )
+    fig.text(
+        0.50, 0.97, r"$\beta\psi_{1}$", fontsize=36,
+        va='center', ha='center'
+        )
 
     fig.tight_layout()
 
@@ -1430,8 +1455,8 @@ def plot_power_scan(target_dir):
 
     fig.savefig(
         target_dir
-        + "/power_scan_E0_{0}_E1_{1}_minima_{2}_phase_{3}_figure.pdf".format(
-                E0, E1, num_minima, phase_shift
+        + "/power_scan_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}_figure.pdf".format(
+                E0, E1, num_minima1, num_minima2, phase_shift
             )
         )
 
@@ -1439,7 +1464,7 @@ def plot_efficiency_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -1451,38 +1476,38 @@ def plot_efficiency_scan(target_dir):
     dx = (2*pi)/N
 
     fig, ax = subplots(
-        F_Hplus_array.size, F_atp_array.size,
+        psi_1_array.size, psi_2_array.size,
         figsize=(15,15), sharex='col', sharey='all'
         )
 
     positions = linspace(0.0, 2*pi-dx, N)
 
-    for row_index, F_atp in enumerate(F_atp_array):
-        for col_index, F_Hplus in enumerate(F_Hplus_array):
+    for row_index, psi_2 in enumerate(psi_2_array):
+        for col_index, psi_1 in enumerate(psi_1_array):
 
             Ecouple_array, efficiency_ratio = loadtxt(
                 target_dir + input_file_name.format(
-                    E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                    E0, E1, psi_1, psi_2, num_minima, phase_shift
                     ),
                 unpack=True, usecols=(0,5)
             )
 
-            if (abs(F_Hplus) == abs(F_atp)): continue
+            if (abs(psi_1) == abs(psi_2)): continue
 
             ax[row_index, col_index].semilogx(
                 Ecouple_array[1:], efficiency_ratio[1:], lw=3.0
                 )
 
-    for i in range(F_atp_array.size):
-        for j in range(F_Hplus_array.size):
+    for i in range(psi_2_array.size):
+        for j in range(psi_1_array.size):
 
             if (i == 0):
                 ax[i, j].set_title(
-                    "{}".format(F_Hplus_array[j]), fontsize=20
+                    "{}".format(psi_1_array[j]), fontsize=20
                     )
-            if (j == F_Hplus_array.size - 1):
+            if (j == psi_1_array.size - 1):
                 ax[i, j].set_ylabel(
-                    "{}".format(F_atp_array[i]), fontsize=20
+                    "{}".format(psi_2_array[i]), fontsize=20
                     )
                 ax[i, j].yaxis.set_label_position("right")
 
@@ -1529,7 +1554,7 @@ def plot_efficiency_scan_compare(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -1541,35 +1566,35 @@ def plot_efficiency_scan_compare(target_dir):
     dx = (2*pi)/N
 
     fig, ax = subplots(
-        F_Hplus_array.size, F_atp_array.size,
+        psi_1_array.size, psi_2_array.size,
         figsize=(15,15), sharex='col', sharey='all'
         )
 
     positions = linspace(0.0, 2*pi-dx, N)
 
-    for row_index, F_atp in enumerate(F_atp_array):
-        for col_index, F_Hplus in enumerate(F_Hplus_array):
+    for row_index, psi_2 in enumerate(psi_2_array):
+        for col_index, psi_1 in enumerate(psi_1_array):
 
             Ecouple_array_2, efficiency_ratio_2 = loadtxt(
                 target_dir + input_file_name.format(
-                    2.0, 2.0, F_Hplus, F_atp, 3.0, phase_shift
+                    2.0, 2.0, psi_1, psi_2, 3.0, phase_shift
                     ),
                 unpack=True, usecols=(0,5)
             )
             Ecouple_array_4, efficiency_ratio_4 = loadtxt(
                 target_dir + input_file_name.format(
-                    4.0, 4.0, F_Hplus, F_atp, 3.0, phase_shift
+                    4.0, 4.0, psi_1, psi_2, 3.0, phase_shift
                     ),
                 unpack=True, usecols=(0,5)
             )
             Ecouple_array_4_minima_9, efficiency_ratio_4_minima_9 = loadtxt(
                 target_dir + input_file_name.format(
-                    4.0, 4.0, F_Hplus, F_atp, 9.0, phase_shift
+                    4.0, 4.0, psi_1, psi_2, 9.0, phase_shift
                     ),
                 unpack=True, usecols=(0,5)
             )
 
-            if (abs(F_Hplus) == abs(F_atp)): continue
+            if (abs(psi_1) == abs(psi_2)): continue
 
             ax[row_index, col_index].semilogx(
                 Ecouple_array_2[1:], efficiency_ratio_2[1:], lw=3.0, label=r"$E_{0} = E_{1} = 2.0$"
@@ -1581,16 +1606,16 @@ def plot_efficiency_scan_compare(target_dir):
                 Ecouple_array_4_minima_9[1:], efficiency_ratio_4_minima_9[1:], lw=3.0, label=r"$n=9$"
                 )
 
-    for i in range(F_atp_array.size):
-        for j in range(F_Hplus_array.size):
+    for i in range(psi_2_array.size):
+        for j in range(psi_1_array.size):
 
             if (i == 0):
                 ax[i, j].set_title(
-                    "{}".format(F_Hplus_array[j]), fontsize=20
+                    "{}".format(psi_1_array[j]), fontsize=20
                     )
-            if (j == F_Hplus_array.size - 1):
+            if (j == psi_1_array.size - 1):
                 ax[i, j].set_ylabel(
-                    "{}".format(F_atp_array[i]), fontsize=20
+                    "{}".format(psi_2_array[i]), fontsize=20
                     )
                 ax[i, j].yaxis.set_label_position("right")
                 ax[i, j].legend(loc=0,prop={'size':10})
@@ -1640,25 +1665,25 @@ def plot_relative_entropy_lr_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
     input_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
-    relative_entropies = zeros((Ecouple_array.size, F_atp_array.size,F_Hplus_array.size))
+    relative_entropies = zeros((Ecouple_array.size, psi_2_array.size,psi_1_array.size))
 
     for ee, Ecouple in enumerate(Ecouple_array):
-        for ii, F_atp in enumerate(F_atp_array):
-            for jj, F_Hplus in enumerate(F_Hplus_array):
+        for ii, psi_2 in enumerate(psi_2_array):
+            for jj, psi_1 in enumerate(psi_1_array):
 
                 prob, prob_eq = loadtxt(
                     target_dir + input_file_name.format(
-                        E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
                         ),
                     unpack=True, usecols=(0,1)
                 )
@@ -1680,10 +1705,10 @@ def plot_relative_entropy_lr_scan(target_dir):
             cmap=cm.get_cmap("Reds")
             )
 
-        ax[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax[xloc, yloc].set_xticklabels(F_atp_array.astype(int))
-        ax[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax[xloc, yloc].set_yticklabels(F_Hplus_array.astype(int))
+        ax[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax[xloc, yloc].set_xticklabels(psi_2_array.astype(int))
+        ax[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax[xloc, yloc].set_yticklabels(psi_1_array.astype(int))
         ax[xloc, yloc].tick_params(labelsize=22)
         ax[xloc, yloc].set_title(
             r"$\beta E_{\mathrm{couple}}=$" + " {0}".format(int(Ecouple)),
@@ -1740,25 +1765,25 @@ def plot_efficiencies_lr_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
 
-    efficiencies = zeros((Ecouple_array.size, F_atp_array.size,F_Hplus_array.size))
+    efficiencies = zeros((Ecouple_array.size, psi_2_array.size,psi_1_array.size))
 
     for ee, Ecouple in enumerate(Ecouple_array):
-        for ii, F_atp in enumerate(F_atp_array):
-            for jj, F_Hplus in enumerate(F_Hplus_array):
+        for ii, psi_2 in enumerate(psi_2_array):
+            for jj, psi_1 in enumerate(psi_1_array):
 
                 Ecouple_array_out, efficiency_ratio = loadtxt(
                     target_dir + input_file_name.format(
-                        E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, E1, psi_1, psi_2, num_minima, phase_shift
                         ),
                     unpack=True, usecols=(0,5)
                 )
 
-                if (abs(F_atp)==abs(F_Hplus)): efficiencies[ee, ii, jj] = nan; continue
+                if (abs(psi_2)==abs(psi_1)): efficiencies[ee, ii, jj] = nan; continue
 
                 loc=where((Ecouple_array_out-Ecouple).__abs__()<=finfo('float32').eps)[0][0]
                 efficiencies[ee, ii, jj] = efficiency_ratio[loc]
@@ -1781,10 +1806,10 @@ def plot_efficiencies_lr_scan(target_dir):
             cmap=coolwarm_cmap
             )
 
-        ax[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax[xloc, yloc].set_xticklabels(F_atp_array.astype(int))
-        ax[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax[xloc, yloc].set_yticklabels(F_Hplus_array.astype(int))
+        ax[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax[xloc, yloc].set_xticklabels(psi_2_array.astype(int))
+        ax[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax[xloc, yloc].set_yticklabels(psi_1_array.astype(int))
         ax[xloc, yloc].tick_params(labelsize=28)
         ax[xloc, yloc].set_title(
             r"$\beta E_{\mathrm{couple}}=$" + " {0}".format(int(Ecouple)),
@@ -1839,19 +1864,19 @@ def plot_nostalgia_scan(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
-    nostalgias = zeros((Ecouple_array.size, F_atp_array.size,F_Hplus_array.size))
+    nostalgias = zeros((Ecouple_array.size, psi_2_array.size,psi_1_array.size))
 
     for ee, Ecouple in enumerate(Ecouple_array):
-        for ii, F_atp in enumerate(F_atp_array):
-            for jj, F_Hplus in enumerate(F_Hplus_array):
+        for ii, psi_2 in enumerate(psi_2_array):
+            for jj, psi_1 in enumerate(psi_1_array):
 
                 prob_ss_array, __, __, force1_array, force2_array = loadtxt(
                     target_dir + reference_file_name.format(
-                        E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
                         ), unpack=True
                 )
 
@@ -1894,10 +1919,10 @@ def plot_nostalgia_scan(target_dir):
             cmap=cm.get_cmap("coolwarm")
             )
 
-        ax[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax[xloc, yloc].set_xticklabels(F_atp_array.astype(int))
-        ax[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax[xloc, yloc].set_yticklabels(F_Hplus_array.astype(int))
+        ax[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax[xloc, yloc].set_xticklabels(psi_2_array.astype(int))
+        ax[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax[xloc, yloc].set_yticklabels(psi_1_array.astype(int))
         ax[xloc, yloc].tick_params(labelsize=20)
         ax[xloc, yloc].set_title(
             r"$\beta E_{\mathrm{couple}}=$" + " {0}".format(int(Ecouple)),
@@ -1956,19 +1981,19 @@ def plot_lr_scan(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
-    learning_rates = zeros((Ecouple_array.size, F_atp_array.size,F_Hplus_array.size))
+    learning_rates = zeros((Ecouple_array.size, psi_2_array.size,psi_1_array.size))
 
     for ee, Ecouple in enumerate(Ecouple_array):
-        for ii, F_atp in enumerate(F_atp_array):
-            for jj, F_Hplus in enumerate(F_Hplus_array):
+        for ii, psi_2 in enumerate(psi_2_array):
+            for jj, psi_1 in enumerate(psi_1_array):
 
                 prob_ss_array, __, __, force1_array, force2_array = loadtxt(
                     target_dir + reference_file_name.format(
-                        E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
                         ), unpack=True
                 )
 
@@ -2015,10 +2040,10 @@ def plot_lr_scan(target_dir):
             cmap=cm.get_cmap("coolwarm")
             )
 
-        ax[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax[xloc, yloc].set_xticklabels(F_atp_array.astype(int))
-        ax[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax[xloc, yloc].set_yticklabels(F_Hplus_array.astype(int))
+        ax[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax[xloc, yloc].set_xticklabels(psi_2_array.astype(int))
+        ax[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax[xloc, yloc].set_yticklabels(psi_1_array.astype(int))
         ax[xloc, yloc].tick_params(labelsize=20)
         ax[xloc, yloc].set_title(
             r"$\beta E_{\mathrm{couple}}=$" + " {0}".format(int(Ecouple)),
@@ -2079,31 +2104,31 @@ def plot_lr_efficiency_correlation(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
 
-    learning_rates = empty((Ecouple_array.size, F_atp_array.size,F_Hplus_array.size))
-    efficiencies = empty((Ecouple_array.size, F_atp_array.size,F_Hplus_array.size))
+    learning_rates = empty((Ecouple_array.size, psi_2_array.size,psi_1_array.size))
+    efficiencies = empty((Ecouple_array.size, psi_2_array.size,psi_1_array.size))
 
     for ee, Ecouple in enumerate(Ecouple_array):
-        for ii, F_atp in enumerate(F_atp_array):
-            for jj, F_Hplus in enumerate(F_Hplus_array):
+        for ii, psi_2 in enumerate(psi_2_array):
+            for jj, psi_1 in enumerate(psi_1_array):
 
                 prob_ss_array, force1_array, force2_array = loadtxt(
                     target_dir + reference_file_name.format(
-                        E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
                         ), unpack=True, usecols=(0,3,4)
                 )
                 Ecouple_array_out, efficiency_ratio = loadtxt(
                     target_dir + input_file_name.format(
-                        E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, E1, psi_1, psi_2, num_minima, phase_shift
                         ),
                     unpack=True, usecols=(0,5)
                 )
@@ -2138,7 +2163,7 @@ def plot_lr_efficiency_correlation(target_dir):
 
                 learning = flux_array[1,...]*Dpxgy
 
-                if (abs(F_atp)==abs(F_Hplus)):
+                if (abs(psi_2)==abs(psi_1)):
                     efficiencies[ee, ii, jj] = nan
                 else:
                     efficiencies[ee, ii, jj] = efficiency_ratio[loc]
@@ -2159,10 +2184,10 @@ def plot_lr_efficiency_correlation(target_dir):
             cmap=cm.get_cmap("coolwarm")
             )
 
-        ax[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax[xloc, yloc].set_xticklabels(F_atp_array)
-        ax[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax[xloc, yloc].set_yticklabels(F_Hplus_array)
+        ax[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax[xloc, yloc].set_xticklabels(psi_2_array)
+        ax[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax[xloc, yloc].set_yticklabels(psi_1_array)
         ax[xloc, yloc].tick_params(labelsize=20)
         ax[xloc, yloc].set_title(r"$\beta E_{\mathrm{couple}}$ = " + str(Ecouple), fontsize=24)
 
@@ -2192,30 +2217,30 @@ def plot_lr_efficiency_scatter(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_F_Hplus_{3}_F_atp_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
-    learning_rates = empty((Ecouple_array.size, F_atp_array.size,F_Hplus_array.size))
-    efficiencies = empty((Ecouple_array.size, F_atp_array.size,F_Hplus_array.size))
+    learning_rates = empty((Ecouple_array.size, psi_2_array.size,psi_1_array.size))
+    efficiencies = empty((Ecouple_array.size, psi_2_array.size,psi_1_array.size))
 
     for ee, Ecouple in enumerate(Ecouple_array):
-        for ii, F_atp in enumerate(F_atp_array):
-            for jj, F_Hplus in enumerate(F_Hplus_array):
+        for ii, psi_2 in enumerate(psi_2_array):
+            for jj, psi_1 in enumerate(psi_1_array):
 
                 prob_ss_array, force1_array, force2_array = loadtxt(
                     target_dir + reference_file_name.format(
-                        E0, Ecouple, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
                         ), unpack=True, usecols=(0,3,4)
                 )
                 Ecouple_array_out, efficiency_ratio = loadtxt(
                     target_dir + input_file_name.format(
-                        E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, E1, psi_1, psi_2, num_minima, phase_shift
                         ),
                     unpack=True, usecols=(0,5)
                 )
@@ -2249,7 +2274,7 @@ def plot_lr_efficiency_scatter(target_dir):
 
                 learning = flux_array[1,...]*Dpxgy
 
-                if (abs(F_atp)==abs(F_Hplus)):
+                if (abs(psi_2)==abs(psi_1)):
                     efficiencies[ee, ii, jj] = nan
                 else:
                     efficiencies[ee, ii, jj] = efficiency_ratio[loc]
@@ -2294,19 +2319,19 @@ def plot_flux_lr_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
-    fluxes = zeros((Ecouple_array.size, 2, F_atp_array.size,F_Hplus_array.size))
+    fluxes = zeros((Ecouple_array.size, 2, psi_2_array.size,psi_1_array.size))
 
     for ee, Ecouple in enumerate(Ecouple_array):
-        for ii, F_atp in enumerate(F_atp_array):
-            for jj, F_Hplus in enumerate(F_Hplus_array):
+        for ii, psi_2 in enumerate(psi_2_array):
+            for jj, psi_1 in enumerate(psi_1_array):
 
                 Ecouple_array_out, integrate_flux_X, integrate_flux_Y = loadtxt(
                     target_dir + input_file_name.format(
-                        E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, E1, psi_1, psi_2, num_minima, phase_shift
                         ),
                     unpack=True, usecols=(0,1,2)
                 )
@@ -2336,20 +2361,20 @@ def plot_flux_lr_scan(target_dir):
             cmap=cm.get_cmap("coolwarm")
             )
 
-        ax1[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax1[xloc, yloc].set_xticklabels(F_atp_array.astype(int))
-        ax1[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax1[xloc, yloc].set_yticklabels(F_Hplus_array.astype(int))
+        ax1[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax1[xloc, yloc].set_xticklabels(psi_2_array.astype(int))
+        ax1[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax1[xloc, yloc].set_yticklabels(psi_1_array.astype(int))
         ax1[xloc, yloc].tick_params(labelsize=22)
         ax1[xloc, yloc].set_title(
             r"$\beta E_{\mathrm{couple}}=$" + " {0}".format(int(Ecouple)),
             fontsize=32
             )
 
-        ax2[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax2[xloc, yloc].set_xticklabels(F_atp_array.astype(int))
-        ax2[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax2[xloc, yloc].set_yticklabels(F_Hplus_array.astype(int))
+        ax2[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax2[xloc, yloc].set_xticklabels(psi_2_array.astype(int))
+        ax2[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax2[xloc, yloc].set_yticklabels(psi_1_array.astype(int))
         ax2[xloc, yloc].tick_params(labelsize=22)
         ax2[xloc, yloc].set_title(
             r"$\beta E_{\mathrm{couple}}=$" + " {0}".format(int(Ecouple)),
@@ -2449,19 +2474,19 @@ def plot_power_lr_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_F_Hplus_{2}_F_atp_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
-    powers = zeros((Ecouple_array.size, 2, F_atp_array.size,F_Hplus_array.size))
+    powers = zeros((Ecouple_array.size, 2, psi_2_array.size,psi_1_array.size))
 
     for ee, Ecouple in enumerate(Ecouple_array):
-        for ii, F_atp in enumerate(F_atp_array):
-            for jj, F_Hplus in enumerate(F_Hplus_array):
+        for ii, psi_2 in enumerate(psi_2_array):
+            for jj, psi_1 in enumerate(psi_1_array):
 
                 Ecouple_array_out, integrate_power_X, integrate_power_Y = loadtxt(
                     target_dir + input_file_name.format(
-                        E0, E1, F_Hplus, F_atp, num_minima, phase_shift
+                        E0, E1, psi_1, psi_2, num_minima, phase_shift
                         ),
                     unpack=True, usecols=(0,3,4)
                 )
@@ -2491,20 +2516,20 @@ def plot_power_lr_scan(target_dir):
             cmap=cm.get_cmap("coolwarm")
             )
 
-        ax1[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax1[xloc, yloc].set_xticklabels(F_atp_array.astype(int))
-        ax1[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax1[xloc, yloc].set_yticklabels(F_Hplus_array.astype(int))
+        ax1[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax1[xloc, yloc].set_xticklabels(psi_2_array.astype(int))
+        ax1[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax1[xloc, yloc].set_yticklabels(psi_1_array.astype(int))
         ax1[xloc, yloc].tick_params(labelsize=20)
         ax1[xloc, yloc].set_title(
             r"$\beta E_{\mathrm{couple}}=$" + " {0}".format(int(Ecouple)),
             fontsize=22
             )
 
-        ax2[xloc, yloc].set_xticks(list(range(F_atp_array.size)))
-        ax2[xloc, yloc].set_xticklabels(F_atp_array.astype(int))
-        ax2[xloc, yloc].set_yticks(list(range(F_Hplus_array.size)))
-        ax2[xloc, yloc].set_yticklabels(F_Hplus_array.astype(int))
+        ax2[xloc, yloc].set_xticks(list(range(psi_2_array.size)))
+        ax2[xloc, yloc].set_xticklabels(psi_2_array.astype(int))
+        ax2[xloc, yloc].set_yticks(list(range(psi_1_array.size)))
+        ax2[xloc, yloc].set_yticklabels(psi_1_array.astype(int))
         ax2[xloc, yloc].tick_params(labelsize=20)
         ax2[xloc, yloc].set_title(
             r"$\beta E_{\mathrm{couple}}=$" + " {0}".format(int(Ecouple)),
@@ -2599,66 +2624,92 @@ def plot_power_lr_scan(target_dir):
 def plot_emma_compare(target_dir):
 
     [
-        N, E0, __, E1, __, __, num_minima, phase_shift,
+        N, E0, __, E1, __, __, num_minima1, num_minima2, phase_shift,
         m1, m2, beta, gamma
         ] = set_params()
 
-    emma_file_template = "Emma_Flux_Ecouple_Fx_{0}_Fy{1}.dat"
+    emma_file_template = "Emma_Flux_Ecouple_Fx_{0}_Fy_{1}.dat"
+    emma_file_template2 = "Emma_Flux_Ecouple_Fx_{0}_Fy_{1}_prec_15.dat"
     my_file_template = (
         "flux_power_efficiency_" 
-        + "E0_0.0_E1_0.0_F_Hplus_{0}_F_atp_{1}_minima_{2}_phase_{3}_outfile.dat"
+        + "E0_0.0_E1_0.0_psi_1_{0}_psi_2_{1}_n1_{2}_n2_{3}_phase_{4}_outfile.dat"
     )
 
-    F_atp_vals = [-2.0, -4.0]
-    F_Hplus_vals = [2.0, 4.0]
+    psi_1_vals = [-2.0, -4.0]
+    psi_2_vals = [2.0, 4.0]
 
     dx = (2*pi)/N
 
     fig, ax = subplots(
-        len(F_atp_vals), len(F_Hplus_vals), figsize=(10,10), 
+        len(psi_2_vals), len(psi_1_vals), figsize=(10,10), 
         sharey='row', sharex='col'
         )
 
-    for i, F_atp in enumerate(F_atp_vals):
-        for j, F_Hplus in enumerate(F_Hplus_vals):
+    for i, psi_2 in enumerate(psi_2_vals):
+        for j, psi_1 in enumerate(psi_1_vals):
 
-            try:
-                e_Ecouple, e_Jx, e_Jy = loadtxt(
-                    target_dir + emma_file_template.format(F_Hplus, F_atp), unpack=True
-                    )
-                j_Ecouple, j_Jx, j_Jy = loadtxt(
-                    target_dir + 
-                    my_file_template.format(F_Hplus, F_atp, num_minima, phase_shift),
-                    usecols=(0,1,2), unpack=True
-                )
+            # try:
+            e_Ecouple, e_Jx, e_Jy = loadtxt(
+                target_dir + emma_file_template.format(psi_1, psi_2), unpack=True
+            )
+            e_Ecouple2, e_Jx2, e_Jy2 = loadtxt(
+                target_dir + emma_file_template2.format(psi_1, psi_2), unpack=True
+            )
+            ax[i,j].plot(e_Ecouple, e_Jx, 'k-', e_Ecouple, e_Jy, 'r-', e_Ecouple2, e_Jx2, 'ko', e_Ecouple2, e_Jy2, 'ro')
+                
+                # e_Ecouple, e_Jx, e_Jy = loadtxt(
+                #      "/Users/jlucero/data_dir/2019-04-09/" + 
+                #     "flux_power_efficiency_E0_0.0_E1_0.0_F_Hplus_{0}_F_atp_{1}_minima_{2}_phase_{3}_outfile.dat".format(
+                #         psi_1, psi_2, num_minima1, phase_shift
+                #         ), usecols=(0,1,2), unpack=True
+                # )
+                # j_Ecouple, j_Jx, j_Jy = loadtxt(
+                #     target_dir + 
+                #     my_file_template.format(
+                #         psi_1, psi_2, num_minima1, num_minima2, phase_shift
+                #         ), usecols=(0,1,2), unpack=True
+                # )
 
-                e_Jx_reduced = empty(j_Ecouple.size)
-                e_Jy_reduced = empty(j_Ecouple.size)
-                counter = 0
+                # e_Jx_reduced = empty(j_Ecouple.size)
+                # e_Jy_reduced = empty(j_Ecouple.size)
+                # counter = 0
 
-                for ii, Ecouple in enumerate(e_Ecouple):
-                    if Ecouple in j_Ecouple:
-                        e_Jx_reduced[counter] = e_Jx[ii]
-                        e_Jy_reduced[counter] = e_Jy[ii]
-                        counter += 1
+                # for ii, Ecouple in enumerate(e_Ecouple):
+                #     if Ecouple in j_Ecouple:
+                #         e_Jx_reduced[counter] = e_Jx[ii]
+                #         e_Jy_reduced[counter] = e_Jy[ii]
+                #         counter += 1
 
-                ax[i, j].plot(
-                    j_Ecouple[:counter], e_Jx_reduced[:counter], 'k-', 
-                    j_Ecouple[:counter], e_Jy_reduced[:counter], 'r-', 
-                    lw=3.0
-                    )
-                ax[i, j].plot(j_Ecouple, j_Jx, 'k--', j_Ecouple, j_Jy, 'r--', lw=3.0)
-            except OSError:
-                continue
+                # e_Ecouple = j_Ecouple[:counter]
+                # e_Jx_reduced = e_Jx_reduced[:counter]
+                # e_Jy_reduced = e_Jy_reduced[:counter]
+
+                # # ax[i, j].plot(
+                # #     e_Ecouple, e_Jx_reduced, 'kx-', 
+                # #     e_Ecouple, e_Jy_reduced, 'rx-', 
+                # #     lw=3.0
+                # #     )
+                # # ax[i, j].plot(
+                # #     e_Ecouple, e_Jx, 'k-', 
+                # #     e_Ecouple, e_Jy, 'r-', 
+                # #     lw=3.0
+                # #     )
+                # ax[i, j].plot(
+                # j_Ecouple[:counter], j_Jx[:counter]-e_Jx_reduced, 'go--', 
+                # j_Ecouple[:counter], j_Jy[:counter]-e_Jy_reduced, 'bo--', lw=3.0
+                # )
+            # except OSError:
+            #     continue
             
-            ax[i, j].set_xlim([0.0, 40.0])
+            ax[i, j].set_xlim([0.0, 20.0])
 
     fig.tight_layout()
     fig.savefig(target_dir + "Joseph_Emma_compare_figure.pdf")
 
 
 if __name__ == "__main__":
-    target_dir = "/Users/jlucero/data_dir/2019-04-09/"
+    target_dir = "/Users/jlucero/data_dir/2019-05-02/"
+    # target_dir = "/Users/jlucero/data_dir/2019-04-09/"
     # target_dir = "./"
     # calculate_flux_power_and_efficiency(target_dir)
     # plot_energy(target_dir)
@@ -2671,7 +2722,7 @@ if __name__ == "__main__":
     # plot_lr(target_dir)
     # plot_energy_scan(target_dir)
     # plot_probability_eq_scan(target_dir)
-    plot_probability_scan(target_dir)
+    # plot_probability_scan(target_dir)
     # plot_flux_scan(target_dir)
     # plot_integrated_flux_scan(target_dir)
     # plot_power_scan(target_dir)
@@ -2685,4 +2736,4 @@ if __name__ == "__main__":
     # plot_lr_efficiency_scatter(target_dir)
     # plot_flux_lr_scan(target_dir)
     # plot_power_lr_scan(target_dir)
-    # plot_emma_compare(target_dir)
+    plot_emma_compare(target_dir)

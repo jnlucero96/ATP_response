@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 from math import pi
-from numpy import (
-    array, arange, empty, finfo, log, true_divide, asarray,
-    empty, zeros, linspace
-    )
+from numpy import finfo, asarray, empty, zeros, linspace
 from datetime import datetime
 
 from fpe import launchpad_reference
@@ -15,44 +12,40 @@ def get_params():
     N = 360  # inverse space discretization. Keep this number high!
 
     # model-specific parameters
-    gamma = 1000.0  # drag
-    beta = 1.0  # 1/kT
-    m = 1.0  # mass
+    gamma1 = 1000.0  # drag coefficient of subsystem 1
+    gamma2 = 1000.0  # drag coefficient of subsystem 2
+    beta = 1.0  # thermodynamic beta: 1/kT
+    m1 = 1.0  # mass of subsystem 1
+    m2 = 1.0  # mass of subsystem 2
 
-    E0 = 3.0 # energy scale of F0 sub-system
-    Ecouple = 3.0 # energy scale of coupling between sub-systems F0 and F1
-    E1 = 3.0 # energy scale of F1 sub-system
-    psi_1 = 3.0 #  energy INTO (positive) F0 sub-system by H+ chemical bath
-    psi_2 = 3.0 # energy INTO (positive) F1 sub-system by ATP chemical bath
+    E0 = 3.0 # energy scale of subsystem 1
+    Ecouple = 3.0 # energy scale of coupling between subsystems 1 and 2
+    E1 = 3.0 # energy scale of subsystem 2
+    psi1 = 3.0 #  energy INTO (positive) subsystem 1 by chemical bath 1
+    psi2 = 3.0 # energy INTO (positive) subsystem 2 by chemical bath 2
 
-    num_minima1 = 3.0 # number of minima in the potential of system 1
-    num_minima2 = 3.0 # number of minima in the potential of system 2
-    phase_shift = 0.0 # how much sub-systems are offset from one another
-
-    # degree to which distribution should be rotated for check 
-    rotate_deg = 120.0
+    n1 = 3.0 # number of minima in the potential of system 1
+    n2 = 3.0 # number of minima in the potential of system 2
+    phase = 0.0 # how much sub-systems are offset from one another
 
     return (
-        dt, N,
-        gamma, beta, m, 
-        num_minima1, num_minima2,
-        phase_shift, E0, E1, Ecouple, psi_1, psi_2, 
-        rotate_deg
+        dt, N, gamma1, gamma2, beta, m1, m2, n1, n2,
+        phase, E0, E1, Ecouple, psi1, psi2
         )
 
 def save_data_reference(
-    num_minima1, num_minima2,
-    phase_shift,
-    E0, Ecouple, E1, psi_1, psi_2, p_now, p_equil,
-    potential_at_pos, force1_at_pos, force2_at_pos,
+    n1, n2,
+    phase,
+    E0, Ecouple, E1, psi1, psi2, p_now, p_equil,
+    potential_at_pos, drift_at_pos, diffusion_at_pos,
     N
     ):
 
     target_dir = './master_output_dir/'
     data_filename = (
         f"/reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
-        + f"psi_1_{psi_1}_psi_2_{psi_2}_" 
-        + f"n1_{num_minima1}_n2_{num_minima2}_phase_{phase_shift}_"
+        + f"psi1_{psi1}_psi2_{psi2}_" 
+        + f"n1_{n1}_n2_{n2}_phase_{phase}_"
         + "outfile.dat"
         )
     data_total_path = target_dir + data_filename
@@ -61,11 +54,15 @@ def save_data_reference(
         for i in range(N):
             for j in range(N):
                 dfile.write(
-                    f'{p_now[i, j]:.15e}'
-                    + '\t' + f'{p_equil[i, j]:.15e}'
-                    + '\t' + f'{potential_at_pos[i, j]:.15e}'
-                    + '\t' + f'{force1_at_pos[i, j]:.15e}'
-                    + '\t' + f'{force2_at_pos[i, j]:.15e}'
+                    f'{p_now[i, j]:.15e}'                        #0
+                    + '\t' + f'{p_equil[i, j]:.15e}'             #1
+                    + '\t' + f'{potential_at_pos[i, j]:.15e}'    #2
+                    + '\t' + f'{drift_at_pos[0, i, j]:.15e}'     #3
+                    + '\t' + f'{drift_at_pos[1, i, j]:.15e}'     #4
+                    + '\t' + f'{diffusion_at_pos[0, i, j]:.15e}' #5
+                    + '\t' + f'{diffusion_at_pos[1, i, j]:.15e}' #6
+                    + '\t' + f'{diffusion_at_pos[2, i, j]:.15e}' #7
+                    + '\t' + f'{diffusion_at_pos[3, i, j]:.15e}' #8
                     + '\n'
                 )
 
@@ -73,21 +70,20 @@ def main():
 
     # unload parameters
     [
-        dt, N, gamma, beta, m, num_minima1, num_minima2, 
-        phase_shift, E0, E1, Ecouple, psi_1, psi_2, rotate_deg
+        dt, N, gamma1, gamma2, beta, m1, m2, n1, n2, 
+        phase, E0, E1, Ecouple, psi1, psi2
         ] = get_params()
 
     # calculate derived discretization parameters
     dx = (2*pi) / N  # space discretization: total distance / number of points
-    rotation_index = int(rotate_deg*N/360)
 
     # provide CSL criteria to make sure simulation doesn't blow up
     if E0 == 0.0 and E1 == 0.0:
         time_check = 100000000.0
     else:
-        time_check = (
-            (dx*m*gamma) / 
-            (Ecouple + 0.5*(E0*num_minima1 + E1*num_minima2) - (psi_1+psi_2))
+        time_check = dx/(
+            (0.5*(Ecouple+E0*n1)-psi1)/(m1*gamma1)
+            +(0.5*(Ecouple+E1*n2)-psi2)/(m2*gamma2)
             )
 
     if dt > time_check:
@@ -107,20 +103,22 @@ def main():
     p_last_ref = zeros((N, N))
     positions = linspace(0, (2*pi)-dx, N)
     potential_at_pos = zeros((N, N))
-    force1_at_pos = zeros((N, N))
-    force2_at_pos = zeros((N, N))
-    rotation_check = zeros((N, N))
+    drift_at_pos = zeros((2, N, N))
+    diffusion_at_pos = zeros((4, N, N))
 
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Launching coupled simulation...")
     launchpad_reference(
-        num_minima1, num_minima2,
-        phase_shift,
-        positions, prob, p_now, p_last, p_last_ref,
-        potential_at_pos, force1_at_pos, force2_at_pos,
-        rotation_check,
+        n1, n2,
+        phase,
+        positions, 
+        prob, p_now, 
+        p_last, p_last_ref,
+        potential_at_pos, 
+        drift_at_pos, 
+        diffusion_at_pos,
         N, dx, check_step,
-        E0, Ecouple, E1, psi_1, psi_2,
-        dt, m, beta, gamma, rotation_index
+        E0, Ecouple, E1, psi1, psi2,
+        dt, m1, m2, beta, gamma1, gamma2
     )
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Coupled simulation done!")
 
@@ -129,16 +127,15 @@ def main():
     p_now = asarray(p_now)
     p_equil = asarray(prob)
     potential_at_pos = asarray(potential_at_pos)
-    force1_at_pos = asarray(force1_at_pos)
-    force2_at_pos = asarray(force2_at_pos)
-
-    # for checking normalization
-    check_sum = p_now.sum(axis=None)
+    drift_at_pos = asarray(drift_at_pos)
+    diffusion_at_pos = asarray(diffusion_at_pos)
 
     # checks to make sure nothing went weird: bail at first sign of trouble
+    # check the non-negativity of the distribution
     assert (p_now >= 0.0).all(), \
         "ABORT: Probability density has negative values!"
-    assert ((check_sum - 1.0).__abs__() <= finfo('float32').eps), \
+    # check the normalization
+    assert (abs(p_now.sum(axis=None) - 1.0).__abs__() <= finfo('float32').eps), \
         "ABORT: Probability density is not normalized!"
 
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Processing finished!")
@@ -146,10 +143,10 @@ def main():
     # write to file
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving data...")
     save_data_reference(
-        num_minima1, num_minima2,
-        phase_shift,
-        E0, Ecouple, E1, psi_1, psi_2, p_now, p_equil,
-        potential_at_pos, force1_at_pos, force2_at_pos, N
+        n1, n2,
+        phase,
+        E0, Ecouple, E1, psi1, psi2, p_now, p_equil,
+        potential_at_pos, drift_at_pos, diffusion_at_pos, N
         )
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving completed!")
     print("Exiting...")
