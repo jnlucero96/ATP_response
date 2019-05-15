@@ -1,5 +1,5 @@
 # cython: language_level=3, cdivision=True, boundscheck=False, wraparound=False
-from libc.math cimport exp, fabs, log, sin, cos
+from libc.math cimport exp, fabs, sin, cos
 
 # yes, this is what you think it is
 cdef double pi = 3.14159265358979323846264338327950288419716939937510582
@@ -8,14 +8,12 @@ cdef double float64_eps = 2.22044604925031308084726e-16
 
 def launchpad_reference(
     double[:] positions,
-    double[:] prob,
-    double[:] p_now, double[:] p_last,
-    double[:] p_last_ref,
+    double[:] prob, double[:] p_now, double[:] p_last, double[:] p_last_ref,
     double[:] potential_at_pos,
-    double[:] force_at_pos,
+    double[:] drift_at_pos, double[:] diffusion_at_pos,
     int N, double dx, unsigned int check_step,
-    double A, double H, double atp, double overall,
-    double num_minima, double dt, double m, double beta, double gamma
+    double E, double psi1, double psi2,
+    double n, double dt, double m, double beta, double gamma
     ):
 
     cdef:
@@ -25,8 +23,9 @@ def launchpad_reference(
 
     # populate the reference arrays
     for i in range(N):
-        potential_at_pos[i] = potential(positions[i], A, num_minima)
-        force_at_pos[i] = force(positions[i], A, H, atp, overall, num_minima)
+        potential_at_pos[i] = potential(positions[i], E, n)
+        drift_at_pos[i] = drift(positions[i], E, psi1, psi2, n, m, beta, gamma)
+        diffusion_at_pos[i] = diffusion(positions[i], m, beta, gamma)
 
     # calculate the partition function
     for i in range(N):
@@ -41,45 +40,52 @@ def launchpad_reference(
         p_now[i] = 1.0/N
 
     steady_state_initialize(
-        positions, p_now, p_last, p_last_ref,
-        force_at_pos,
+        p_now, p_last, p_last_ref,
+        drift_at_pos, diffusion_at_pos,
         N, dx, dt, check_step,
         m, gamma, beta
     )
 
-###############################################################################
-###############################################################################
-############
-############ ENERGETICS AND FORCES
-############
-###############################################################################
-###############################################################################
+# =============================================================================
+# =============================================================================
+# ==========
+# ========== ENERGETICS AND FORCES
+# ==========
+# =============================================================================
+# =============================================================================
 
-cdef double force(
-    double position,
-    double A, double H, double atp, double overall, double num_minima
-    ) nogil: # force on system X
-    return (0.5)*(num_minima*A*sin(num_minima*position)) - (H+atp)
+# position dependent drift on system 
+cdef double drift(
+    double position, double E, double psi1, double psi2, double n,
+    double m, double beta, double gamma
+    ) nogil: 
+    # drift of 2D equation in limit of Ecouple \to \infty
+    return -((1.0/(m*gamma))*(n*E*sin(n*position))-(psi1+psi2))
 
-cdef double potential(
-    double position, double A, double num_minima
-    ) nogil:
-    return 0.5*(A*(1-cos((num_minima*position))))
+# position dependent diffusion on system 
+cdef double diffusion(
+    double position, double m, double beta, double gamma
+    ) nogil: 
+    return 1.0/(beta*m*gamma)
 
-###############################################################################
-###############################################################################
-############
-############ INITIALIZATIONS
-############
-###############################################################################
-###############################################################################
+# potential of system
+cdef double potential(double position, double E, double n) nogil: 
+    return E*(1-cos((n*position)))
+
+# =============================================================================
+# =============================================================================
+# ==========
+# ========== INITIALIZATIONS
+# ==========
+# =============================================================================
+# =============================================================================
 
 cdef void steady_state_initialize(
-    double[:] positions,
     double[:] p_now,
     double[:] p_last,
     double[:] p_last_ref,
-    double[:] force_at_pos,
+    double[:] drift_at_pos,
+    double[:] diffusion_at_pos,
     int N, double dx, double dt, unsigned int check_step,
     double m, double gamma, double beta
     ) nogil:
@@ -102,15 +108,15 @@ cdef void steady_state_initialize(
 
         # advance probability one time step
         update_probability_full(
-            positions, p_now, p_last,
-            force_at_pos,
+            p_now, p_last,
+            drift_at_pos, diffusion_at_pos,
             m, gamma, beta,
             N, dx, dt
             )
 
         if step_counter == check_step:
             for i in range(N):
-                tot_var_dist += 0.5*fabs(p_last_ref[i] - p_now[i])
+                tot_var_dist += 0.5*fabs(p_last_ref[i]-p_now[i])
 
             # check condition
             if tot_var_dist < float64_eps:
@@ -125,10 +131,10 @@ cdef void steady_state_initialize(
         step_counter += 1
 
 cdef void update_probability_full(
-    double[:] positions,
     double[:] p_now,
     double[:] p_last,
-    double[:] force_at_pos,
+    double[:] drift_at_pos,
+    double[:] diffusion_at_pos,
     double m, double gamma, double beta,
     int N, double dx, double dt
     ) nogil:
@@ -136,23 +142,20 @@ cdef void update_probability_full(
     # declare iterator variables
     cdef Py_ssize_t i
 
-    ## Periodic boundary conditions:
-    ## Explicity update FPE for the ends
-    p_now[0] = (
-        p_last[0]
-        + dt*(force_at_pos[1]*p_last[1]-force_at_pos[N-1]*p_last[N-1])/(gamma*m*2.0*dx)
-        + dt*(p_last[1]-2.0*p_last[0]+p_last[N-1])/(beta*gamma*m*(dx*dx))
-        ) # checked
-    p_now[N-1] = (
-        p_last[N-1]
-        + dt*(force_at_pos[0]*p_last[0]-force_at_pos[N-2]*p_last[N-2])/(gamma*m*2.0*dx)
-        + dt*(p_last[0]-2.0*p_last[N-1]+p_last[N-2])/(beta*gamma*m*(dx*dx))
-        ) # checked
+    # Periodic boundary conditions:
+    # Explicity update FPE for the ends
+    p_now[0] = p_last[0] + dt*(
+        -(drift_at_pos[1]*p_last[1]-drift_at_pos[N-1]*p_last[N-1])/(2.0*dx)
+        +(diffusion_at_pos[1]*p_last[1]-2.0*diffusion_at_pos[0]*p_last[0]+diffusion_at_pos[N-1]*p_last[N-1])/(dx*dx)
+        ) 
+    p_now[N-1] = p_last[N-1] + dt*(
+        -(drift_at_pos[0]*p_last[0]-drift_at_pos[N-2]*p_last[N-2])/(2.0*dx)
+        +(diffusion_at_pos[0]*p_last[0]-2.0*diffusion_at_pos[N-1]*p_last[N-1]+diffusion_at_pos[N-2]*p_last[N-2])/(dx*dx)
+        ) 
 
     # all points with well defined neighbours go like so:
     for i in range(1, N-1):
-        p_now[i] = (
-            p_last[i]
-            + dt*(force_at_pos[i+1]*p_last[i+1]-force_at_pos[i-1]*p_last[i-1])/(gamma*m*2.0*dx)
-            + dt*(p_last[i+1]-2.0*p_last[i]+p_last[i-1])/(beta*gamma*m*(dx*dx))
-            ) # checked
+        p_now[i] = p_last[i] + dt*(
+            -(drift_at_pos[i+1]*p_last[i+1]-drift_at_pos[i-1]*p_last[i-1])/(2.0*dx)
+            +(diffusion_at_pos[i+1]*p_last[i+1]-2.0*diffusion_at_pos[i]*p_last[i]+diffusion_at_pos[i-1]*p_last[i-1])/(dx*dx)
+            ) 
