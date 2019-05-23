@@ -41,7 +41,7 @@ def save_data_reference(
     N
     ):
 
-    target_dir = './master_output_dir/'
+    target_dir = '../../../master_output_dir/'
     data_filename = (
         f"/reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
         + f"psi1_{psi1}_psi2_{psi2}_" 
