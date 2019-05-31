@@ -168,7 +168,7 @@ cdef double potential(
     double phase, double E0, double Ecouple, double E1
     ) nogil:
     return 0.5*(
-        E0*(1-cos((n1*position1-phase)))
+        E0*(1-cos((n1*(position1-phase))))
         + Ecouple*(1-cos(position1-position2))
         + E1*(1-cos((n2*position2)))
         )

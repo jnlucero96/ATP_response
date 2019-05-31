@@ -17,109 +17,18 @@ E0=2.0
 E1=2.0
 num_minima1=3.0
 num_minima2=3.0
-psi1_array = array([1.0, 2.0, 4.0])
-psi2_array = array([-1.0, -2.0, -4.0])
-#psi1_array = array([8.0])
+psi1_array = array([4.0])
+psi2_array = array([-1.0, -2.0])
+#psi1_array = array([0.0])
 #psi2_array = array([0.0])
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
-phase_array = array([0.0, 0.628319, 1.25664, 1.88496, 2.51327, 3.14159])
-colorlst=['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8','0.9']
-
-# def calc_flux_func(p_now,force1_at_pos, force2_at_pos,flux_array,m1, m2, gamma, beta, N, dx):
-#
-#     # explicit update of the corners
-#     # first component
-#     flux_array[0, 0, 0] = (-1.0)*(
-#         (force1_at_pos[0, 0]*p_now[0, 0])/(gamma*m1)
-#         + (p_now[1, 0] - p_now[N-1, 0])/(beta*gamma*m1*2*dx)
-#         )
-#     flux_array[0, 0, N-1] = (-1.0)*(
-#         (force1_at_pos[0, N-1]*p_now[0, N-1])/(gamma*m1)
-#         + (p_now[1, N-1] - p_now[N-1, N-1])/(beta*gamma*m1*2*dx)
-#         )
-#     flux_array[0, N-1, 0] = (-1.0)*(
-#         (force1_at_pos[N-1, 0]*p_now[N-1, 0])/(gamma*m1)
-#         + (p_now[0, 0] - p_now[N-2, 0])/(beta*gamma*m1*2*dx)
-#         )
-#     flux_array[0, N-1, N-1] = (-1.0)*(
-#         (force1_at_pos[N-1, N-1]*p_now[N-1, N-1])/(gamma*m1)
-#         + (p_now[0, N-1] - p_now[N-2, N-1])/(beta*gamma*m1*2*dx)
-#         )
-#
-#     # second component
-#     flux_array[1, 0, 0] = (-1.0)*(
-#         (force2_at_pos[0, 0]*p_now[0, 0])/(gamma*m2)
-#         + (p_now[0, 1] - p_now[0, N-1])/(beta*gamma*m2*2*dx)
-#         )
-#     flux_array[1, 0, N-1] = (-1.0)*(
-#         (force2_at_pos[0, N-1]*p_now[0, N-1])/(gamma*m2)
-#         + (p_now[0, 0] - p_now[0, N-2])/(beta*gamma*m2*2*dx)
-#         )
-#     flux_array[1, N-1, 0] = (-1.0)*(
-#         (force2_at_pos[N-1, 0]*p_now[N-1, 0])/(gamma*m2)
-#         + (p_now[N-1, 1] - p_now[N-1, N-1])/(beta*gamma*m2*2*dx)
-#         )
-#     flux_array[1, N-1, N-1] = (-1.0)*(
-#         (force2_at_pos[N-1, N-1]*p_now[N-1, N-1])/(gamma*m2)
-#         + (p_now[N-1, 0] - p_now[N-1, N-2])/(beta*gamma*m2*2*dx)
-#         )
-#
-#     # for points with well defined neighbours
-#     for i in range(1, N-1):
-#         # explicitly update for edges not corners
-#         # first component
-#         flux_array[0, 0, i] = (-1.0)*(
-#             (force1_at_pos[0, i]*p_now[0, i])/(gamma*m1)
-#             + (p_now[1, i] - p_now[N-1, i])/(beta*gamma*m1*2*dx)
-#         )
-#         flux_array[0, i, 0] = (-1.0)*(
-#             (force1_at_pos[i, 0]*p_now[i, 0])/(gamma*m1)
-#             + (p_now[i+1, 0]- p_now[i-1, 0])/(beta*gamma*m1*2*dx)
-#         )
-#
-#         # second component
-#         flux_array[1, 0, i] = (-1.0)*(
-#             (force2_at_pos[0, i]*p_now[0, i])/(gamma*m2)
-#             + (p_now[0, i+1] - p_now[0, i-1])/(beta*gamma*m2*2*dx)
-#             )
-#         flux_array[1, i, 0] = (-1.0)*(
-#             (force2_at_pos[i, 0]*p_now[i, 0])/(gamma*m2)
-#             + (p_now[i, 1] - p_now[i, N-1])/(beta*gamma*m2*2*dx)
-#             )
-#
-#         for j in range(1, N-1):
-#             # first component
-#             flux_array[0, i, j] = (-1.0)*(
-#                 (force1_at_pos[i, j]*p_now[i, j])/(gamma*m1)
-#                 + (p_now[i+1, j] - p_now[i-1, j])/(beta*gamma*m1*2*dx)
-#                 )
-#             # second component
-#             flux_array[1, i, j] = (-1.0)*(
-#                 (force2_at_pos[i, j]*p_now[i, j])/(gamma*m2)
-#                 + (p_now[i, j+1] - p_now[i, j-1])/(beta*gamma*m2*2*dx)
-#                 )
-#
-#         # update rest of edges not corners
-#         # first component
-#         flux_array[0, N-1, i] = (-1.0)*(
-#             (force1_at_pos[N-1, i]*p_now[N-1, i])/(gamma*m1)
-#             + (p_now[0, i] - p_now[N-2, i])/(beta*gamma*m1*2*dx)
-#             )
-#         flux_array[0, i, N-1] = (-1.0)*(
-#             (force1_at_pos[i, N-1]*p_now[i, N-1])/(gamma*m1)
-#             + (p_now[i+1, N-1] - p_now[i-1, N-1])/(beta*gamma*m1*2*dx)
-#             )
-#
-#         # second component
-#         flux_array[1, N-1, i] = (-1.0)*(
-#             (force2_at_pos[N-1, i]*p_now[N-1, i])/(gamma*m2)
-#             + (p_now[N-1, i+1] - p_now[N-1, i-1])/(beta*gamma*m2*2*dx)
-#             )
-#         flux_array[1, i, N-1] = (-1.0)*(
-#             (force2_at_pos[i, N-1]*p_now[i, N-1])/(gamma*m2)
-#             + (p_now[i, 0] - p_now[i, N-2])/(beta*gamma*m2*2*dx)
-#             )
-
+#phase_array = array([0.0, 0.628319, 1.25664, 1.88496, 2.51327, 3.14159])
+phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319])
+phase_selection = array([0.0, 0.698132, 1.39626, 2.0944, 2.79253])
+colorlist=linspace(0,1,8)
+ticklst=linspace(0,2*math.pi,7)
+#ticklabels=['0', '$\pi/6$', '$\pi/3$', '$\pi/2$', '$2 \pi/3$']
+ticklabels=['0', '$\pi/3$', '$2 \pi/3$', '$\pi$', '$4 \pi/3$', '$5 \pi/3$', '$2 \pi$']
 
 def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array):
     # explicit update of the corners
@@ -232,8 +141,8 @@ def flux_power_efficiency():
 
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
-            input_file_name = ("reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
-            output_file_name = ("flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+            input_file_name = (target_dir + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+            output_file_name = ("Twopisweep/master_output_dir/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
             integrate_flux_X = empty(phase_array.size)
             integrate_flux_Y = empty(phase_array.size)
             integrate_power_X = empty(phase_array.size)
@@ -278,76 +187,81 @@ def flux_power_efficiency():
                     ofile.flush()
             
 def plot_power_grid():
-    output_file_name = ("power_in_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
+    output_file_name = ("power_Y_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
     f,axarr=plt.subplots(3,3,sharex='all',sharey='all')
     
     for i, psi_1 in enumerate(psi1_array):
         for j, psi_2 in enumerate(psi2_array):
+            print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = ("flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = ("processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,3,4))
-                    print('Ecouple=%f'%Ecouple)
+                    #print('Ecouple=%f'%Ecouple)
                     phase_array = data_array[:,0]
                     power_x_array = data_array[:,1]
                     power_y_array = data_array[:,2]
     
-                    axarr[i,j].plot(phase_array,power_x_array, color=colorlst[ii])
+                    axarr[i,j].plot(phase_array, power_y_array, color=plt.cm.cool(colorlist[ii]))
                 except OSError:
                     print('Missing file')    
-            #plt.legend(Ecouple_array, title="Ecouple")    
-            f.text(0.5, 0.04, '$\phi$', ha='center')
-            f.text(0.04, 0.5, 'Input power', va='center', rotation='vertical')
-            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    #plt.legend(Ecouple_array, title="Ecouple")
+    f.text(0.5, 0.04, '$\phi$', ha='center')
+    f.text(0.04, 0.5, 'Output power', va='center', rotation='vertical')
+    plt.xticks(ticklst, ticklabels)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     plt.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
 
 def plot_power_single():
-    output_file_name = ("power_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name = ("Twopisweep/master_output_dir/power_X_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
     
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             plt.figure()    
+            print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = ("flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = ("Twopisweep/master_output_dir/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
-                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,4))
-                    print('Ecouple=%f'%Ecouple)
+                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,3,4))
+                    #print('Ecouple=%f'%Ecouple)
                     phase_array = data_array[:,0]
-                    power_y_array = data_array[:,1]
+                    power_x_array = data_array[:,1]
+                    power_y_array = data_array[:,2]
 
-                    plt.plot(phase_array, power_y_array, color=colorlst[ii])
+                    plt.plot(phase_array, power_x_array, color=plt.cm.cool(colorlist[ii]))
                 except OSError:
-                    print('Missing file')    
-            plt.legend(Ecouple_array, title="Ecouple", loc='upper left')    
-            #f.text(0.5, 0.04, '$\phi$', ha='center')
-            #f.text(0.04, 0.5, 'Output power', va='center', rotation='vertical')
+                    print('Missing file')      
+            plt.legend(Ecouple_array, title="Ecouple", loc='upper left')
             plt.xlabel('$\phi$')
-            plt.ylabel('Output power')
-            plt.grid()
+            plt.ylabel('Input power')
+            plt.xticks(ticklst, ticklabels)
+            #plt.grid()
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
     
 def plot_efficiency_single():
-    output_file_name = ("efficiency_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name = ("Twopisweep/master_output_dir/efficiency_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
     
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             plt.figure()    
+            print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = ("flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = ("Twopisweep/master_output_dir/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,5))
-                    print('Ecouple=%f'%Ecouple)
+                    #print('Ecouple=%f'%Ecouple)
                     phase_array = data_array[:,0]
                     eff_array = data_array[:,1]
 
-                    plt.plot(phase_array, eff_array, color=colorlst[ii])
+                    plt.plot(phase_array, eff_array, color=plt.cm.cool(colorlist[ii]))
                 except OSError:
                     print('Missing file')    
             plt.legend(Ecouple_array, title="Ecouple", loc='upper left')    
             plt.xlabel('$\phi$')
             plt.ylabel('$\eta$')
-            plt.grid()
+            #plt.grid()
+            plt.xticks(ticklst, ticklabels)
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
     
@@ -357,8 +271,9 @@ def plot_efficiency_grid():
     
     for i, psi_1 in enumerate(psi1_array):
         for j, psi_2 in enumerate(psi2_array):
+            print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = ("flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = ("processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,5))
                     print('Ecouple=%f'%Ecouple)
@@ -367,66 +282,109 @@ def plot_efficiency_grid():
                     if i==j:
                         eff_array = [-1,-1,-1,-1,-1,-1]
     
-                    axarr[i,j].plot(phase_array,eff_array, color=colorlst[ii])
+                    axarr[i,j].plot(phase_array,eff_array, color=plt.cm.cool(colorlist[ii]))
                 except OSError:
                     print('Missing file')    
-            #plt.legend(Ecouple_array, title="Ecouple")  
-            plt.ylim(-0.3,1.0)  
-            f.text(0.5, 0.04, '$\phi$', ha='center')
-            f.text(0.04, 0.5, '$\eta$', va='center', rotation='vertical')
-            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    #plt.legend(Ecouple_array, title="Ecouple")  
+    plt.ylim(-0.3,1.0)  
+    f.text(0.5, 0.04, '$\phi$', ha='center')
+    f.text(0.04, 0.5, '$\eta$', va='center', rotation='vertical')
+    plt.xticks(ticklst, ticklabels)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     plt.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
         
 def plot_flux_grid():
-    output_file_name = ("flux_x_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
+    output_file_name = ("flux_y_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
     f,axarr=plt.subplots(3,3,sharex='all',sharey='all')
     for i, psi_1 in enumerate(psi1_array):
         for j, psi_2 in enumerate(psi2_array):
+            print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = ("flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = ("processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,1,2))
-                    print('Ecouple=%f'%Ecouple)
+                    #print('Ecouple=%f'%Ecouple)
                     phase_array = data_array[:,0]
                     flux_x_array = data_array[:,1]
                     flux_y_array = data_array[:,2]
     
-                    axarr[i,j].plot(phase_array, flux_y_array, color=colorlst[ii])
+                    axarr[i,j].plot(phase_array, flux_y_array, color=plt.cm.cool(colorlist[ii]))
                 except OSError:
                     print('Missing file')    
             #plt.legend(Ecouple_array, title="Ecouple")    
-            f.text(0.5, 0.04, '$\phi$', ha='center')
-            f.text(0.04, 0.5, '$J_x$', va='center', rotation='vertical')
-            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    f.text(0.5, 0.04, '$\phi$', ha='center')
+    f.text(0.04, 0.5, '$J_y$', va='center', rotation='vertical')
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    plt.xticks(ticklst, ticklabels)
     plt.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
         
 def plot_flux_single():
-    output_file_name = ("flux_X_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name = ("Twopisweep/master_output_dir/flux_XY_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
     
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             plt.figure()
+            print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = ("flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = ("Twopisweep/master_output_dir/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,1,2))
-                    print('Ecouple=%f'%Ecouple)
+                    #print('Ecouple=%f'%Ecouple)
                     phase_array = data_array[:,0]
                     flux_x_array = data_array[:,1]
                     flux_y_array = data_array[:,2]
 
-                    plt.plot(phase_array, flux_x_array, color=colorlst[ii])
+                    plt.plot(phase_array, flux_x_array, color=plt.cm.cool(colorlist[ii]), ls='--')
+                    plt.plot(phase_array, flux_y_array, color=plt.cm.cool(colorlist[ii]), label=f'{Ecouple}')
                 except OSError:
                     print('Missing file')    
-            plt.legend(Ecouple_array, title="Ecouple", loc='upper left')    
+            #plt.legend(Ecouple_array, title="Ecouple", loc='upper left')    
+            plt.legend(title="Ecouple", loc='upper right')  
             #f.text(0.5, 0.04, '$\phi$', ha='center')
             #f.text(0.04, 0.5, 'Output power', va='center', rotation='vertical')
             #plt.ylim((0,None))
             plt.xlabel('$\phi$')
-            plt.ylabel('Flux X')
-            plt.grid()
+            plt.ylabel('Flux')
+            plt.xticks(ticklst, ticklabels)
+            #plt.grid()
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))    
+            
+def plot_flux_Ecouple_single():
+    output_file_name = ("Twopisweep/master_output_dir/flux_Ecouple_XY_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+   
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            plt.figure()
+            for i, phase in enumerate(phase_selection):
+                flux_x_array=[]
+                flux_y_array=[]
+                print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    input_file_name = ("Twopisweep/master_output_dir/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    try:
+                        data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,1,2))
+                        #print('Ecouple=%f'%Ecouple)
+                        #phase_array = data_array[:,0]
+                        flux_x = data_array[i,1]
+                        flux_y = data_array[i,2]
+                        flux_x_array.append(flux_x)
+                        flux_y_array.append(flux_y)
+                    except OSError:
+                        print('Missing file')    
+                plt.plot(Ecouple_array, flux_x_array, color=plt.cm.cool(colorlist[i]), ls='--')
+                plt.plot(Ecouple_array, flux_y_array, color=plt.cm.cool(colorlist[i]), label=f'{phase}')        
+            #plt.legend(Ecouple_array, title="Ecouple", loc='upper left')    
+            plt.legend(title="$\phi$", loc='upper right')  
+            #f.text(0.5, 0.04, '$\phi$', ha='center')
+            #f.text(0.04, 0.5, 'Output power', va='center', rotation='vertical')
+            #plt.ylim((0,None))
+            plt.xlabel('$E_{couple}$')
+            plt.ylabel('Flux')
+            #plt.xticks(ticklst, ticklabels)
+            #plt.grid()
+            plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))                
 
 def plot_flux_contour():
     psi_1=0.0
@@ -487,13 +445,111 @@ def plot_flux():
     plt.show()
 
 if __name__ == "__main__":
-    target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/working_directory_cython/working_directory_cython/master_output_dir"
-    os.chdir(target_dir)
+    target_dir="/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190530_phaseoffset_twopi" #target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/Twopioverthree_sweep/master_output_dir"
+    #os.chdir(target_dir)
     #flux_power_efficiency()
-    plot_flux_single()
+    #plot_flux_single()
+    #plot_flux_Ecouple_single()
     #plot_flux_contour()
     #plot_flux_grid()
     #plot_power_single()
     #plot_power_grid()
-    #plot_efficiency_single()
+    plot_efficiency_single()
     #plot_efficiency_grid()
+    
+    
+    
+# def calc_flux_func(p_now,force1_at_pos, force2_at_pos,flux_array,m1, m2, gamma, beta, N, dx):
+#
+#     # explicit update of the corners
+#     # first component
+#     flux_array[0, 0, 0] = (-1.0)*(
+#         (force1_at_pos[0, 0]*p_now[0, 0])/(gamma*m1)
+#         + (p_now[1, 0] - p_now[N-1, 0])/(beta*gamma*m1*2*dx)
+#         )
+#     flux_array[0, 0, N-1] = (-1.0)*(
+#         (force1_at_pos[0, N-1]*p_now[0, N-1])/(gamma*m1)
+#         + (p_now[1, N-1] - p_now[N-1, N-1])/(beta*gamma*m1*2*dx)
+#         )
+#     flux_array[0, N-1, 0] = (-1.0)*(
+#         (force1_at_pos[N-1, 0]*p_now[N-1, 0])/(gamma*m1)
+#         + (p_now[0, 0] - p_now[N-2, 0])/(beta*gamma*m1*2*dx)
+#         )
+#     flux_array[0, N-1, N-1] = (-1.0)*(
+#         (force1_at_pos[N-1, N-1]*p_now[N-1, N-1])/(gamma*m1)
+#         + (p_now[0, N-1] - p_now[N-2, N-1])/(beta*gamma*m1*2*dx)
+#         )
+#
+#     # second component
+#     flux_array[1, 0, 0] = (-1.0)*(
+#         (force2_at_pos[0, 0]*p_now[0, 0])/(gamma*m2)
+#         + (p_now[0, 1] - p_now[0, N-1])/(beta*gamma*m2*2*dx)
+#         )
+#     flux_array[1, 0, N-1] = (-1.0)*(
+#         (force2_at_pos[0, N-1]*p_now[0, N-1])/(gamma*m2)
+#         + (p_now[0, 0] - p_now[0, N-2])/(beta*gamma*m2*2*dx)
+#         )
+#     flux_array[1, N-1, 0] = (-1.0)*(
+#         (force2_at_pos[N-1, 0]*p_now[N-1, 0])/(gamma*m2)
+#         + (p_now[N-1, 1] - p_now[N-1, N-1])/(beta*gamma*m2*2*dx)
+#         )
+#     flux_array[1, N-1, N-1] = (-1.0)*(
+#         (force2_at_pos[N-1, N-1]*p_now[N-1, N-1])/(gamma*m2)
+#         + (p_now[N-1, 0] - p_now[N-1, N-2])/(beta*gamma*m2*2*dx)
+#         )
+#
+#     # for points with well defined neighbours
+#     for i in range(1, N-1):
+#         # explicitly update for edges not corners
+#         # first component
+#         flux_array[0, 0, i] = (-1.0)*(
+#             (force1_at_pos[0, i]*p_now[0, i])/(gamma*m1)
+#             + (p_now[1, i] - p_now[N-1, i])/(beta*gamma*m1*2*dx)
+#         )
+#         flux_array[0, i, 0] = (-1.0)*(
+#             (force1_at_pos[i, 0]*p_now[i, 0])/(gamma*m1)
+#             + (p_now[i+1, 0]- p_now[i-1, 0])/(beta*gamma*m1*2*dx)
+#         )
+#
+#         # second component
+#         flux_array[1, 0, i] = (-1.0)*(
+#             (force2_at_pos[0, i]*p_now[0, i])/(gamma*m2)
+#             + (p_now[0, i+1] - p_now[0, i-1])/(beta*gamma*m2*2*dx)
+#             )
+#         flux_array[1, i, 0] = (-1.0)*(
+#             (force2_at_pos[i, 0]*p_now[i, 0])/(gamma*m2)
+#             + (p_now[i, 1] - p_now[i, N-1])/(beta*gamma*m2*2*dx)
+#             )
+#
+#         for j in range(1, N-1):
+#             # first component
+#             flux_array[0, i, j] = (-1.0)*(
+#                 (force1_at_pos[i, j]*p_now[i, j])/(gamma*m1)
+#                 + (p_now[i+1, j] - p_now[i-1, j])/(beta*gamma*m1*2*dx)
+#                 )
+#             # second component
+#             flux_array[1, i, j] = (-1.0)*(
+#                 (force2_at_pos[i, j]*p_now[i, j])/(gamma*m2)
+#                 + (p_now[i, j+1] - p_now[i, j-1])/(beta*gamma*m2*2*dx)
+#                 )
+#
+#         # update rest of edges not corners
+#         # first component
+#         flux_array[0, N-1, i] = (-1.0)*(
+#             (force1_at_pos[N-1, i]*p_now[N-1, i])/(gamma*m1)
+#             + (p_now[0, i] - p_now[N-2, i])/(beta*gamma*m1*2*dx)
+#             )
+#         flux_array[0, i, N-1] = (-1.0)*(
+#             (force1_at_pos[i, N-1]*p_now[i, N-1])/(gamma*m1)
+#             + (p_now[i+1, N-1] - p_now[i-1, N-1])/(beta*gamma*m1*2*dx)
+#             )
+#
+#         # second component
+#         flux_array[1, N-1, i] = (-1.0)*(
+#             (force2_at_pos[N-1, i]*p_now[N-1, i])/(gamma*m2)
+#             + (p_now[N-1, i+1] - p_now[N-1, i-1])/(beta*gamma*m2*2*dx)
+#             )
+#         flux_array[1, i, N-1] = (-1.0)*(
+#             (force2_at_pos[i, N-1]*p_now[i, N-1])/(gamma*m2)
+#             + (p_now[i, 0] - p_now[i, N-2])/(beta*gamma*m2*2*dx)
+#             )
