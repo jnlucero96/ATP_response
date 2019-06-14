@@ -66,7 +66,8 @@ def launchpad_reference(
     # start with uniform distribution as initial guess
     for i in range(N):
         for j in range(N):
-            p_now[i, j] = 1.0/(N*N)
+           # p_now[i, j] = 1.0/(N*N)
+           p_now[i, j] = prob[i, j]
 
     steady_state_initialize(
         p_now, p_last, p_last_ref,
@@ -183,7 +184,7 @@ cdef double drift1(
     # for F0
     return (-1.0/(m1*gamma1))*((0.5)*(
         Ecouple*sin(position1-position2)
-        + (n1*E0*sin((n1*position1)-(phase)))
+        + (n1*E0*sin((n1*(position1-phase))))
         ) - psi1)
 
 cdef double drift2(
