@@ -18,11 +18,11 @@ def get_params():
     m1 = 1.0  # mass of subsystem 1
     m2 = 1.0  # mass of subsystem 2
 
-    E0 = 3.0 # energy scale of subsystem 1
-    Ecouple = 3.0 # energy scale of coupling between subsystems 1 and 2
-    E1 = 3.0 # energy scale of subsystem 2
-    psi1 = 3.0 #  energy INTO (positive) subsystem 1 by chemical bath 1
-    psi2 = 3.0 # energy INTO (positive) subsystem 2 by chemical bath 2
+    E0 = 2.0 # energy scale of subsystem 1
+    Ecouple = 1.0 # energy scale of coupling between subsystems 1 and 2
+    E1 = 2.0 # energy scale of subsystem 2
+    psi1 = 4.0 #  energy INTO (positive) subsystem 1 by chemical bath 1
+    psi2 = -2.0 # energy INTO (positive) subsystem 2 by chemical bath 2
 
     n1 = 3.0 # number of minima in the potential of system 1
     n2 = 3.0 # number of minima in the potential of system 2
