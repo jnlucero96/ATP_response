@@ -17,15 +17,15 @@ num_minima2=3.0
 psi1_array = array([0.0, 1.0, 2.0, 4.0, 8.0])
 psi2_array = array([-8.0, -4.0, -2.0, -1.0, 0.0])
 #psi1_array = array([4.0])
-#psi2_array = array([-2.0, -1.0])
+#psi2_array = array([-2.0])
 
-#Ecouple_array = array([0.0, 8.0, 16.0]) #for grid plots
-Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
-Ecouple_array2 = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
+Ecouple_array = array([0.0, 8.0, 16.0]) #for grid plots
+#Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
+#Ecouple_array2 = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 #phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
 #phase_array = array([0.0])
-#phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944]) #selection of twopisweep
-phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533]) #twopisweep, only get data of first 1/3 
+phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944]) #selection of twopisweep
+#phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533]) #twopisweep, only get data of first 1/3 
 #phase_array = round(array([0.0, 0.628319, 1.25664, 1.88496, 2.51327, 3.14159])/3 ,2) #phaseoffset data, divide by 3 to get true angle
 #phase_array = array([0.0, 0.628319, 1.25664, 1.88496, 2.51327, 3.14159])
 #phase_array = array([0.0, 0.698132, 1.39626]) #for grid plots
@@ -37,6 +37,7 @@ size_lst=[12,10,8,6,4,2]
 
 #ticklabels=['0', '$\pi$', '$2 \pi$']
 ticklabels=['0', '', '', '$2 \pi$']
+#ticklabels=['0', '', '$2\pi/3$', '', '$4\pi/3$', '', '$2 \pi$']
 #ticklabels=['0', '$\pi/3$', '$2 \pi/3$', '$\pi$', '$4 \pi/3$', '$5 \pi/3$', '$2 \pi$']
 #ticklabels=['0', '$\pi/6$', '$\pi/3$', '$\pi/2$', '$2 \pi/3$']
 ticklst=linspace(0,2*math.pi,len(ticklabels))
@@ -702,14 +703,16 @@ def plot_prob_flux_grid():
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             f,axarr=plt.subplots(3,7,sharex='all',sharey='all', figsize=(12,6))
-            output_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/" + "ProbSS_flux_grid_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+            output_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/" + "Energy_force_grid_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
             
             ##determining the max. potential height in the grid of plots, and the max. flux in the whole grid, so that we can scale the colors and arrows by it
             input_file_name = ("reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
             print(input_file_name.format(E0, 16.0, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
             data_array = loadtxt(input_file_name.format(E0, 16.0, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0,2,3,4,5,6,7,8))
             prob_ss_array = data_array[:,0].reshape((N,N))
+            pot_array = data_array[:,1].reshape((N,N))
             maxprob=amax(prob_ss_array)
+            maxpot=amax(pot_array)
             drift_at_pos = data_array[:,2:4].T.reshape((2,N,N))
             diffusion_at_pos = data_array[:,4:].T.reshape((4,N,N))
             flux_array = empty((2,N,N))
@@ -720,7 +723,7 @@ def plot_prob_flux_grid():
             flux_y_array = flux_array[1]
             flux_length_array = flux_x_array*flux_x_array + flux_y_array*flux_y_array
             maxflux=amax(flux_length_array)
-            print(maxprob, math.sqrt(maxflux))
+            print(maxpot, math.sqrt(maxflux))
             
             #actually making subplots
             for i, Ecouple in enumerate(Ecouple_array):
@@ -730,7 +733,7 @@ def plot_prob_flux_grid():
                     try:
                         data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase), usecols=(0,2,3,4,5,6,7,8))
                         prob_ss_array = data_array[:,0].reshape((N,N))
-                        #pot_array = data_array[:,1].reshape((N,N))
+                        pot_array = data_array[:,1].reshape((N,N))
                         drift_at_pos = data_array[:,2:4].T.reshape((2,N,N))
                         diffusion_at_pos = data_array[:,4:].T.reshape((4,N,N))
                         if i==2 and j==0:
@@ -758,8 +761,18 @@ def plot_prob_flux_grid():
                         
                     except OSError:
                         print('Missing file')
-            f.text(0.45, 0.04, '$X$', ha='center')
-            f.text(0.05, 0.5, '$Y$', va='center', rotation='vertical')
+            f.text(0.5, 0.04, '$X$', ha='center')
+            f.text(0.08, 0.5, '$Y$', va='center', rotation='vertical')
+            f.text(0.05, 0.75, '$E_{couple}=0.0$', ha='center')
+            f.text(0.05, 0.48, '$8.0$', ha='center')
+            f.text(0.05, 0.22, '$16.0$', ha='center')
+            f.text(0.17, 0.9, '$\phi=0.0$', ha='center')
+            f.text(0.26, 0.9, '$\pi/9$', ha='center')
+            f.text(0.36, 0.9, '$2\pi/9$', ha='center')
+            f.text(0.46, 0.9, '$\pi/3$', ha='center')
+            f.text(0.56, 0.9, '$4\pi/9$', ha='center')
+            f.text(0.66, 0.9, '$5\pi/9$', ha='center')
+            f.text(0.76, 0.9, '$2\pi/3$', ha='center')
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             plt.xticks(ticklst, ticklabels)
             plt.yticks(ticklst, ticklabels)
@@ -891,12 +904,62 @@ def plot_rel_flux():
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))     
             plt.close()
             
+def plot_energy_prob_marg():
+    
+    output_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/" + "Energy_X_marg_grid_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    input_file_name = ("reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+    
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            force_X = positions*psi_1
+            force_Y = positions*psi_2
+            
+            f,axarr=plt.subplots(3,7,sharex='all',sharey='all', figsize=(12,6))
+            
+            for i, Ecouple in enumerate(Ecouple_array):
+                for j, phase in enumerate(phase_array):
+                    try:
+                        print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase))
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase), usecols=(0,2))
+                        prob_ss_array = data_array[:,0].reshape((N,N))
+                        pot_array = data_array[:,1].reshape((N,N))
+        
+                        prob_ss_X = trapz(prob_ss_array, dx=dx, axis=1)#axis=0 gives marg pdf of y, axis=1 gives marg pdf of x
+                        prob_ss_Y = trapz(prob_ss_array, dx=dx, axis=0)#axis=0 gives marg pdf of y, axis=1 gives marg pdf of x
+                        axarr[i,j].plot(positions, prob_ss_X)
+        
+                        pot_X = trapz(pot_array, dx=dx, axis=1)
+                        pot_Y = trapz(pot_array, dx=dx, axis=0)
+                        axarr[i,j].plot(positions, (pot_X-force_X-20)/100000)
+                        axarr[i,j].grid()
+                        plt.xticks(ticklst, ticklabels)
+                        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        
+                    except OSError:
+                        print('Missing file')
+      
+            
+            f.text(0.05, 0.75, '$E_{couple}=0.0$', ha='center')
+            f.text(0.05, 0.48, '$8.0$', ha='center')
+            f.text(0.05, 0.22, '$16.0$', ha='center')
+            f.text(0.18, 0.95, '$\phi=0.0$', ha='center')
+            f.text(0.29, 0.95, '$\pi/9$', ha='center')
+            f.text(0.40, 0.95, '$2\pi/9$', ha='center')
+            f.text(0.51, 0.95, '$\pi/3$', ha='center')
+            f.text(0.62, 0.95, '$4\pi/9$', ha='center')
+            f.text(0.73, 0.95, '$5\pi/9$', ha='center')
+            f.text(0.85, 0.95, '$2\pi/3$', ha='center')
+            
+            #plt.tight_layout()
+            plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2)) 
+            plt.close()
+            
 if __name__ == "__main__":
     #target_dir="/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset/"
     #target_dir="/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190530_phaseoffset_twopi/" #raw data 
-    #target_dir="/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset/"
+    target_dir="/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset/"
     #target_dir="/Users/Emma/Documents/Data/ATPsynthase/Zero-barriers-FP/2019-05-14/" #raw data
-    target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/" #processed data
+    #target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/" #processed data
     #target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/Zero-energy_barriers/" 
     os.chdir(target_dir)
     #flux_power_efficiency()
@@ -912,4 +975,5 @@ if __name__ == "__main__":
     #plot_energy_flux_grid()
     #plot_prob_flux_grid()
     #plot_condprob_grid()
-    plot_rel_flux()
+    #plot_rel_flux()
+    plot_energy_prob_marg()
