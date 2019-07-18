@@ -9,25 +9,25 @@ from scipy.integrate import trapz
 N=360
 dx=2*math.pi/N
 positions=linspace(0,2*math.pi-dx,N)
-E0=0.0
-E1=0.0
+E0=2.0
+E1=2.0
 num_minima1=3.0
 num_minima2=3.0
 
 #psi1_array = array([0.0, 1.0, 2.0, 4.0, 8.0])
 #psi2_array = array([-8.0, -4.0, -2.0, -1.0, 0.0])
-#psi1_array = array([4.0])
-#psi2_array = array([-2.0])
-psi1_array = array([1.0, 2.0, 4.0])
-psi2_array = array([-1.0, -2.0, -4.0])
+psi1_array = array([4.0])
+psi2_array = array([-2.0])
+#psi1_array = array([1.0, 2.0, 4.0])
+#psi2_array = array([-1.0, -2.0, -4.0])
 
-#Ecouple_array = array([0.0, 8.0, 16.0]) #for grid plots
-Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
-Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
+Ecouple_array = array([0.0, 8.0, 16.0]) #for grid plots
+#Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
+#Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 #phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
-phase_array = array([0.0])
-barrier_array = array([0.0, 2.0])
-#phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944]) #selection of twopisweep
+#phase_array = array([0.0])
+#barrier_array = array([0.0, 2.0])
+phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944]) #selection of twopisweep
 #phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533]) #twopisweep, only get data of first 1/3 
 #phase_array = round(array([0.0, 0.628319, 1.25664, 1.88496, 2.51327, 3.14159])/3 ,2) #phaseoffset data, divide by 3 to get true angle
 #phase_array = array([0.0, 0.628319, 1.25664, 1.88496, 2.51327, 3.14159])
@@ -1067,8 +1067,8 @@ def plot_rel_flux():
             
 def plot_energy_prob_marg():
     
-    output_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/" + "FreeEnergy_X_marg_grid_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
-    input_file_name = ("reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+    output_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/" + "PMF_Pss_Y_norm_marg_grid_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset/" + "reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
     
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
@@ -1081,27 +1081,32 @@ def plot_energy_prob_marg():
                 for j, phase in enumerate(phase_array):
                     try:
                         print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase))
-                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase), usecols=(0,2))
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase), usecols=(0,1,2))
                         prob_ss_array = data_array[:,0].reshape((N,N))
-                        pot_array = data_array[:,1].reshape((N,N))
+                        prob_eq_array = data_array[:,1].reshape((N,N))
+                        pot_array = data_array[:,2].reshape((N,N))
         
-                        prob_ss_X = trapz(prob_ss_array, dx=dx, axis=1)#axis=0 gives marg pdf of y, axis=1 gives marg pdf of x
-                        prob_ss_Y = trapz(prob_ss_array, dx=dx, axis=0)#axis=0 gives marg pdf of y, axis=1 gives marg pdf of x
-                        axarr[i,j].plot(positions, prob_ss_X)
+                        prob_ss_X = trapz(prob_ss_array, dx=dx, axis=1)/ trapz(trapz(prob_ss_array, dx=dx, axis=1), dx=dx, axis=0)#axis=0 gives marg pdf of y, axis=1 gives marg pdf of x
+                        prob_ss_Y = trapz(prob_ss_array, dx=dx, axis=0)/ trapz(trapz(prob_ss_array, dx=dx, axis=1), dx=dx, axis=0)#axis=0 gives marg pdf of y, axis=1 gives marg pdf of x
+                        axarr[i,j].plot(positions, prob_ss_Y)
         
-                        #pot_X_w = trapz((pot_array-force_X[:,None]-force_Y[None,:])*prob_ss_array, dx=dx, axis=1)/prob_ss_X
-                        #pot_Y_w = trapz((pot_array-force_X[:,None]-force_Y[None,:])*prob_ss_array, dx=dx, axis=0)/prob_ss_Y
+                        pot_X_w = trapz((pot_array-force_X[:,None]-force_Y[None,:])*prob_ss_array, dx=dx, axis=1)/prob_ss_X
+                        pot_Y_w = trapz((pot_array-force_X[:,None]-force_Y[None,:])*prob_ss_array, dx=dx, axis=0)/prob_ss_Y
                         FreeE_X = trapz(exp(-(pot_array-force_X[:,None]-force_Y[None,:])), dx=dx, axis=1)
                         FreeE_Y = trapz(exp(-(pot_array-force_X[:,None]-force_Y[None,:])), dx=dx, axis=0)
+                        PMF_X = trapz(exp(-(pot_array-force_X[:,None]-force_Y[None,:]))*prob_ss_array, dx=dx, axis=1)/trapz(prob_ss_array, dx=dx, axis=1)
+                        PMF_Y = trapz(exp(-(pot_array-force_X[:,None]-force_Y[None,:]))*prob_ss_array, dx=dx, axis=0)/trapz(prob_ss_array, dx=dx, axis=0)
+                        prob_eq_X = trapz(exp(-(pot_array)), dx=dx, axis=1)/ trapz(trapz(exp(-(pot_array)), dx=dx, axis=1), dx=dx, axis=0)#axis=0 gives marg pdf of y, axis=1 gives marg pdf of x
+                        prob_eq_Y = trapz(exp(-(pot_array)), dx=dx, axis=0)/ trapz(trapz(exp(-(pot_array)), dx=dx, axis=1), dx=dx, axis=0)#axis=0 gives marg pdf of y, axis=1 gives marg pdf of x
                         
-                        axarr[i,j].plot(positions, log(FreeE_X)/100000)
+                        axarr[i,j].plot(positions, PMF_Y)
                         axarr[i,j].grid()
                         plt.xticks(ticklst, ticklabels)
-                        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                        #plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                        plt.yscale('log')
         
                     except OSError:
                         print('Missing file')
-      
             
             f.text(0.05, 0.75, '$E_{couple}=0.0$', ha='center')
             f.text(0.05, 0.48, '$8.0$', ha='center')
@@ -1135,10 +1140,10 @@ if __name__ == "__main__":
     #plot_power_single()
     #plot_power_grid()
     #plot_efficiency_single()
-    plot_efficiency_grid()
+    #plot_efficiency_grid()
     #plot_energy_flux()
     #plot_energy_flux_grid()
     #plot_prob_flux_grid()
     #plot_condprob_grid()
     #plot_rel_flux()
-    #plot_energy_prob_marg()
+    plot_energy_prob_marg()
