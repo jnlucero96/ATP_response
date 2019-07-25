@@ -66,7 +66,7 @@ def launchpad_reference(
     # start with uniform distribution as initial guess
     for i in range(N):
         for j in range(N):
-            p_now[i, j] = 1.0/(N*N)
+            p_now[i, j] = prob[i, j]
 
     steady_state_initialize(
         p_now, p_last, p_last_ref,
