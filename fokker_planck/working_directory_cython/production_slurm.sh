@@ -3,7 +3,7 @@
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mem=1G
 #SBATCH --no-requeue
-#SBATCH --account=rrg-dsivak
+#SBATCH --account=def-dsivak
 
 cd $SLURM_SUBMIT_DIR
 echo "Current working directory is `pwd`"
