@@ -44,7 +44,7 @@ def save_data_reference(
     target_dir = '../../../master_output_dir/'
     data_filename = (
         f"/reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
-        + f"psi1_{psi1}_psi2_{psi2}_" 
+        + f"psi1_{psi1}_psi2_{psi2}_"
         + f"n1_{n1}_n2_{n2}_phase_{phase}_"
         + "outfile.dat"
         )
@@ -70,7 +70,7 @@ def main():
 
     # unload parameters
     [
-        dt, N, gamma1, gamma2, beta, m1, m2, n1, n2, 
+        dt, N, gamma1, gamma2, beta, m1, m2, n1, n2,
         phase, E0, E1, Ecouple, psi1, psi2
         ] = get_params()
 
@@ -110,11 +110,11 @@ def main():
     launchpad_reference(
         n1, n2,
         phase,
-        positions, 
-        prob, p_now, 
+        positions,
+        prob, p_now,
         p_last, p_last_ref,
-        potential_at_pos, 
-        drift_at_pos, 
+        potential_at_pos,
+        drift_at_pos,
         diffusion_at_pos,
         N, dx, check_step,
         E0, Ecouple, E1, psi1, psi2,

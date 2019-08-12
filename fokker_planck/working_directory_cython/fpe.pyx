@@ -1,5 +1,6 @@
 # cython: language_level=3, cdivision=True, boundscheck=False, wraparound=False
 from libc.math cimport exp, fabs, sin, cos
+from cython.parallel import prange
 
 # float64 machine eps
 cdef double float64_eps = 2.22044604925031308084726e-16
@@ -335,7 +336,7 @@ cdef void update_probability_full(
         )
 
     # iterate through all the coordinates (not corners) for both variables
-    for i in range(1, N-1):
+    for i in prange(1, N-1):
         # Periodic boundary conditions:
         # Explicitly update FPE for edges of grid (not corners)
         p_now[0, i] = p_last[0, i] + dt*(
