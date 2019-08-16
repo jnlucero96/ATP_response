@@ -17,7 +17,7 @@ from os import getcwd
 from datetime import datetime
 
 from utilities import (
-    calc_flux, calc_learning_rate, calc_derivative_pxgy, step_probability_X
+    calc_flux, calc_derivative_pxgy, step_probability_X #, calc_learning_rate
     )
 
 use('seaborn-paper')
@@ -37,13 +37,14 @@ Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
 # psi_2_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
 psi_1_array = array([0.0, 2.0, 4.0, 8.0])
 psi_2_array = array([-8.0, -4.0, -2.0, 0.0])[::-1]
+phase_array = array([0.0, 0.628319, 1.25664, 1.88496, 2.51327, 3.14159])
 
 def set_params():
 
-    N = 720
-    E0 = 0.0
+    N = 360
+    E0 = 2.0
     Ecouple = 8.0
-    E1 = 0.0
+    E1 = 2.0
     psi_1 = 4.0
     psi_2 = -1.0
 
@@ -92,16 +93,16 @@ def force2(E1, Ecouple, psi_2, num_minima, position1, position2):  # force on sy
 # ==============
 # ============================================================================
 
-def calculate_flux_power_and_efficiency(target_dir=None):
+def calculate_flux_power_and_efficiency(target_dir):
 
     input_file_name = (
         "/reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_n1_{5}_n2_{6}_phase_{7}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}"
         + "_outfile.dat"
         )
     output_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_n1_{4}_n2_{5}_phase_{6}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -261,14 +262,14 @@ def plot_probability_against_reference(target_dir):
 
     reference_file_name = (
         "/reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}".format(
             E0, 0.0, E1, 4.0, -1.0, num_minima, phase_shift
         ) + "_outfile.dat"
         )
 
     input_file_name = (
         "/reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}".format(
             E0, 0.0, E1, 4.0, -2.0, num_minima, phase_shift
         ) + "_outfile.dat"
         )
@@ -310,7 +311,7 @@ def plot_probability_against_reference(target_dir):
     fig.tight_layout()
     fig.savefig(
         target_dir + "/probability_comparison_" +
-        "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}".format(
+        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}".format(
             E0, Ecouple, E1, psi_1, psi_2
             ) + "_sfigure.pdf"
         )
@@ -326,7 +327,7 @@ def plot_probability(target_dir):
 
     input_file_name = (
         "/reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}".format(
             E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
         ) + "_outfile.dat")
 
@@ -393,7 +394,7 @@ def plot_power(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -443,7 +444,7 @@ def plot_power(target_dir):
     fig.tight_layout()
     fig.savefig(
         target_dir + "/power_" +
-        "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}".format(
             E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
             ) + "_sfigure.pdf"
         )
@@ -452,7 +453,7 @@ def plot_efficiency(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -503,7 +504,7 @@ def plot_efficiency_against_ratio(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -572,7 +573,7 @@ def plot_flux(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -659,7 +660,7 @@ def plot_flux(target_dir):
 
     fig.savefig(
         target_dir
-        + f"flux_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_psi_1_{psi_1}_psi_2_{psi_2}_minima_{num_minima}_phase_{phase_shift}"
+        + f"flux_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_psi1_{psi_1}_psi2_{psi_2}_minima_{num_minima}_phase_{phase_shift}"
         + "_figure.pdf"
         )
 
@@ -673,7 +674,7 @@ def plot_lr(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -848,7 +849,7 @@ def plot_probability_eq_scan(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -941,7 +942,7 @@ def plot_probability_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -968,7 +969,7 @@ def plot_probability_scan(target_dir):
 
             input_file_name = (
                 "reference_"
-                + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}".format(
+                + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}".format(
                     E0, Ecouple, E1, psi_1, psi_2, num_minima, phase_shift
                 ) + "_outfile.dat")
 
@@ -1083,7 +1084,7 @@ def plot_flux_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_n1_{4}_n2_{5}_phase_{6}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -1118,7 +1119,7 @@ def plot_flux_scan(target_dir):
 
             input_file_name = (
                 "reference_"
-                + f"E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_psi_1_{psi_1}_psi_2_{psi_2}_"
+                + f"E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_psi1_{psi_1}_psi2_{psi_2}_"
                 + f"n1_{num_minima1}_n2_{num_minima2}_phase_{phase_shift}" 
                 + "_outfile.dat"
                 ) 
@@ -1285,7 +1286,7 @@ def plot_integrated_flux_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_n1_{4}_n2_{5}_phase_{6}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -1371,7 +1372,7 @@ def plot_power_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_n1_{4}_n2_{5}_phase_{6}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -1464,7 +1465,7 @@ def plot_efficiency_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -1554,7 +1555,7 @@ def plot_efficiency_scan_compare(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -1665,13 +1666,13 @@ def plot_relative_entropy_lr_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
     input_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -1765,7 +1766,7 @@ def plot_efficiencies_lr_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -1864,7 +1865,7 @@ def plot_nostalgia_scan(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -1981,7 +1982,7 @@ def plot_lr_scan(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
 
@@ -2104,12 +2105,12 @@ def plot_lr_efficiency_correlation(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -2217,12 +2218,12 @@ def plot_lr_efficiency_scatter(target_dir):
 
     reference_file_name = (
         "reference_"
-        + "E0_{0}_Ecouple_{1}_E1_{2}_psi_1_{3}_psi_2_{4}_minima_{5}_phase_{6}"
+        + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_minima_{5}_phase_{6}"
         + "_outfile.dat"
         )
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -2319,7 +2320,7 @@ def plot_flux_lr_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -2474,7 +2475,7 @@ def plot_power_lr_scan(target_dir):
 
     input_file_name = (
         "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi_1_{2}_psi_2_{3}_minima_{4}_phase_{5}"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_minima_{4}_phase_{5}"
         + "_outfile.dat"
         )
 
@@ -2632,7 +2633,7 @@ def plot_emma_compare(target_dir):
     emma_file_template2 = "Emma_Flux_Ecouple_Fx_{0}_Fy_{1}_prec_15.dat"
     my_file_template = (
         "flux_power_efficiency_" 
-        + "E0_0.0_E1_0.0_psi_1_{0}_psi_2_{1}_n1_{2}_n2_{3}_phase_{4}_outfile.dat"
+        + "E0_0.0_E1_0.0_psi1_{0}_psi2_{1}_n1_{2}_n2_{3}_phase_{4}_outfile.dat"
     )
 
     psi_1_vals = [-2.0, -4.0]
@@ -2708,12 +2709,13 @@ def plot_emma_compare(target_dir):
 
 
 if __name__ == "__main__":
-    target_dir = "/Users/jlucero/data_dir/2019-05-02/"
+    print(getcwd())
+    target_dir = "/⁨Users⁩/⁨Emma⁩/⁨sfuvault⁩/⁨SivakGroup⁩/Emma⁩/ATPsynthase⁩/⁨FokkerPlanck_2D_full⁩/⁨prediction⁩/⁨fokker_planck⁩/working_directory_cython/working_directory_cython/working_directory_cython/master_output_dir"
     # target_dir = "/Users/jlucero/data_dir/2019-04-09/"
     # target_dir = "./"
-    # calculate_flux_power_and_efficiency(target_dir)
-    # plot_energy(target_dir)
-    # plot_probability(target_dir)
+    calculate_flux_power_and_efficiency(target_dir)
+    #plot_energy(target_dir)
+    #plot_probability(target_dir)
     # plot_probability_against_reference(target_dir)
     # plot_power(target_dir)
     # plot_efficiency(target_dir)
@@ -2736,4 +2738,4 @@ if __name__ == "__main__":
     # plot_lr_efficiency_scatter(target_dir)
     # plot_flux_lr_scan(target_dir)
     # plot_power_lr_scan(target_dir)
-    plot_emma_compare(target_dir)
+    #plot_emma_compare(target_dir)
