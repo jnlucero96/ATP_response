@@ -60,7 +60,7 @@ cdef double drift(
     double m, double beta, double gamma
     ) nogil: 
     # drift of 2D equation in limit of Ecouple \to \infty
-    return -((1.0/(m*gamma))*(n*E*sin(n*position))-(psi1+psi2))
+    return -((1.0/(m*gamma))*(0.5*(n*E*sin(n*position))-(psi1+psi2)))
 
 # position dependent diffusion on system 
 cdef double diffusion(
@@ -70,7 +70,7 @@ cdef double diffusion(
 
 # potential of system
 cdef double potential(double position, double E, double n) nogil: 
-    return E*(1-cos((n*position)))
+    return 0.5*E*(1-cos((n*position)))
 
 # =============================================================================
 # =============================================================================
