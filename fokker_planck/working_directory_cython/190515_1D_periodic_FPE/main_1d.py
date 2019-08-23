@@ -16,12 +16,12 @@ def get_params():
     beta = 1.0  # 1/kT
     m = 1.0  # mass
 
-    E = 2.0 # energy scale of system
+    E = 4.0 # energy scale of system
 
     psi1 = 2.0 # force on system by chemical bath B1
-    psi2 = -1.0 # force on system by chemical bath B2
+    psi2 = 0.0 # force on system by chemical bath B2
 
-    n = 12.0 # number of minima in system potential
+    n = 3.0 # number of minima in system potential
 
     return ( dt, N, gamma, beta, m, E, psi1, psi2, n )
 
