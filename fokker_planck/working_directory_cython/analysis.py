@@ -33,14 +33,14 @@ set_printoptions(linewidth=512)
 
 # declare global arrays
 #Ecouple_array = array([2.0, 8.0, 32.0, 128.0])
-Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])[::-1]
-# psi_1_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-# psi_2_array = array([-8.0, -4.0, -2.0, 0.0, 2.0, 4.0, 8.0])
-psi_1_array = array([4.0, 2.0])[::-1]
-psi_2_array = array([-2.0, -1.0])
-phase_array = array([0., 0.174533, 0.349066, 0.523599, 0.698132, 0.872665, 1.0472])
-phase_label_array = ['0', '', '', '$\pi/3$', '', '', '$2\pi/3$']
-Ecouple_label_array = ['', '2', '', '8', '', '32', '', '128'][::-1]
+Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
+psi_1_array = array([4.0, 2.0, 1.0, 0.0])[::-1]
+psi_2_array = array([-4.0, -2.0, -1.0, 0.0])
+phase_array = array([0., 0.174533, 0.349066, 0.523599, 0.698132, 0.872665, 1.0472])[::-1]
+phase_label_array = ['0', '', '', '$\pi/3$', '', '', '$2\pi/3$'][::-1]
+Ecouple_label_array = ['', '2', '', '8', '', '32', '', '128']
+min_array=array([1.0, 2.0, 3.0, 6.0, 12.0])
+min_label_array = ['1', '2', '3', '6', '12']
 
 
 def set_params():
@@ -2664,13 +2664,14 @@ def plot_flux_Ecouple_phi_scan_small(target_dir):
 
     input_file_name = (
         "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython" 
-        + "/190528_Phase_offset_results/master_output_dir/processed_data"
+        + "/190924_no_vary_n1_3/processed_data"
         + "/flux_power_efficiency_"
         + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}"
         + "_outfile.dat"
         )
         
-    fluxes = zeros((psi_2_array.size, psi_1_array.size, 2, phase_array.size, Ecouple_array.size))
+    flux1 = zeros((psi_2_array.size, psi_1_array.size, Ecouple_array.size, phase_array.size))
+    flux2 = zeros((psi_2_array.size, psi_1_array.size, Ecouple_array.size, phase_array.size))
     
     for ii, psi_2 in enumerate(psi_2_array):
         for jj, psi_1 in enumerate(psi_1_array):
@@ -2679,6 +2680,198 @@ def plot_flux_Ecouple_phi_scan_small(target_dir):
                 phase_array_out, integrate_flux_X, integrate_flux_Y = loadtxt(
                     input_file_name.format(
                         E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple
+                        ),
+                    unpack=True, usecols=(0,1,2)
+                )
+                
+                flux1[ii, jj, ee, :] = integrate_flux_X[:phase_array.size]*psi_1
+                flux2[ii, jj, ee, :] = integrate_flux_Y[:phase_array.size]*psi_2
+
+    limit1=flux1[~(isnan(flux1))].__abs__().max()
+    limit2=flux2[~(isnan(flux2))].__abs__().max()
+
+    # prepare figures
+    fig1, ax1 = subplots(psi_1_array.size, psi_2_array.size, figsize=(16,12), sharex='col', sharey='all')
+    fig2, ax2 = subplots(psi_1_array.size, psi_2_array.size, figsize=(16,12), sharex='col', sharey='all')
+
+    for ii, psi_2 in enumerate(psi_2_array):
+        for jj, psi_1 in enumerate(psi_1_array):
+            im1 = ax1[ii, jj].imshow(
+                flux1[ii, jj, :, :].T,
+                vmin=-limit1, vmax=limit1,
+                cmap=cm.get_cmap("coolwarm")
+                )
+            im2 = ax2[ii, jj].imshow(
+                flux2[ii, jj, :, :].T,
+                vmin=-limit2, vmax=limit2,
+                cmap=cm.get_cmap("coolwarm")
+                )
+                
+            ax1[ii, jj].set_yticks(list(range(phase_array.size)))
+            ax1[ii, jj].set_yticklabels(phase_label_array)
+            ax1[ii, jj].set_xticks(list(range(Ecouple_array.size)))
+            ax1[ii, jj].set_xticklabels(Ecouple_label_array)
+            ax1[ii, jj].tick_params(labelsize=22)
+            
+            if (ii == 0):
+                ax1[ii, jj].set_title(
+                    "{}".format(psi_1), fontsize=20
+                    )
+
+                ax2[ii, jj].set_title(
+                    "{}".format(psi_1), fontsize=20
+                    )
+
+            if (jj == psi_2_array.size - 1):
+                ax1[ii, jj].set_ylabel(
+                    "{}".format(psi_2), fontsize=20
+                    )
+                ax1[ii, jj].yaxis.set_label_position("right")
+
+                ax2[ii, jj].set_ylabel(
+                    "{}".format(psi_2), fontsize=20
+                    )
+                ax2[ii, jj].yaxis.set_label_position("right")
+            
+            ax2[ii, jj].set_yticks(list(range(phase_array.size)))
+            ax2[ii, jj].set_yticklabels(phase_label_array)
+            ax2[ii, jj].set_xticks(list(range(Ecouple_array.size)))
+            ax2[ii, jj].set_xticklabels(Ecouple_label_array)
+            ax2[ii, jj].tick_params(labelsize=22)
+
+
+    # cbar_ticks = array([-5.0, -2.5, 0.0, 2.5, 5.0])*1e-4
+    cbar_ticks1 = array([-2.0, -1.0, 0.0, 1.0, 2.0])*1e-3
+
+    cax1 = fig1.add_axes([0.88, 0.25, 0.02, 0.5])
+    cbar1 = fig1.colorbar(
+        im1, cax=cax1, orientation='vertical', ax=ax1
+    )
+    cbar1.set_label(
+         # r'$\mathcal{J}_{\mathrm{o}}^{\mathrm{int}}\ (\mathrm{units\ of\ }\mathrm{s}^{-1})$', fontsize=32
+        r'$\mathcal{P}_\mathrm{o}$', fontsize=32
+        )
+    cbar1.set_ticks(cbar_ticks1)
+    cbar1.formatter.set_powerlimits([0,0])
+    cbar1.update_ticks()
+    cbar1.ax.tick_params(labelsize=24)
+    cbar1.ax.yaxis.offsetText.set_fontsize(24)
+    cbar1.ax.yaxis.offsetText.set_x(5.0)
+
+    #y-axis label
+    fig1.text(
+        0.82, 0.51,
+        r'$\beta \psi_{1}$',
+        # r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        fontsize=30, rotation='vertical', va='center', ha='center'
+    )
+    fig1.text(
+        0.42, 0.03,
+        r'$\beta E_{\mathrm{couple}}$',
+        fontsize=30, va='center', ha='center'
+    )
+    #x-axis label
+    fig1.text(
+        0.42, 0.93,
+        #r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        r'$\beta \psi_\mathrm{o}$',
+        fontsize=30, va='center', ha='center'
+    )
+    fig1.text(
+            0.03, 0.48,
+            r'$\phi$',
+            fontsize=30, rotation='vertical',va='center', ha='center'
+        )
+
+    left = 0.1  # the left side of the subplots of the figure
+    right = 0.75    # the right side of the subplots of the figure
+    bottom = 0.1   # the bottom of the subplots of the figure
+    top = 0.88     # the top of the subplots of the figure
+    fig1.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
+
+    cbar_ticks2 = array([-4.0, -2.0, 0.0, 2.0, 4.0])*1e-4
+    
+    cax2 = fig2.add_axes([0.88, 0.25, 0.02, 0.5])
+    cbar2 = fig2.colorbar(
+        im2, cax=cax2, orientation='vertical', ax=ax2
+    )
+    cbar2.set_label(
+        #r'$\mathcal{J}_{1}^{\mathrm{int}}\ (\mathrm{units\ of\ }\mathrm{s}^{-1})$', fontsize=32
+        r'$\mathcal{P}_{1}$', fontsize=32
+        )
+    cbar2.set_ticks(cbar_ticks2)
+    cbar2.formatter.set_powerlimits([0,0])
+    cbar2.update_ticks()
+    cbar2.ax.tick_params(labelsize=24)
+    cbar2.ax.yaxis.offsetText.set_fontsize(24)
+    cbar2.ax.yaxis.offsetText.set_x(5.0)
+
+    # y-axis label
+    fig2.text(
+        0.82, 0.51,
+        # r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        r'$\beta \psi_{1}$',
+        fontsize=30, rotation='vertical', va='center', ha='center'
+    )
+    fig2.text(
+        0.42, 0.03,
+        r'$\beta E_{\mathrm{couple}}$',
+        fontsize=30, va='center', ha='center'
+    )
+    # # x-axis label
+    fig2.text(
+        0.42, 0.93,
+        # r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        r'$\beta \psi_\mathrm{o}$',
+        fontsize=30, va='center', ha='center'
+    )
+    fig2.text(
+        0.03, 0.48,
+        r'$\phi$',
+        fontsize=30, rotation='vertical', va='center', ha='center'
+    )
+
+    fig2.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
+
+    fig1.savefig(
+        "power1_Ecouple_phase_small_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}".format(
+                E0, E1, num_minima1, num_minima2, phase_shift
+            )
+        + "_figure.pdf",
+        bbox_inches='tight'
+        )
+    fig2.savefig(
+        "power2_Ecouple_phase_small_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}".format(
+                E0, E1, num_minima1, num_minima2, phase_shift
+            )
+        + "_figure.pdf",
+        bbox_inches='tight'
+        )
+
+def plot_flux_Ecouple_no_scan(target_dir):
+
+    [
+        __, E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift,
+        m1, m2, beta, gamma
+        ] = set_params()
+
+    input_file_name = (
+        "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython" 
+        + "/190924_no_vary_n1_3/processed_data"
+        + "/flux_power_efficiency_"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}"
+        + "_outfile.dat"
+        )
+        
+    fluxes = zeros((psi_2_array.size, psi_1_array.size, 2, min_array.size, Ecouple_array.size))
+    
+    for ii, psi_2 in enumerate(psi_2_array):
+        for jj, psi_1 in enumerate(psi_1_array):
+            for ee, Ecouple in enumerate(Ecouple_array):
+                    
+                min_array_out, integrate_flux_X, integrate_flux_Y = loadtxt(
+                    input_file_name.format(
+                        E0, E1, psi_1, psi_2, num_minima2, Ecouple
                         ),
                     unpack=True, usecols=(0,1,2)
                 )
@@ -2705,8 +2898,8 @@ def plot_flux_Ecouple_phi_scan_small(target_dir):
                 cmap=cm.get_cmap("coolwarm")
                 )
                 
-            ax1[ii, jj].set_xticks(list(range(phase_array.size)))
-            ax1[ii, jj].set_xticklabels(phase_label_array)
+            ax1[ii, jj].set_xticks(list(range(min_array.size)))
+            ax1[ii, jj].set_xticklabels(min_label_array)
             ax1[ii, jj].set_yticks(list(range(Ecouple_array.size)))
             ax1[ii, jj].set_yticklabels(Ecouple_label_array)
             ax1[ii, jj].tick_params(labelsize=22)
@@ -2731,8 +2924,8 @@ def plot_flux_Ecouple_phi_scan_small(target_dir):
                     )
                 ax2[ii, jj].yaxis.set_label_position("right")
             
-            ax2[ii, jj].set_xticks(list(range(phase_array.size)))
-            ax2[ii, jj].set_xticklabels(phase_label_array)
+            ax2[ii, jj].set_xticks(list(range(min_array.size)))
+            ax2[ii, jj].set_xticklabels(min_label_array)
             ax2[ii, jj].set_yticks(list(range(Ecouple_array.size)))
             ax2[ii, jj].set_yticklabels(Ecouple_label_array)
             ax2[ii, jj].tick_params(labelsize=22)
@@ -2773,7 +2966,7 @@ def plot_flux_Ecouple_phi_scan_small(target_dir):
         )
     fig1.text(
             0.42, 0.03,
-            r'$\phi$',
+            r'$n_o$',
             fontsize=30, va='center', ha='center'
         )
 
@@ -2816,386 +3009,21 @@ def plot_flux_Ecouple_phi_scan_small(target_dir):
     )
     fig2.text(
         0.42, 0.03,
-        r'$\phi$',
+        r'$n_o$',
         fontsize=30, va='center', ha='center'
     )
 
     fig2.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
 
     fig1.savefig(
-        "flux1_Ecouple_phase_scan_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}".format(
+        "flux1_Ecouple_no_scan_E0_{0}_E1_{1}_n2_{2}_phase_{3}".format(
                 E0, E1, num_minima1, num_minima2, phase_shift
             )
         + "_figure.pdf",
         bbox_inches='tight'
         )
     fig2.savefig(
-        "flux2_Ecouple_phase_scan_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}".format(
-                E0, E1, num_minima1, num_minima2, phase_shift
-            )
-        + "_figure.pdf",
-        bbox_inches='tight'
-        )
-
-
-def plot_flux_Ecouple_phi_scan(target_dir):
-
-    [
-        __, E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift,
-        m1, m2, beta, gamma
-        ] = set_params()
-
-    input_file_name = (
-        "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython" 
-        + "/190528_Phase_offset_results/master_output_dir/processed_data"
-        + "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}"
-        + "_outfile.dat"
-        )
-        
-    fluxes = zeros((psi_2_array.size, psi_1_array.size, 2, phase_array.size, Ecouple_array.size))
-    
-    for ii, psi_2 in enumerate(psi_2_array):
-        for jj, psi_1 in enumerate(psi_1_array):
-            for ee, Ecouple in enumerate(Ecouple_array):
-                    
-                phase_array_out, integrate_flux_X, integrate_flux_Y = loadtxt(
-                    input_file_name.format(
-                        E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple
-                        ),
-                    unpack=True, usecols=(0,1,2)
-                )
-                
-                fluxes[ii, jj, 0, :, ee] = integrate_flux_X
-                fluxes[ii, jj, 1, :, ee] = integrate_flux_Y
-
-    limit=fluxes[~(isnan(fluxes))].__abs__().max()
-
-    # prepare figures
-    fig1, ax1 = subplots(psi_1_array.size, psi_2_array.size, figsize=(12,13), sharex='col', sharey='all')
-    fig2, ax2 = subplots(psi_1_array.size, psi_2_array.size, figsize=(12,13), sharex='col', sharey='all')
-
-    for ii, psi_2 in enumerate(psi_2_array):
-        for jj, psi_1 in enumerate(psi_1_array):
-            im1 = ax1[ii, jj].imshow(
-                fluxes[ii, jj, 0, :, :].T,
-                vmin=-limit, vmax=limit,
-                cmap=cm.get_cmap("coolwarm")
-                )
-            im2 = ax2[ii, jj].imshow(
-                fluxes[ii, jj, 1, :, :].T,
-                vmin=-limit, vmax=limit,
-                cmap=cm.get_cmap("coolwarm")
-                )
-                
-            ax1[ii, jj].set_xticks(list(range(phase_array.size)))
-            ax1[ii, jj].set_xticklabels(phase_label_array)
-            ax1[ii, jj].set_yticks(list(range(Ecouple_array.size)))
-            ax1[ii, jj].set_yticklabels(Ecouple_label_array)
-            ax1[ii, jj].tick_params(labelsize=22)
-            
-            if (ii == 0):
-                ax1[ii, jj].set_title(
-                    "{}".format(psi_1), fontsize=20
-                    )
-
-                ax2[ii, jj].set_title(
-                    "{}".format(psi_1), fontsize=20
-                    )
-
-            if (jj == psi_2_array.size - 1):
-                ax1[ii, jj].set_ylabel(
-                    "{}".format(psi_2), fontsize=20
-                    )
-                ax1[ii, jj].yaxis.set_label_position("right")
-
-                ax2[ii, jj].set_ylabel(
-                    "{}".format(psi_2), fontsize=20
-                    )
-                ax2[ii, jj].yaxis.set_label_position("right")
-            
-            ax2[ii, jj].set_xticks(list(range(phase_array.size)))
-            ax2[ii, jj].set_xticklabels(phase_label_array)
-            ax2[ii, jj].set_yticks(list(range(Ecouple_array.size)))
-            ax2[ii, jj].set_yticklabels(Ecouple_label_array)
-            ax2[ii, jj].tick_params(labelsize=22)
-
-
-    cbar_ticks = array([-5.0, -2.5, 0.0, 2.5, 5.0])*1e-4
-
-    cax1 = fig1.add_axes([0.88, 0.25, 0.02, 0.5])
-    cbar1 = fig1.colorbar(
-        im1, cax=cax1, orientation='vertical', ax=ax1
-    )
-    cbar1.set_label(
-        r'$\mathcal{J}_{\mathrm{o}}^{\mathrm{int}}\ (\mathrm{units\ of\ }\mathrm{s}^{-1})$', fontsize=32
-        )
-    cbar1.set_ticks(cbar_ticks)
-    cbar1.formatter.set_powerlimits([0,0])
-    cbar1.update_ticks()
-    cbar1.ax.tick_params(labelsize=24)
-    cbar1.ax.yaxis.offsetText.set_fontsize(24)
-    cbar1.ax.yaxis.offsetText.set_x(5.0)
-
-    #y-axis label
-    fig1.text(
-        0.82, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
-        fontsize=30, rotation='vertical', va='center', ha='center'
-    )
-    fig1.text(
-        0.03, 0.48,
-        r'$E_{\mathrm{couple}}$',
-        fontsize=30, rotation='vertical', va='center', ha='center'
-    )
-    #x-axis label
-    fig1.text(
-            0.42, 0.93,
-            r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
-            fontsize=30, va='center', ha='center'
-        )
-    fig1.text(
-            0.42, 0.03,
-            r'$\phi$',
-            fontsize=30, va='center', ha='center'
-        )
-
-    left = 0.1  # the left side of the subplots of the figure
-    right = 0.75    # the right side of the subplots of the figure
-    bottom = 0.1   # the bottom of the subplots of the figure
-    top = 0.88     # the top of the subplots of the figure
-    fig1.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
-
-    cax2 = fig2.add_axes([0.88, 0.25, 0.02, 0.5])
-    cbar2 = fig2.colorbar(
-        im2, cax=cax2, orientation='vertical', ax=ax2
-    )
-    cbar2.set_label(
-        r'$\mathcal{J}_{1}^{\mathrm{int}}\ (\mathrm{units\ of\ }\mathrm{s}^{-1})$', fontsize=32
-        )
-    cbar2.set_ticks(cbar_ticks)
-    cbar2.formatter.set_powerlimits([0,0])
-    cbar2.update_ticks()
-    cbar2.ax.tick_params(labelsize=24)
-    cbar2.ax.yaxis.offsetText.set_fontsize(24)
-    cbar2.ax.yaxis.offsetText.set_x(5.0)
-
-    # y-axis label
-    fig2.text(
-        0.82, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
-        fontsize=30, rotation='vertical', va='center', ha='center'
-    )
-    fig2.text(
-        0.03, 0.48,
-        r'$E_{\mathrm{couple}}$',
-        fontsize=30, rotation='vertical', va='center', ha='center'
-    )
-    # # x-axis label
-    fig2.text(
-        0.42, 0.93,
-        r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
-        fontsize=30, va='center', ha='center'
-    )
-    fig2.text(
-        0.42, 0.03,
-        r'$\phi$',
-        fontsize=30, va='center', ha='center'
-    )
-
-    fig2.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
-
-    fig1.savefig(
-        "flux1_Ecouple_phase_scan_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}".format(
-                E0, E1, num_minima1, num_minima2, phase_shift
-            )
-        + "_figure.pdf",
-        bbox_inches='tight'
-        )
-    fig2.savefig(
-        "flux2_Ecouple_phase_scan_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}".format(
-                E0, E1, num_minima1, num_minima2, phase_shift
-            )
-        + "_figure.pdf",
-        bbox_inches='tight'
-        )
-
-def plot_flux_Ecouple_phi_scan_small(target_dir):
-
-    [
-        __, E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift,
-        m1, m2, beta, gamma
-        ] = set_params()
-
-    input_file_name = (
-        "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython" 
-        + "/190624_Twopisweep_complete_set/processed_data"
-        + "/flux_power_efficiency_"
-        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}"
-        + "_outfile.dat"
-        )
-        
-    fluxes = zeros((psi_2_array.size, psi_1_array.size, 2, phase_array.size, Ecouple_array.size))
-    
-    for ii, psi_2 in enumerate(psi_2_array):
-        for jj, psi_1 in enumerate(psi_1_array):
-            for ee, Ecouple in enumerate(Ecouple_array):
-                    
-                phase_array_out, integrate_flux_X, integrate_flux_Y = loadtxt(
-                    input_file_name.format(
-                        E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple
-                        ),
-                    unpack=True, usecols=(0,1,2)
-                )
-                
-                fluxes[ii, jj, 0, :, ee] = integrate_flux_X[:phase_array.size]
-                fluxes[ii, jj, 1, :, ee] = integrate_flux_Y[:phase_array.size]
-
-    limit=fluxes[~(isnan(fluxes))].__abs__().max()
-
-    # prepare figures
-    fig1, ax1 = subplots(psi_1_array.size, psi_2_array.size, figsize=(12,12), sharex='col', sharey='all')
-    fig2, ax2 = subplots(psi_1_array.size, psi_2_array.size, figsize=(12,12), sharex='col', sharey='all')
-
-    for ii, psi_2 in enumerate(psi_2_array):
-        for jj, psi_1 in enumerate(psi_1_array):
-            im1 = ax1[ii, jj].imshow(
-                fluxes[ii, jj, 0, :, :].T,
-                vmin=-limit, vmax=limit,
-                cmap=cm.get_cmap("coolwarm")
-                )
-            im2 = ax2[ii, jj].imshow(
-                fluxes[ii, jj, 1, :, :].T,
-                vmin=-limit, vmax=limit,
-                cmap=cm.get_cmap("coolwarm")
-                )
-                
-            ax1[ii, jj].set_xticks(list(range(phase_array.size)))
-            ax1[ii, jj].set_xticklabels(phase_label_array)
-            ax1[ii, jj].set_yticks(list(range(Ecouple_array.size)))
-            ax1[ii, jj].set_yticklabels(Ecouple_label_array)
-            ax1[ii, jj].tick_params(labelsize=22)
-            
-            if (ii == 0):
-                ax1[ii, jj].set_title(
-                    "{}".format(psi_1), fontsize=20
-                    )
-
-                ax2[ii, jj].set_title(
-                    "{}".format(psi_1), fontsize=20
-                    )
-
-            if (jj == psi_2_array.size - 1):
-                ax1[ii, jj].set_ylabel(
-                    "{}".format(psi_2), fontsize=20
-                    )
-                ax1[ii, jj].yaxis.set_label_position("right")
-
-                ax2[ii, jj].set_ylabel(
-                    "{}".format(psi_2), fontsize=20
-                    )
-                ax2[ii, jj].yaxis.set_label_position("right")
-            
-            ax2[ii, jj].set_xticks(list(range(phase_array.size)))
-            ax2[ii, jj].set_xticklabels(phase_label_array)
-            ax2[ii, jj].set_yticks(list(range(Ecouple_array.size)))
-            ax2[ii, jj].set_yticklabels(Ecouple_label_array)
-            ax2[ii, jj].tick_params(labelsize=22)
-
-
-    cbar_ticks = array([-5.0, -2.5, 0.0, 2.5, 5.0])*1e-4
-
-    cax1 = fig1.add_axes([0.88, 0.25, 0.02, 0.5])
-    cbar1 = fig1.colorbar(
-        im1, cax=cax1, orientation='vertical', ax=ax1
-    )
-    cbar1.set_label(
-        r'$\mathcal{J}_{\mathrm{o}}^{\mathrm{int}}\ (\mathrm{units\ of\ }\mathrm{s}^{-1})$', fontsize=32
-        )
-    cbar1.set_ticks(cbar_ticks)
-    cbar1.formatter.set_powerlimits([0,0])
-    cbar1.update_ticks()
-    cbar1.ax.tick_params(labelsize=24)
-    cbar1.ax.yaxis.offsetText.set_fontsize(24)
-    cbar1.ax.yaxis.offsetText.set_x(5.0)
-
-    #y-axis label
-    fig1.text(
-        0.82, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
-        fontsize=30, rotation='vertical', va='center', ha='center'
-    )
-    fig1.text(
-        0.03, 0.48,
-        r'$E_{\mathrm{couple}}$',
-        fontsize=30, rotation='vertical', va='center', ha='center'
-    )
-    #x-axis label
-    fig1.text(
-            0.42, 0.93,
-            r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
-            fontsize=30, va='center', ha='center'
-        )
-    fig1.text(
-            0.42, 0.03,
-            r'$\phi$',
-            fontsize=30, va='center', ha='center'
-        )
-
-    left = 0.1  # the left side of the subplots of the figure
-    right = 0.75    # the right side of the subplots of the figure
-    bottom = 0.1   # the bottom of the subplots of the figure
-    top = 0.88     # the top of the subplots of the figure
-    fig1.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
-
-    cax2 = fig2.add_axes([0.88, 0.25, 0.02, 0.5])
-    cbar2 = fig2.colorbar(
-        im2, cax=cax2, orientation='vertical', ax=ax2
-    )
-    cbar2.set_label(
-        r'$\mathcal{J}_{1}^{\mathrm{int}}\ (\mathrm{units\ of\ }\mathrm{s}^{-1})$', fontsize=32
-        )
-    cbar2.set_ticks(cbar_ticks)
-    cbar2.formatter.set_powerlimits([0,0])
-    cbar2.update_ticks()
-    cbar2.ax.tick_params(labelsize=24)
-    cbar2.ax.yaxis.offsetText.set_fontsize(24)
-    cbar2.ax.yaxis.offsetText.set_x(5.0)
-
-    # y-axis label
-    fig2.text(
-        0.82, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
-        fontsize=30, rotation='vertical', va='center', ha='center'
-    )
-    fig2.text(
-        0.03, 0.48,
-        r'$E_{\mathrm{couple}}$',
-        fontsize=30, rotation='vertical', va='center', ha='center'
-    )
-    # # x-axis label
-    fig2.text(
-        0.42, 0.93,
-        r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
-        fontsize=30, va='center', ha='center'
-    )
-    fig2.text(
-        0.42, 0.03,
-        r'$\phi$',
-        fontsize=30, va='center', ha='center'
-    )
-
-    fig2.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
-
-    fig1.savefig(
-        "flux1_Ecouple_phase_small_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}".format(
-                E0, E1, num_minima1, num_minima2, phase_shift
-            )
-        + "_figure.pdf",
-        bbox_inches='tight'
-        )
-    fig2.savefig(
-        "flux2_Ecouple_phase_small_E0_{0}_E1_{1}_n1_{2}_n2_{3}_phase_{4}".format(
+        "flux2_Ecouple_no_scan_E0_{0}_E1_{1}_n2_{2}_phase_{3}".format(
                 E0, E1, num_minima1, num_minima2, phase_shift
             )
         + "_figure.pdf",
@@ -3473,6 +3301,7 @@ if __name__ == "__main__":
     # plot_lr_efficiency_correlation(target_dir)
     # plot_lr_efficiency_scatter(target_dir)
     # plot_flux_lr_scan(target_dir)
-    plot_flux_Ecouple_phi_scan_small(target_dir)
+    plot_flux_Ecouple_no_scan(target_dir)
+    # plot_flux_Ecouple_phi_scan_small(target_dir)
     # plot_power_lr_scan(target_dir)
     #plot_emma_compare(target_dir)

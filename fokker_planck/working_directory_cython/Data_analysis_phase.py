@@ -12,18 +12,18 @@ positions=linspace(0,2*math.pi-dx,N)
 E0=2.0
 E1=2.0
 num_minima1=1.0
-num_minima2=1.0
+num_minima2=3.0
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
 
-#psi1_array = array([0.0, 1.0, 2.0, 4.0, 8.0])
-#psi2_array = array([-8.0, -4.0, -2.0, -1.0, 0.0])
-psi1_array = array([4.0])
-psi2_array = array([-2.0])
+psi1_array = array([0.0, 1.0, 2.0, 4.0])
+psi2_array = array([-4.0, -2.0, -1.0, 0.0])
+# psi1_array = array([4.0])
+# psi2_array = array([-2.0])
 
 #Ecouple_array = array([8.0, 32.0, 128.0]) #for grid plots
-Ecouple_array = array([256.0])
-#Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
+# Ecouple_array = array([256.0])
+Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 #Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 
 #phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
@@ -43,7 +43,7 @@ size_lst=[12,10,8,6,4,2]
 ticklabels=['0', '', '$2\pi/3$', '', '$4\pi/3$', '', '$2 \pi$'] #array for n=1
 ticklst=linspace(0, 2*math.pi, 7)
 
-def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array):
+def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array, N):
     # explicit update of the corners
     # first component
     flux_array[0, 0, 0] = (
@@ -154,58 +154,63 @@ def flux_power_efficiency():
     phase_shift=0.0
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
-            if abs(psi_1) >= abs(psi_2):
-                input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190815_ndata_Ecouple_256" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
-                output_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190815_ndata_Ecouple_256/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
-                       
-                integrate_flux_X = empty(min_array.size)
-                integrate_flux_Y = empty(min_array.size)
-                integrate_power_X = empty(min_array.size)
-                integrate_power_Y = empty(min_array.size)
-                efficiency_ratio = empty(min_array.size)
+            # if abs(psi_1) >= abs(psi_2):
+                   
+            integrate_flux_X = empty(min_array.size)
+            integrate_flux_Y = empty(min_array.size)
+            integrate_power_X = empty(min_array.size)
+            integrate_power_Y = empty(min_array.size)
+            efficiency_ratio = empty(min_array.size)
+
+            for Ecouple in Ecouple_array:
+                for ii, num_minima in enumerate(min_array):
+                #for ii, phase_shift in enumerate(phase_array):
+                    if num_minima==3.0:
+                        N=360
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                    else:
+                        N=540
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190924_no_vary_n1_3" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                    
+                    output_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190924_no_vary_n1_3/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                    
+                    print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " + f"Ecouple = {Ecouple}, num_minima1 = {num_minima}, num_minima2 = {num_minima2}")
+                    flux_array = empty((2,N,N))
+                    try:
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima, num_minima2, phase_shift), usecols=(0,3,4,5,6,7,8))
+                        prob_ss_array = data_array[:,0].reshape((N,N))
+                        drift_at_pos = data_array[:,1:3].T.reshape((2,N,N))
+                        diffusion_at_pos = data_array[:,3:].T.reshape((4,N,N))
+
+                        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
+
+                        flux_array = asarray(flux_array)/(dx*dx)
+
+                        integrate_flux_X[ii] = (1./(2*pi))*trapz(trapz(flux_array[0,...], dx=dx, axis=1), dx=dx)
+                        integrate_flux_Y[ii] = (1./(2*pi))*trapz(trapz(flux_array[1,...], dx=dx, axis=0), dx=dx)
+
+                        #print(sum(integrate_flux_Y))
+                        integrate_power_X[ii] = integrate_flux_X[ii]*psi_1
+                        integrate_power_Y[ii] = integrate_flux_Y[ii]*psi_2
+                    except:
+                        print('Missing file')    
+                if (abs(psi_1) <= abs(psi_2)):
+                    efficiency_ratio = -(integrate_power_X/integrate_power_Y)
+                else:
+                    efficiency_ratio = -(integrate_power_Y/integrate_power_X)
     
-                for Ecouple in Ecouple_array:
+                with open(output_file_name.format(E0, E1, psi_1, psi_2, num_minima2, Ecouple), "w") as ofile:
                     for ii, num_minima in enumerate(min_array):
                     #for ii, phase_shift in enumerate(phase_array):
-        
-                        print("Calculating flux for " + f"psi_2 = {psi_2}, psi_1 = {psi_1}, " + f"Ecouple = {Ecouple}, num_minima = {num_minima}")
-                        flux_array = empty((2,N,N))
-                        #print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima, num_minima, phase_shift))
-                        try:
-                            data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima, num_minima, phase_shift), usecols=(0,3,4,5,6,7,8))
-                            prob_ss_array = data_array[:,0].reshape((N,N))
-                            drift_at_pos = data_array[:,1:3].T.reshape((2,N,N))
-                            diffusion_at_pos = data_array[:,3:].T.reshape((4,N,N))
-    
-                            calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
-    
-                            flux_array = asarray(flux_array)/(dx*dx)
-    
-                            integrate_flux_X[ii] = (1./(2*pi))*trapz(trapz(flux_array[0,...], dx=dx, axis=1), dx=dx)
-                            integrate_flux_Y[ii] = (1./(2*pi))*trapz(trapz(flux_array[1,...], dx=dx, axis=0), dx=dx)
-    
-                            #print(sum(integrate_flux_Y))
-                            integrate_power_X[ii] = integrate_flux_X[ii]*psi_1
-                            integrate_power_Y[ii] = integrate_flux_Y[ii]*psi_2
-                        except:
-                            print('Missing file')    
-                    if (abs(psi_1) <= abs(psi_2)):
-                        efficiency_ratio = -(integrate_power_X/integrate_power_Y)
-                    else:
-                        efficiency_ratio = -(integrate_power_Y/integrate_power_X)
-        
-                    with open(output_file_name.format(E0, E1, psi_1, psi_2, num_minima, num_minima, Ecouple), "w") as ofile:
-                        for ii, num_minima in enumerate(min_array):
-                        #for ii, phase_shift in enumerate(phase_array):
-                            ofile.write(
-                                f"{num_minima:.15e}" + "\t"
-                                #"{phase_shift:.15e}" + "\t"
-                                + f"{integrate_flux_X[ii]:.15e}" + "\t"
-                                + f"{integrate_flux_Y[ii]:.15e}" + "\t" 
-                                + f"{integrate_power_X[ii]:.15e}" + "\t"
-                                + f"{integrate_power_Y[ii]:.15e}" + "\t"
-                                + f"{efficiency_ratio[ii]:.15e}" + "\n")
-                        ofile.flush()
+                        ofile.write(
+                            f"{num_minima:.15e}" + "\t"
+                            #"{phase_shift:.15e}" + "\t"
+                            + f"{integrate_flux_X[ii]:.15e}" + "\t"
+                            + f"{integrate_flux_Y[ii]:.15e}" + "\t" 
+                            + f"{integrate_power_X[ii]:.15e}" + "\t"
+                            + f"{integrate_power_Y[ii]:.15e}" + "\t"
+                            + f"{efficiency_ratio[ii]:.15e}" + "\n")
+                    ofile.flush()
             
 def plot_power_grid():
     output_file_name = ("power_Y_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
@@ -704,9 +709,7 @@ def plot_flux_contour():
         drift_at_pos = data_array[:,1:3].T.reshape((2,N,N))
         diffusion_at_pos = data_array[:,3:].T.reshape((4,N,N))
 
-        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
-        #calc_flux_func(prob_ss_array, drift_at_pos[0]*(-1.0)*gamma, drift_at_pos[1]*(-1.0)*gamma, flux_array, m1, m2, gamma, beta, N, dx)
-
+        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
         flux_array = asarray(flux_array)/(dx*dx)
         flux_x_array = flux_array[0]
         flux_y_array = flux_array[1]
@@ -736,7 +739,7 @@ def plot_flux():
     drift_at_pos = data_array[:,1:3].T.reshape((2,N,N))
     diffusion_at_pos = data_array[:,3:].T.reshape((4,N,N))
 
-    calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
+    calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
 
     flux_array = asarray(flux_array)/(dx*dx)
 
@@ -768,8 +771,7 @@ def plot_energy_flux():
         plt.contourf(positions, positions, pot_array)
         plt.colorbar()
 
-        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
-        #calc_flux_func(prob_ss_array, drift_at_pos[0]*(-1.0)*gamma, drift_at_pos[1]*(-1.0)*gamma, flux_array, m1, m2, gamma, beta, N, dx)
+        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
 
         flux_array = asarray(flux_array)/(dx*dx)
         flux_x_array = flux_array[0]
@@ -822,7 +824,7 @@ def plot_energy_flux_grid():
             drift_at_pos = data_array[:,2:4].T.reshape((2,N,N))
             diffusion_at_pos = data_array[:,4:].T.reshape((4,N,N))
             flux_array = empty((2,N,N))
-            calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
+            calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
             flux_array = asarray(flux_array)/(dx*dx)
             flux_length_array = empty((N,N))
             flux_x_array = flux_array[0]
@@ -848,7 +850,7 @@ def plot_energy_flux_grid():
                         else:
                             im2 = axarr[i,j].contourf(positions, positions, (pot_array.T), vmin=minpot, vmax=maxpot, cmap=plt.cm.cool)
 
-                        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
+                        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
                         flux_array = asarray(flux_array)/(dx*dx)
                         flux_x_array = flux_array[0]
                         flux_y_array = flux_array[1]
@@ -902,7 +904,7 @@ def plot_prob_flux():
                 drift_at_pos = data_array[:,2:4].T.reshape((2,N,N))
                 diffusion_at_pos = data_array[:,4:].T.reshape((4,N,N))
                 flux_array = empty((2,N,N))
-                calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
+                calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
                 flux_array = asarray(flux_array)/(dx*dx)
                 flux_length_array = empty((N,N))
                 flux_x_array = flux_array[0]
@@ -954,7 +956,7 @@ def plot_prob_flux_grid():
             # drift_at_pos = data_array[:,2:4].T.reshape((2,N,N))
             # diffusion_at_pos = data_array[:,4:].T.reshape((4,N,N))
             # flux_array = empty((2,N,N))
-            # calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
+            # calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
             # flux_array = asarray(flux_array)/(dx*dx)
             # flux_length_array = empty((N,N))
             # flux_x_array = flux_array[0]
@@ -985,7 +987,7 @@ def plot_prob_flux_grid():
                     # else:
                     #     im2 = axarr[i,j].contourf(positions, positions, prob_ss_array.T, vmin=0, vmax=maxprob, cmap=plt.cm.cool)#plot energy landscape  
                     # axarr[i,j].plot(positions, positions, color='grey', linewidth=1.0)
-                    # # calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array)
+                    # # calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
                     # flux_array = asarray(flux_array)/(dx*dx)
                     # flux_x_array = (flux_array[0])
                     # flux_y_array = (flux_array[1])
