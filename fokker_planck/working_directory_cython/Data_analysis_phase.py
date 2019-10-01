@@ -21,7 +21,7 @@ psi2_array = array([-4.0, -2.0, -1.0, 0.0])
 # psi1_array = array([4.0])
 # psi2_array = array([-2.0])
 
-#Ecouple_array = array([8.0, 32.0, 128.0]) #for grid plots
+# Ecouple_array = array([2.0, 8.0, 32.0, 128.0]) #for grid plots
 # Ecouple_array = array([256.0])
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 #Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
@@ -37,7 +37,8 @@ phase_array = array([0.0])
 
 colorlist=linspace(0,1,len(min_array))
 #label_lst=['0', '$\pi/9$', '$2\pi/9$', '$\pi/3$', '$4 \pi/9$', '$5 \pi/9$']
-size_lst=[12,10,8,6,4,2]
+# size_lst=[12,10,8,6,4,2]
+size_lst=[8,7,6,5,4,3]
 
 #ticklabels=['0', '$\pi/6$', '$\pi/3$', '$\pi/2$', '$2 \pi/3$']
 ticklabels=['0', '', '$2\pi/3$', '', '$4\pi/3$', '', '$2 \pi$'] #array for n=1
@@ -474,7 +475,7 @@ def plot_flux_single():
             plt.close()
             
 def plot_flux_n_single():
-    output_file_name = ("flux_XY_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}" + "_.pdf")
+    output_file_name = ("flux_n0_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}" + "_.pdf")
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             plt.figure()
@@ -483,34 +484,28 @@ def plot_flux_n_single():
             print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
             
             for ii, Ecouple in enumerate(Ecouple_array):
-                #phase_array = []
                 flux_x_array = []
                 flux_y_array = []
-                for n in min_array:
-                    input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/" + "190729_Varying_n/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
-                    try:
-                        data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple), usecols=(0,1,2))
-                        #phase = data_array[0,0]
-                        #phase_array = append(phase_array, phase)
-                        flux_x = data_array[0,1]
-                        flux_x_array = append(flux_x_array, flux_x)
-                        flux_y = data_array[0,2]
-                        flux_y_array = append(flux_y_array, flux_y)
-                    
-                    except OSError:
-                        print('Missing file')
+                # for n in min_array:
+                input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/" + "190924_no_vary_n1_3/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima2, Ecouple), usecols=(0,1,2))
+                    flux_x_array = data_array[:,1]
+                    # flux_x_array = append(flux_x_array, flux_x)
+                    flux_y_array = data_array[:,2]
+                    # flux_y_array = append(flux_y_array, flux_y)
+                
+                except OSError:
+                    print('Missing file')
                     
                 ax.plot(min_array, flux_x_array, 'o', markersize=4, color=plt.cm.cool(colorlist[ii]), label=f'{Ecouple}')
-                ax.plot(min_array, flux_y_array, 'v', markersize=4, color=plt.cm.cool(colorlist[ii]))        
-            
+                ax.plot(min_array, flux_y_array, 'v', markersize=4, color=plt.cm.cool(colorlist[ii]))
+
             chartBox = ax.get_position()
             ax.set_position([chartBox.x0, chartBox.y0, chartBox.width*0.9, chartBox.height*0.9])
-            ax.legend(loc='upper right', bbox_to_anchor=(1.25, 0.8), shadow=False, ncol=1)
-            #plt.legend(title="$E_{couple}$", loc='best')    
-            #f.text(0.5, 0.04, '$\phi$', ha='center')
-            #f.text(0.04, 0.5, 'Output power', va='center', rotation='vertical')
+            ax.legend(loc='upper right', bbox_to_anchor=(1.25, 0.8), shadow=False, title="$E_{couple}$")
             #plt.ylim((0,None))
-            plt.xlabel('$n$')
+            plt.xlabel('$n_o$')
             plt.ylabel('Flux')
             plt.xscale('log')
             #plt.xticks(ticklst, ticklabels)
@@ -529,8 +524,8 @@ def plot_flux_Ecouple_single():
             if abs(psi_1) >= abs(psi_2):
                 plt.figure()
                 ax=plt.subplot(111)
-                ax.axhline(0, color='black', linewidth=2)#line at zero
-                plt.axhline(y=0.00005, ls='--', color='grey')#dashed line to emphasize peak in flux
+                ax.axhline(0, color='black', linewidth=1)#line at zero
+                
                 #for i, phase in enumerate(phase_array):
                 i=0
                 # #zero-barrier theory lines
@@ -565,24 +560,26 @@ def plot_flux_Ecouple_single():
             
                 for j, num in enumerate(min_array):
                     num_minima1=num
-                    num_minima2=num
+                    num_minima2=3.0
                     flux_x_array=[]
                     flux_y_array=[]
                     for ii, Ecouple in enumerate(Ecouple_array):
-                        if num == 3.0:
-                            input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/" + "190624_Twopisweep_complete_set/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
-                        else:
-                            input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/" + "190729_Varying_n/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                        # if num == 3.0:
+                        input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/" + "190924_no_vary_n1_3/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                        # else:
+#                             input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/" + "190729_Varying_n/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                         try:
-                            data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,1,2))
-                            flux_x = data_array[i,1]
-                            flux_y = data_array[i,2]
+                            data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima2, Ecouple), usecols=(0,1,2))
+                            flux_x = data_array[j,1]
+                            flux_y = data_array[j,2]
                             flux_x_array.append(flux_x)
                             flux_y_array.append(flux_y)
                         except OSError:
                             print('Missing file')
-                    plt.plot(Ecouple_array, flux_x_array, 'o', color=plt.cm.cool(colorlist[j]), label=num)
-                    plt.plot(Ecouple_array, flux_y_array, 'v', color=plt.cm.cool(colorlist[j]))
+                    if num==3.0:
+                        plt.axhline(y=flux_y_array[-1], ls='--', color='grey', linewidth=1)#dashed line to emphasize peak in flux
+                    plt.plot(Ecouple_array, flux_x_array, 'o', color=plt.cm.cool(colorlist[j]), markersize=size_lst[j], label=num)
+                    plt.plot(Ecouple_array, flux_y_array, 'v', color=plt.cm.cool(colorlist[j]), markersize=size_lst[j])
 
                 # #add in a extra data points
                 # flux_x_array=[]
@@ -602,7 +599,7 @@ def plot_flux_Ecouple_single():
                 # plt.plot(Ecouple_array_extra, flux_x_array, 'o', color=plt.cm.cool(colorlist[0]))
                 # plt.plot(Ecouple_array_extra, flux_y_array, 'v', color=plt.cm.cool(colorlist[0]))
                 
-                plt.legend(title="$n_x = n_y$")  
+                plt.legend(title="$n_1$")  
                 plt.xlabel('$E_{couple}$')
                 plt.ylabel('Flux')
                 plt.xscale('log')
@@ -1209,10 +1206,10 @@ if __name__ == "__main__":
     #target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/" #processed data
     #target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/Zero-energy_barriers/" 
     #os.chdir(target_dir)
-    flux_power_efficiency()
+    # flux_power_efficiency()
     #plot_flux_single()
-    #plot_flux_n_single()
-    #plot_flux_Ecouple_single()
+    # plot_flux_n_single()
+    plot_flux_Ecouple_single()
     #plot_flux_Ecouple_grid()
     #plot_flux_contour()
     #plot_flux_grid()
