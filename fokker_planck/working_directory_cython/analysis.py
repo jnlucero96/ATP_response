@@ -40,7 +40,7 @@ psi_1_array = array([4.0, 2.0])[::-1]
 psi_2_array = array([-2.0, -1.0])
 phase_array = array([0., 0.174533, 0.349066, 0.523599, 0.698132, 0.872665, 1.0472])[::-1]
 phase_label_array = ['0', '', '', '$\pi/3$', '', '', '$2\pi/3$'][::-1]
-Ecouple_label_array = ['', '2', '', '8', '', '32', '', '128']
+Ecouple_label_array = ['0', '2', '', '8', '', '32', '', '128', '$\infty$']
 min_array=array([1.0, 2.0, 3.0, 6.0, 12.0])[::-1]
 min_label_array = ['1', '2', '3', '6', '12'][::-1]
 
@@ -3047,12 +3047,19 @@ def plot_flux_Ecouple_no_scan_small(target_dir):
         + "_outfile.dat"
         )
         
-    fluxes = zeros((psi_2_array.size, psi_1_array.size, 2, Ecouple_array.size, min_array.size))
+    input_file_name2 = (
+        "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython" 
+        + "/190924_no_vary_n1_3/processed_data"
+        + "/flux_"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_inf"
+        + "_outfile.dat"
+        )
+        
+    fluxes = zeros((psi_2_array.size, psi_1_array.size, 2, Ecouple_array.size + 1, min_array.size))
     
     for ii, psi_2 in enumerate(psi_2_array):
         for jj, psi_1 in enumerate(psi_1_array):
             for ee, Ecouple in enumerate(Ecouple_array):
-                
                 min_array_out, integrate_flux_X, integrate_flux_Y = loadtxt(
                     input_file_name.format(
                         E0, E1, psi_1, psi_2, num_minima2, Ecouple
@@ -3062,29 +3069,39 @@ def plot_flux_Ecouple_no_scan_small(target_dir):
                 
                 fluxes[ii, jj, 0, ee, :] = integrate_flux_X
                 fluxes[ii, jj, 1, ee, :] = integrate_flux_Y
+                
+            min_array_out, integrate_flux_X = loadtxt(
+                input_file_name2.format(
+                    E0, E1, psi_1, psi_2, num_minima2
+                    ),
+                unpack=True, usecols=(0,1)
+            )
+            
+            fluxes[ii, jj, 0, ee+1, :] = integrate_flux_X
+            fluxes[ii, jj, 1, ee+1, :] = integrate_flux_X#note that the flux for X and Y is identical in the infinite coupling limit
 
     limit=fluxes[~(isnan(fluxes))].__abs__().max()
 
     # prepare figure
-    fig1, ax1 = subplots(psi_1_array.size, psi_2_array.size, figsize=(22,12), sharex='col', sharey='all')
-    fig2, ax2 = subplots(psi_1_array.size, psi_2_array.size, figsize=(22,12), sharex='col', sharey='all')
+    fig1, ax1 = subplots(psi_1_array.size, psi_2_array.size, figsize=(22,10), sharex='col', sharey='all')
+    fig2, ax2 = subplots(psi_1_array.size, psi_2_array.size, figsize=(22,10), sharex='col', sharey='all')
 
     for ii, psi_2 in enumerate(psi_2_array):
         for jj, psi_1 in enumerate(psi_1_array):
             im1 = ax1[ii, jj].imshow(
-                fluxes[ii, jj, 0, :, :].T,
+                fluxes[ii, jj, 0, :, ::-1].T,
                 vmin=-limit, vmax=limit,
                 cmap=cm.get_cmap("coolwarm")
                 )
             im2 = ax2[ii, jj].imshow(
-                fluxes[ii, jj, 1, :, :].T,
+                fluxes[ii, jj, 1, :, ::-1].T,
                 vmin=-limit, vmax=limit,
                 cmap=cm.get_cmap("coolwarm")
                 )
                 
             ax1[ii, jj].set_yticks(list(range(min_array.size)))
             ax1[ii, jj].set_yticklabels(min_label_array)
-            ax1[ii, jj].set_xticks(list(range(Ecouple_array.size)))
+            ax1[ii, jj].set_xticks(list(range(Ecouple_array.size+1)))
             ax1[ii, jj].set_xticklabels(Ecouple_label_array)
             ax1[ii, jj].tick_params(labelsize=22)
             
@@ -3110,7 +3127,7 @@ def plot_flux_Ecouple_no_scan_small(target_dir):
             
             ax2[ii, jj].set_yticks(list(range(min_array.size)))
             ax2[ii, jj].set_yticklabels(min_label_array)
-            ax2[ii, jj].set_xticks(list(range(Ecouple_array.size)))
+            ax2[ii, jj].set_xticks(list(range(Ecouple_array.size+1)))
             ax2[ii, jj].set_xticklabels(Ecouple_label_array)
             ax2[ii, jj].tick_params(labelsize=22)
 
