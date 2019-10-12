@@ -1,5 +1,6 @@
 # cython: language_level=3, cdivision=True, boundscheck=False, wraparound=False
 from libc.math cimport exp, fabs, sin, cos
+from cython.parallel import prange
 
 # float64 machine eps
 cdef double float64_eps = 2.22044604925031308084726e-16
@@ -66,8 +67,7 @@ def launchpad_reference(
     # start with uniform distribution as initial guess
     for i in range(N):
         for j in range(N):
-           # p_now[i, j] = 1.0/(N*N)
-           p_now[i, j] = prob[i, j]
+            p_now[i, j] = prob[i, j]
 
     steady_state_initialize(
         p_now, p_last, p_last_ref,
@@ -169,7 +169,7 @@ cdef double potential(
     double phase, double E0, double Ecouple, double E1
     ) nogil:
     return 0.5*(
-        E0*(1-cos((n1*(position1-phase))))
+        E0*(1-cos((n1*position1-phase)))
         + Ecouple*(1-cos(position1-position2))
         + E1*(1-cos((n2*position2)))
         )
@@ -184,7 +184,7 @@ cdef double drift1(
     # for F0
     return (-1.0/(m1*gamma1))*((0.5)*(
         Ecouple*sin(position1-position2)
-        + (n1*E0*sin((n1*(position1-phase))))
+        + (n1*E0*sin((n1*position1)-(phase)))
         ) - psi1)
 
 cdef double drift2(
@@ -336,7 +336,7 @@ cdef void update_probability_full(
         )
 
     # iterate through all the coordinates (not corners) for both variables
-    for i in range(1, N-1):
+    for i in prange(1, N-1):
         # Periodic boundary conditions:
         # Explicitly update FPE for edges of grid (not corners)
         p_now[0, i] = p_last[0, i] + dt*(
