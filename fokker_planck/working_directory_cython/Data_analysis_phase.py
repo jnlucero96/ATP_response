@@ -15,11 +15,13 @@ num_minima1=3.0
 num_minima2=3.0
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
-psi1_array = array([0.0, 1.0, 2.0, 4.0])
-psi2_array = array([-4.0, -2.0, -1.0, 0.0])
+psi1_array = array([1.0, 2.0, 4.0])
+psi2_array = array([-4.0, -2.0, -1.0])
+# psi1_array = array([4.0])
+# psi2_array = array([-2.0])
 # Ecouple_array = array([2.0, 8.0, 64.0])
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
-# Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
+Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
 phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346]) #selection of twopisweep
 
@@ -139,7 +141,7 @@ def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array, N):
                 -(diffusion_at_pos[3, i, j+1]*p_now[i, j+1]-diffusion_at_pos[3, i, j-1]*p_now[i, j-1])/(2.0*dx)
                 )
 
-def flux_power_efficiency(target_dir):
+def flux_power_efficiency(target_dir): #processing of raw data
     phase_shift=0.0
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
@@ -157,7 +159,7 @@ def flux_power_efficiency(target_dir):
                     else:
                         input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190924_no_vary_n1_3" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                     
-                    output_file_name = target_dir + "190924_no_vary_n1_3/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                    output_file_name = (target_dir + "190924_no_vary_n1_3/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
                     
                     print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " + f"Ecouple = {Ecouple}, num_minima1 = {num_minima}, num_minima2 = {num_minima2}")
                     
@@ -379,8 +381,8 @@ def plot_efficiency_Ecouple_single(target_dir):#plot of the efficiency as a func
             # plt.xticks(ticklst, ticklabels)
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+            plt.close()
             
-    
 def plot_efficiency_Ecouple_grid(target_dir):#grid of plots of the efficiency as a function of the coupling strength
     output_file_name = (target_dir + "efficiency_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
     f,axarr=plt.subplots(3,3,sharex='all',sharey='all')
@@ -955,6 +957,110 @@ def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupli
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
             plt.close()
             
+def plot_power_Ecouple_scaled(target_dir):#plot of power as a function of coupling strength
+    output_file_name = (target_dir + "power_scaled_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n_{4}" + "_log_.pdf")
+    
+
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            if psi_1 > abs(psi_2):
+                f,axarr=plt.subplots(1, 1, sharex='all', sharey='none', figsize=(6,4))
+                axarr.axhline(0, color='black', linewidth=1)#line at zero
+                axarr.axhline(1, color='grey', linestyle='--', linewidth=1)#line to emphasize peak
+
+                #zero-barrier theory lines
+                input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/Zero-energy_barriers/" + "Flux_Ecouple_Fx_{0}_Fy_{1}_theory.dat")
+                try:
+                    # print(input_file_name.format(psi_1, psi_2))
+                    data_array = loadtxt(input_file_name.format(psi_1, psi_2))
+                    Ecouple_array2 = array(data_array[:,0])
+                    Ecouple_array2 = append(Ecouple_array2, 128.0)
+                    flux_x_array = array(data_array[:,1])
+                    flux_y_array = array(data_array[:,2])
+                    flux_x_array = append(flux_x_array, flux_x_array[-1])
+                    flux_y_array = append(flux_y_array, flux_y_array[-1])
+                    power_x = flux_x_array*psi_1
+                    power_y = flux_y_array*psi_2
+                    fluxinf = 0.5*(psi_1 + psi_2)/(2*pi*1000)
+                    power_inf_x = fluxinf*psi_1
+                    power_inf_y = fluxinf*psi_2
+                    # axarr.plot(Ecouple_array2, power_x, '--', color=plt.cm.cool(.99))
+                    axarr.plot(Ecouple_array2, power_y/power_inf_y, '-', color=plt.cm.cool(.99))
+                except:
+                    print('Zero barrier data unavailable')
+
+                #Infinite coupling
+                input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_inf" + "_outfile.dat")
+                try:
+                    # print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+                    phase = array(data_array[0,0])
+                    flux = array(data_array[0,1])
+                except:
+                    print('Missing file infinite coupling')
+                    print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+                power_inf_x = flux*psi_1
+                power_inf_y = flux*psi_2
+
+                #General data
+                flux_x_array=zeros(len(Ecouple_array))
+                flux_y_array=zeros(len(Ecouple_array))
+                i=0 #only use phase=0 data
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    try:
+                        # print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+                        data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,1,2))
+                        flux_x = data_array[i,1]
+                        flux_y = data_array[i,2]
+                        flux_x_array[ii] = flux_x
+                        flux_y_array[ii] = flux_y
+                    except OSError:
+                        print('Missing file flux')
+                        print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+                        
+                power_x = flux_x_array*psi_1
+                power_y = flux_y_array*psi_2
+                # axarr.plot(Ecouple_array, psi_1*flux_x_array, 'o', color=plt.cm.cool(0))
+                axarr.plot(Ecouple_array, power_y/power_inf_y, 'o', color=plt.cm.cool(0))
+                
+                # add in a extra data points
+                flux_x_array=zeros(len(Ecouple_array_extra))
+                flux_y_array=zeros(len(Ecouple_array_extra))
+                c=0
+                for ii, Ecouple in enumerate(Ecouple_array_extra):
+                    input_file_name = (target_dir + "190610_Extra_measurements_Ecouple/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    try:
+                        # print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+                        data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,1,2))
+                        flux_x = data_array[i,1]
+                        flux_y = data_array[i,2]
+                        flux_x_array[ii] = flux_x
+                        flux_y_array[ii] = flux_y
+                        c=0
+                    except OSError:
+                        print('Missing file flux extra points')
+                        c=1
+                        # print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+                
+                if c==0:
+                    power_x = flux_x_array*psi_1
+                    power_y = flux_y_array*psi_2
+                    # axarr.plot(Ecouple_array_extra, psi_1*flux_x_array, 'o', color=plt.cm.cool(colorlist[0]))
+                    axarr.plot(Ecouple_array_extra, power_y/power_inf_y, 'o', color=plt.cm.cool(colorlist[0]))
+                
+                axarr.set_xscale('log')
+                axarr.set_xlabel('$E_{couple}$')
+                axarr.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                # axarr.set_yticks(ylabels_flux)
+                axarr.set_ylabel('$P_{ATP/ADP}/P_{ATP/ADP}^{\infty}$')
+                axarr.spines['right'].set_visible(False)
+                axarr.spines['top'].set_visible(False)
+                f.tight_layout()
+
+                plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1))
+                plt.close()
+            
 def plot_energy_flux(target_dir):#contourplot of the energy landscape with the 2D flux on top in the form of arrows
     psi_1=4.0
     psi_2=-2.0
@@ -1325,7 +1431,7 @@ def plot_rel_flux_Ecouple(target_dir):#plot of the relative flux (flux F1 divide
             
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
-    flux_power_efficiency(target_dir)
+    # flux_power_efficiency(target_dir)
     # plot_power_phi_grid(target_dir)
     # plot_power_phi_single(target_dir)
     # plot_efficiency_phi_single(target_dir)
@@ -1339,6 +1445,7 @@ if __name__ == "__main__":
     # plot_flux_space(target_dir)
     # plot_power_efficiency_Ecouple_single(target_dir)
     # plot_power_Ecouple_single(target_dir)
+    plot_power_Ecouple_scaled(target_dir)
     # plot_energy_flux(target_dir)
     # plot_energy_flux_grid(target_dir)
     # plot_prob_flux(target_dir)
