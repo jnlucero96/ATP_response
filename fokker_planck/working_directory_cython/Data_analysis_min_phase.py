@@ -1,9 +1,11 @@
 import os
 import glob
 import re
-from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt
+from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt, set_printoptions, isnan
 import math
 import matplotlib.pyplot as plt
+from matplotlib import rcParams, rc, ticker, colors, cm
+from matplotlib.style import use
 from scipy.integrate import trapz
 
 N=360
@@ -11,25 +13,44 @@ dx=2*math.pi/N
 positions=linspace(0,2*math.pi-dx,N)
 E0=2.0
 E1=2.0
-num_minima1=3.0
-num_minima2=3.0
+num_minima1=12.0
+num_minima2=12.0
 
-min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
+min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])[::-1]
 
-psi1_array = array([4.0])
-# psi1_array = array([0.0, 1.0, 2.0, 4.0])
-# psi2_array = array([-4.0, -2.0, -1.0, 0.0])
-psi2_array = array([-2.0])
+# psi1_array = array([4.0])
+psi1_array = array([2.0, 4.0])
+psi2_array = array([-2.0, -1.0])
+# psi2_array = array([-2.0])
 Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) 
-# phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346]) 
-phase_array_1 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599])
-phase_array_2 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253])
-phase_array_3 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253])
-phase_array_6 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533])
-phase_array_12 = array([0.0, 0.08727, 0.17453, 0.2618, 0.34633, 0.5236])
-min_array = phase_array_3
+# phase_array = array([0.0])
+# phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
+phase_array_1 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319])
+phase_array_2 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159])
+phase_array_3 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
+phase_array_6 = array([0.0, 0.349066, 0.698132, 1.0472])
+phase_array_12 = array([0.0, 0.08727, 0.17453, 0.2618, 0.34633, 0.4366, 0.5236])
+phase_array = phase_array_12
 
-colorlst = linspace(0,1,len(Ecouple_array))
+colorlst = linspace(0,1,len(min_array))
+min_labels = ['1', '2', '3', '6', '12'][::-1]
+# Ecouple_labels = ['', '4', '', '16', '', '64', '', '\infty']
+Ecouple_labels = ['2', '', '8', '', '32', '', '128']
+phase_labels = ['0', '', '', '$\pi/12$', '', '', '$\pi/6$'][::-1] #n=12
+# phase_labels = ['0', '', '', '$\pi/3$'][::-1] #n=6
+# phase_labels = ['0', '', '', '$\pi/3$', '', '', '$2 \pi/3$'][::-1] #n=3
+# phase_labels = ['0', '', '', '$\pi/3$', '', '', '$2 \pi/3$', '', '', '$\pi$'][::-1] #n=2
+# phase_labels = ['0', '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'][::-1] #n=1
+
+use('seaborn-paper')
+rc('text', usetex=True)
+rcParams['mathtext.fontset'] = 'cm'
+rcParams['text.latex.preamble'] = [
+    r"\usepackage{amsmath}", r"\usepackage{lmodern}",
+    r"\usepackage{siunitx}", r"\usepackage{units}",
+    r"\usepackage{physics}", r"\usepackage{bm}"
+]
+set_printoptions(linewidth=512)
 
 def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array, N):
     # explicit update of the corners
@@ -197,28 +218,29 @@ def flux_power_efficiency(target_dir): #processing of raw data
                     ofile.flush()
             
 def plot_efficiency_Ecouple_single(target_dir):#plot of the efficiency as a function of the coupling strength
-    output_file_name = (target_dir + "efficiency_Ecouple_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
-    
+    output_file_name = (target_dir + "efficiency_Ecouple_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phase_{4}" + "_.pdf")
+    phaseoffset = 0.0
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             if psi_1 > abs(psi_2):
                 plt.figure()    
                 ax=plt.subplot(111)
                 ax.axhline(0, color='black', linewidth=1)
-            
-                #General results
-                eff_array = zeros(len(Ecouple_array))
-                for ii, Ecouple in enumerate(Ecouple_array):
-                    input_file_name = (target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
-                    try:
-                        data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(5))
-                        eff_array[ii] = data_array[0]#grab phi=0 result
-                    except OSError:
-                        print('Missing file')  
-                        print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))  
+                ax.axhline(-psi_2/psi_1, color='grey', linewidth=1, linestyle='--')
+                
+                for i, n in enumerate(min_array):
+                    eff_array = zeros(len(Ecouple_array))
+                    for ii, Ecouple in enumerate(Ecouple_array):
+                        input_file_name = (target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                        try:
+                            data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple), usecols=(5))
+                            eff_array[ii] = data_array[0]#grab phase=0 result
+                        except OSError:
+                            print('Missing file')  
+                            print(input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple))  
                         
-                plt.plot(Ecouple_array, eff_array, 'o', color=plt.cm.cool(0))
-                # plt.legend(title="$E_{couple}$", loc='upper left') 
+                    plt.plot(Ecouple_array, eff_array, 'o', color=plt.cm.cool(colorlst[i]), label=n)
+                plt.legend(title="$n_o=n_1$", loc='upper left')
                 plt.xlabel('$E_{couple}$')
                 plt.ylabel('$\eta$')
                 plt.xscale('log')
@@ -227,7 +249,7 @@ def plot_efficiency_Ecouple_single(target_dir):#plot of the efficiency as a func
                 ax.spines['top'].set_visible(False)
 
                 plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-                plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))     
+                plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, phaseoffset))     
                 plt.close()       
         
 def plot_flux_n_single(target_dir):#plot of the flux as a function of the number of minima
@@ -271,10 +293,302 @@ def plot_flux_n_single(target_dir):#plot of the flux as a function of the number
             ax.spines['top'].set_visible(False)
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2))    
-            plt.close()            
+            plt.close()
+
+def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupling strength
+    output_file_name1 = (target_dir + "power_H_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phase_{4}" + "_.pdf")
+    output_file_name2 = (target_dir + "power_ATP_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phase_{4}" + "_.pdf")
+    
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array: #different plots for different forces
+            if psi_1 > abs(psi_2):
+                
+                for j, phase in enumerate(phase_array): #different plots of different phase offsets
+                    f1, ax1 = plt.subplots(1,1)
+                    f2, ax2 = plt.subplots(1,1)
+                    ax1.axhline(0, color='black', linewidth=1) #line at zero
+                    ax2.axhline(0, color='black', linewidth=1)
+                    # axarr.axhline(-0.00009, color='grey', linestyle='--', linewidth=1)#line to emphasize peak
                     
+                    for i, n1 in enumerate(min_array): #different lines for different number of minima
+                        power_x_array = zeros(len(Ecouple_array))
+                        power_y_array = zeros(len(Ecouple_array))
+                        for ii, Ecouple in enumerate(Ecouple_array): #different points in a line
+                            input_file_name = (target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                            try:
+                                data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, n1, Ecouple), usecols=(3,4))
+                                power_x_array[ii] = data_array[j,0]
+                                power_y_array[ii] = data_array[j,1]
+                            except OSError:
+                                print('Missing file flux')
+                                print(input_file_name.format(E0, E1, psi_1, psi_2,  num_minima2, Ecouple))
+                        ax1.plot(Ecouple_array, power_x_array, 'o', color=plt.cm.cool(colorlst[i]), label=n1)
+                        ax2.plot(Ecouple_array, power_y_array, 'o', color=plt.cm.cool(colorlst[i]), label=n1)
+
+                    ax1.set_xscale('log')
+                    ax1.set_xlabel('$E_{couple}$')
+                    ax1.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                    ax1.set_ylabel('$P_{ATP/ADP}$')
+                    ax1.spines['right'].set_visible(False)
+                    ax1.spines['top'].set_visible(False)
+                    f1.legend(loc='best', title='$n_o=n_1$')
+                    f1.tight_layout()
+                    
+                    ax2.set_xscale('log')
+                    ax2.set_xlabel('$E_{couple}$')
+                    ax2.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                    ax2.set_ylabel('$P_{ATP/ADP}$')
+                    ax2.spines['right'].set_visible(False)
+                    ax2.spines['top'].set_visible(False)
+                    f2.legend(loc='best', title='$n_o=n_1$')
+                    f2.tight_layout()
+
+                    f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, phase))
+                    f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, phase))
+                    plt.close()
+                    
+def plot_heatmap_power_Ecouple_n_scan(target_dir):
+        
+    input_file_name2 = (
+        target_dir
+        + "190729_Varying_n/processed_data"
+        + "/flux_"
+        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_inf"
+        + "_outfile.dat"
+        )
+    power = zeros((psi2_array.size, psi1_array.size, Ecouple_array.size + 1, min_array.size))  #power = zeros((#plots in a row, #plots in a column, # of figures, # of entries in the x-axis, # of entries in the y-axis))
+    
+    for ii, psi_2 in enumerate(psi2_array):
+        for jj, psi_1 in enumerate(psi1_array):
+            for ee, Ecouple in enumerate(Ecouple_array):
+                for nn, num_min in enumerate(min_array):
+                    input_file_name = (
+                        target_dir
+                        + "190729_Varying_n/processed_data"
+                        + "/flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}"
+                        + "_outfile.dat"
+                        )
+                
+                    power_X, power_Y = loadtxt(
+                        input_file_name.format(
+                            E0, E1, psi_1, psi_2, num_min, num_min, Ecouple
+                            ),
+                        unpack=True, usecols=(3,4)
+                    )
+                    
+                    power[ii, jj, ee, nn] = power_Y[0] #grab phaseoffset=0 results
+                    power[0, 0, ee, 0] = 'NaN'
+                    
+            min_array_out, flux_inf = loadtxt(
+                input_file_name2.format(
+                    E0, E1, psi_1, psi_2, num_minima2
+                    ),
+                unpack=True, usecols=(0,1)
+            )
+            
+            power[ii, jj, ee + 1, :] = psi_2*flux_inf[::-1]
+
+    limit=power[~(isnan(power))].__abs__().max()
+    print(limit)
+    # prepare figure
+    fig1, ax1 = plt.subplots(psi1_array.size, psi2_array.size, figsize=(19,10), sharex='col', sharey='all')
+
+    for ii, psi_2 in enumerate(psi2_array):
+        for jj, psi_1 in enumerate(psi1_array):
+            im1 = ax1[ii, jj].imshow(
+                power[ii, jj, :, :].T,
+                vmin=-limit, vmax=limit,
+                cmap=plt.cm.get_cmap("coolwarm")
+                )
+                
+            ax1[ii, jj].set_yticks(list(range(min_array.size)))
+            ax1[ii, jj].set_yticklabels(min_labels)
+            ax1[ii, jj].set_xticks(list(range(Ecouple_array.size+1)))
+            ax1[ii, jj].set_xticklabels(Ecouple_labels)
+            ax1[ii, jj].tick_params(labelsize=22)
+            
+            if (ii == 0):
+                ax1[ii, jj].set_title(
+                    "{}".format(psi_1), fontsize=20
+                    )
+
+            if (jj == psi2_array.size - 1):
+                ax1[ii, jj].set_ylabel(
+                    "{}".format(psi_2), fontsize=20
+                    )
+                ax1[ii, jj].yaxis.set_label_position("right")
+
+    cbar_ticks = array([-5.0, -2.5, 0.0, 2.5, 5.0])*1e-4
+
+    cax1 = fig1.add_axes([0.85, 0.25, 0.02, 0.5])
+    cbar1 = fig1.colorbar(
+        im1, cax=cax1, orientation='vertical', ax=ax1
+    )
+    cbar1.set_label(
+        r'$\mathcal{P}_{\mathrm{ATP/ADP}}$', fontsize=32
+        )
+    cbar1.set_ticks(cbar_ticks)
+    cbar1.formatter.set_powerlimits([0,0])
+    cbar1.update_ticks()
+    cbar1.ax.tick_params(labelsize=24)
+    cbar1.ax.yaxis.offsetText.set_fontsize(24)
+    cbar1.ax.yaxis.offsetText.set_x(5.0)
+
+    #y-axis label
+    fig1.text(
+        0.8, 0.51,
+        r'$\beta \psi_{1}$',
+        fontsize=30, rotation='vertical', va='center', ha='center'
+    )
+    fig1.text(
+        0.42, 0.03,
+        r'$E_{\mathrm{couple}}$',
+        fontsize=30, va='center', ha='center'
+    )
+    #x-axis label
+    fig1.text(
+            0.42, 0.93,
+            r'$\beta \psi_{\mathrm{o}}$',
+            fontsize=30, va='center', ha='center'
+        )
+    fig1.text(
+            0.05, 0.48,
+            r'$n_o$',
+            fontsize=30, rotation='vertical', va='center', ha='center'
+        )
+
+    left = 0.1  # the left side of the subplots of the figure
+    right = 0.75    # the right side of the subplots of the figure
+    bottom = 0.1   # the bottom of the subplots of the figure
+    top = 0.88     # the top of the subplots of the figure
+    fig1.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
+
+    fig1.savefig(
+        "power_ATP_Ecouple_n_scan_small_E0_{0}_E1_{1}_n1_{2}_phase_{3}".format(
+                E0, E1, num_minima1, 0.0
+            )
+        + "_figure.pdf",
+        bbox_inches='tight'
+        )
+        
+def plot_heatmap_power_Ecouple_phase_scan(target_dir):
+        
+    power = zeros((psi2_array.size, psi1_array.size, Ecouple_array.size, phase_array.size))  #power = zeros((#plots in a row, #plots in a column, # of figures, # of entries in the x-axis, # of entries in the y-axis))
+    
+    for ii, psi_2 in enumerate(psi2_array):
+        for jj, psi_1 in enumerate(psi1_array):
+            for ee, Ecouple in enumerate(Ecouple_array):
+                for pp, phase in enumerate(phase_array):
+                    input_file_name = (
+                        target_dir
+                        + "190729_Varying_n/processed_data"
+                        + "/flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}"
+                        + "_outfile.dat"
+                        )
+                
+                    power_X, power_Y = loadtxt(
+                        input_file_name.format(
+                            E0, E1, psi_1, psi_2, num_minima1, num_minima1, Ecouple
+                            ),
+                        unpack=True, usecols=(3,4)
+                    )
+                    
+                    power[ii, jj, ee, :(phase_array.size-2)] = power_Y[:(phase_array.size-2)] #grab phaseoffset=0 results
+                    power[ii, jj, ee, -1] = power_Y[-1]
+                    power[0, 0, ee, 0:2] = float('nan')
+                
+
+    limit=power[~(isnan(power))].__abs__().max()
+    print(limit)
+    # prepare figure
+    fig1, ax1 = plt.subplots(psi1_array.size, psi2_array.size, figsize=(13,11), sharex='col', sharey='all')
+
+    for ii, psi_2 in enumerate(psi2_array):
+        for jj, psi_1 in enumerate(psi1_array):
+            im1 = ax1[ii, jj].imshow(
+                power[ii, jj, :, ::-1].T,
+                vmin=-limit, vmax=limit,
+                cmap=plt.cm.get_cmap("coolwarm")
+                )
+                
+            ax1[ii, jj].set_yticks(list(range(phase_array.size)))
+            ax1[ii, jj].set_yticklabels(phase_labels)
+            ax1[ii, jj].set_xticks(list(range(Ecouple_array.size)))
+            ax1[ii, jj].set_xticklabels(Ecouple_labels)
+            ax1[ii, jj].tick_params(labelsize=22)
+            
+            if (ii == 0):
+                ax1[ii, jj].set_title(
+                    "{}".format(psi_1), fontsize=20
+                    )
+
+            if (jj == psi2_array.size - 1):
+                ax1[ii, jj].set_ylabel(
+                    "{}".format(psi_2), fontsize=20
+                    )
+                ax1[ii, jj].yaxis.set_label_position("right")
+
+    cbar_ticks = array([-5.0, -2.5, 0.0, 2.5, 5.0])*1e-4
+
+    cax1 = fig1.add_axes([0.85, 0.25, 0.02, 0.5])
+    cbar1 = fig1.colorbar(
+        im1, cax=cax1, orientation='vertical', ax=ax1
+    )
+    cbar1.set_label(
+        r'$\mathcal{P}_{\mathrm{ATP/ADP}}$', fontsize=32
+        )
+    cbar1.set_ticks(cbar_ticks)
+    cbar1.formatter.set_powerlimits([0,0])
+    cbar1.update_ticks()
+    cbar1.ax.tick_params(labelsize=24)
+    cbar1.ax.yaxis.offsetText.set_fontsize(24)
+    cbar1.ax.yaxis.offsetText.set_x(5.0)
+
+    #y-axis label
+    fig1.text(
+        0.8, 0.51,
+        r'$\beta \psi_{1}$',
+        fontsize=30, rotation='vertical', va='center', ha='center'
+    )
+    fig1.text(
+        0.42, 0.03,
+        r'$E_{\mathrm{couple}}$',
+        fontsize=30, va='center', ha='center'
+    )
+    #x-axis label
+    fig1.text(
+            0.42, 0.93,
+            r'$\beta \psi_{\mathrm{o}}$',
+            fontsize=30, va='center', ha='center'
+        )
+    fig1.text(
+            0.05, 0.48,
+            r'$\phi$',
+            fontsize=30, rotation='vertical', va='center', ha='center'
+        )
+
+    left = 0.1  # the left side of the subplots of the figure
+    right = 0.75    # the right side of the subplots of the figure
+    bottom = 0.1   # the bottom of the subplots of the figure
+    top = 0.88     # the top of the subplots of the figure
+    fig1.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
+
+    fig1.savefig(
+        "power_ATP_Ecouple_phase_scan_small_E0_{0}_E1_{1}_n1_{2}".format(
+                E0, E1, num_minima1
+            )
+        + "_figure.pdf",
+        bbox_inches='tight'
+        )
+        
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
     # flux_power_efficiency(target_dir)
     # plot_flux_n_single(target_dir)
-    plot_efficiency_Ecouple_single(target_dir)
+    # plot_efficiency_Ecouple_single(target_dir)
+    # plot_power_Ecouple_single(target_dir)
+    # plot_heatmap_power_Ecouple_n_scan(target_dir)
+    plot_heatmap_power_Ecouple_phase_scan(target_dir)
+    

@@ -15,15 +15,18 @@ num_minima1=3.0
 num_minima2=3.0
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
-psi1_array = array([1.0, 2.0, 4.0])
-psi2_array = array([-4.0, -2.0, -1.0])
-# psi1_array = array([4.0])
-# psi2_array = array([-2.0])
+# psi1_array = array([1.0, 2.0, 4.0])
+# psi2_array = array([-4.0, -2.0, -1.0])
+psi1_array = array([4.0])
+psi2_array = array([-2.0])
 # Ecouple_array = array([2.0, 8.0, 64.0])
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
-phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346]) #selection of twopisweep
+# phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346]) #selection of twopisweep
+phase_array = array([0.0])
+
+phi_array = linspace(0, 2*pi, N)
 
 colorlist=linspace(0,1,4)
 label_lst=['0', '$\pi/9$', '$2\pi/9$', '$\pi/3$', '$4 \pi/9$', '$5 \pi/9$']
@@ -155,11 +158,11 @@ def flux_power_efficiency(target_dir): #processing of raw data
             for Ecouple in Ecouple_array:
                 for ii, phase_shift in enumerate(phase_array):
                     if num_minima==3.0:
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/191018_steadystatecheck" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                     else:
                         input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190924_no_vary_n1_3" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                     
-                    output_file_name = (target_dir + "190924_no_vary_n1_3/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                    output_file_name = (target_dir + "191018_steadystate_check/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
                     
                     print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " + f"Ecouple = {Ecouple}, num_minima1 = {num_minima}, num_minima2 = {num_minima2}")
                     
@@ -884,7 +887,7 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
             plt.close()
             
 def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupling strength
-    output_file_name = (target_dir + "power_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phi_{4}" + "_log_.pdf")
+    output_file_name = (target_dir + "power_Ecouple_steady state check_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phi_{4}" + "_log_.pdf")
     f,axarr=plt.subplots(1, 1, sharex='all', sharey='none', figsize=(6,4))
 
     for psi_1 in psi1_array:
@@ -903,34 +906,28 @@ def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupli
             flux_y_array = append(flux_y_array, flux_y_array[-1])
             power_x = flux_x_array*psi_1
             power_y = flux_y_array*psi_2
-            # axarr[0].plot(Ecouple_array2, power_x, '--', color=plt.cm.cool(.99))
+            # axarr.plot(Ecouple_array2, power_x, '--', color=plt.cm.cool(.99))
             axarr.plot(Ecouple_array2, power_y, '-', color=plt.cm.cool(.99))
         
-            flux_x_array=[]
-            flux_y_array=[]
-            E0=2.0
-            E1=2.0
+            power_x_array=[]
+            power_y_array=[]
             i=0 #only use phase=0 data
             for ii, Ecouple in enumerate(Ecouple_array):
                 input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
-                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,1,2))
-                    flux_x = array(data_array[i,1])
-                    flux_y = array(data_array[i,2])
-                    flux_x_array = append(flux_x_array, flux_x)
-                    flux_y_array = append(flux_y_array, flux_y)
+                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(3,4))
+                    power_x = array(data_array[i,0])
+                    power_y = array(data_array[i,1])
+                    power_x_array = append(power_x_array, power_x)
+                    power_y_array = append(power_y_array, power_y)
                 except OSError:
                     print('Missing file flux')
-            power_x = flux_x_array*psi_1
-            power_y = flux_y_array*psi_2
             # axarr[0].plot(Ecouple_array, psi_1*flux_x_array, 'o', color=plt.cm.cool(0))
-            axarr.plot(Ecouple_array, power_y, 'o', color=plt.cm.cool(0))
+            axarr.plot(Ecouple_array, power_y_array, 'o', color=plt.cm.cool(0))
 
             # add in a extra data points
             flux_x_array=[]
             flux_y_array=[]
-            E0=2.0
-            E1=2.0
             for ii, Ecouple in enumerate(Ecouple_array_extra):
                 input_file_name = (target_dir + "190610_Extra_measurements_Ecouple/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
@@ -950,7 +947,7 @@ def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupli
             axarr.set_xlabel('$E_{couple}$')
             axarr.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             axarr.set_yticks(ylabels_flux)
-            axarr.set_ylabel('$P_{out}$')
+            axarr.set_ylabel('$P_{ATP/ADP}$')
             axarr.spines['right'].set_visible(False)
             axarr.spines['top'].set_visible(False)
         
@@ -1428,7 +1425,115 @@ def plot_rel_flux_Ecouple(target_dir):#plot of the relative flux (flux F1 divide
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))     
             plt.close()
             
+def plot_marg_prob_space(target_dir):#plot of the relative flux (flux F1 divided by flux Fo) as a function of the coupling strength
+    output_file_name1 = (target_dir + "margprob_x_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_.pdf")
+    output_file_name2 = (target_dir + "margprob_y_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_.pdf")
+   
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            for ii, Ecouple in enumerate(Ecouple_array):
+                plt.figure()
+                f1, ax1 = plt.subplots(1,1)
+                f2, ax2 = plt.subplots(1,1)
+                
+                #usual data
+                input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0))
+                    prob_ss_array = data_array.reshape((N,N))
+                    prob_ss_x = trapz(prob_ss_array, dx=dx, axis=1)
+                    prob_ss_y = trapz(prob_ss_array, dx=dx, axis=0)
+                except OSError:
+                    print('Missing file')    
+                    print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
+                ax1.plot(phi_array, prob_ss_x, color='blue', linewidth=1.0)
+                ax2.plot(phi_array, prob_ss_y, color='blue', linewidth=1.0)
             
+                #steady state check data
+                input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/191018_steadystatecheck" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0))
+                    prob_ss_array = data_array.reshape((N,N))
+                    prob_ss_x = trapz(prob_ss_array, dx=dx, axis=1)
+                    prob_ss_y = trapz(prob_ss_array, dx=dx, axis=0)
+                except OSError:
+                    print('Missing file')    
+                    print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
+                ax1.plot(phi_array, prob_ss_x, color='orange', linewidth=1.0, linestyle='--')
+                ax2.plot(phi_array, prob_ss_y, color='orange', linewidth=1.0, linestyle='--')
+
+                ax1.set_xlabel('$ \\theta_o $')
+                ax1.set_ylabel('$P( \\theta_o) $')
+                ax2.set_xlabel('$ \\theta_o $')
+                ax2.set_ylabel('$P( \\theta_o) $')
+                ax1.spines['right'].set_visible(False)
+                ax1.spines['top'].set_visible(False)
+                ax2.spines['right'].set_visible(False)
+                ax2.spines['top'].set_visible(False)
+                ax1.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                ax2.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        
+                f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))     
+                f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))     
+                plt.close()
+            
+def plot_pmf(target_dir):#plot of the pmf along some coordinate
+    output_file_name1 = (target_dir + "pmf_y_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name2 = (target_dir + "pmf_x_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+   
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            plt.figure()
+            f1, axarr1 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
+            f2, axarr2 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
+            
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0,2))
+                    prob_ss_array = data_array[:,0].reshape((N,N))
+                    pot_array = data_array[:,1].reshape((N,N))
+                    prob_ss_x = trapz(prob_ss_array, axis=1)
+                    prob_ss_y = trapz(prob_ss_array, axis=0)
+                except OSError:
+                    print('Missing file')    
+                    print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
+                prob_ss_x_given_y = prob_ss_array/prob_ss_y
+                prob_ss_y_given_x = prob_ss_array/prob_ss_x
+                print(trapz(prob_ss_x_given_y, axis=0))
+                pmf_array_y = - log( trapz( prob_ss_x_given_y * exp( - pot_array ), axis=0 ) )
+                pmf_array_x = - log( trapz( prob_ss_y_given_x * exp( - pot_array ), axis=1 ) )
+                axarr1[ii].plot(phi_array, pmf_array_y)
+                axarr2[ii].plot(phi_array, pmf_array_x)
+                
+                if (ii == 0):
+                    axarr1[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
+                    axarr2[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
+                else:
+                    axarr1[ii].set_title("{}".format(Ecouple))
+                    axarr2[ii].set_title("{}".format(Ecouple))
+                axarr1[ii].set_xlabel('$ \\theta_1 $')
+                axarr2[ii].set_xlabel('$ \\theta_o $')
+                if ii==0:
+                    axarr1[ii].set_ylabel('$PMF( \\theta_1 )$')
+                    axarr2[ii].set_ylabel('$PMF( \\theta_o )$')
+                axarr1[ii].spines['right'].set_visible(False)
+                axarr1[ii].spines['top'].set_visible(False)
+                axarr2[ii].spines['right'].set_visible(False)
+                axarr2[ii].spines['top'].set_visible(False)
+                axarr1[ii].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                axarr1[ii].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
+                axarr1[ii].set_xticklabels([0, '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'])
+                axarr2[ii].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                axarr2[ii].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
+                axarr2[ii].set_xticklabels([0, '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'])
+            
+            f1.tight_layout()
+            f2.tight_layout()
+            f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+            f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+            plt.close()
+                
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
     # flux_power_efficiency(target_dir)
@@ -1445,10 +1550,12 @@ if __name__ == "__main__":
     # plot_flux_space(target_dir)
     # plot_power_efficiency_Ecouple_single(target_dir)
     # plot_power_Ecouple_single(target_dir)
-    plot_power_Ecouple_scaled(target_dir)
+    # plot_power_Ecouple_scaled(target_dir)
     # plot_energy_flux(target_dir)
     # plot_energy_flux_grid(target_dir)
     # plot_prob_flux(target_dir)
     # plot_prob_flux_grid(target_dir)
     # plot_condprob_grid(target_dir)
     # plot_rel_flux_Ecouple(target_dir)
+    # plot_marg_prob_space(target_dir)
+    plot_pmf(target_dir)
