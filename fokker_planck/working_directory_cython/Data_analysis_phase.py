@@ -1,7 +1,7 @@
 import os
 import glob
 import re
-from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt
+from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt, floor
 import math
 import matplotlib.pyplot as plt
 from scipy.integrate import trapz
@@ -23,14 +23,15 @@ psi2_array = array([-2.0])
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
-# phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346]) #selection of twopisweep
-phase_array = array([0.0])
+phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533]) #selection of twopisweep
+# phase_array = array([0.0, 0.349066, 0.698132])
 
 phi_array = linspace(0, 2*pi, N)
 
-colorlist=linspace(0,1,4)
+colorlist=linspace(0,1,len(phase_array))
 label_lst=['0', '$\pi/9$', '$2\pi/9$', '$\pi/3$', '$4 \pi/9$', '$5 \pi/9$']
 size_lst=[8,7,6,5,4,3]
+marker_lst = [".", "v", "+", "s", "p", "^", "x", "D"]
 ticklst=linspace(0, 2*math.pi, 7)
 ylabels_flux = [0, 0.0003, 0.0006]
 ylabels_eff = [0, 0.5, 1]
@@ -1477,63 +1478,361 @@ def plot_marg_prob_space(target_dir):#plot of the relative flux (flux F1 divided
                 f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))     
                 plt.close()
             
-def plot_pmf(target_dir):#plot of the pmf along some coordinate
-    output_file_name1 = (target_dir + "pmf_y_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
-    output_file_name2 = (target_dir + "pmf_x_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+def plot_pmf_space(target_dir):#plot of the pmf along some coordinate
+    output_file_name1 = (target_dir + "pmf_x_marg_force_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name2 = (target_dir + "pmf_y_marg_force_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
    
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
-            plt.figure()
-            f1, axarr1 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
-            f2, axarr2 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
+            if psi_1 >= abs(psi_2):
+                plt.figure()
+                f1, ax1 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
+                f2, ax2 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
             
-            for ii, Ecouple in enumerate(Ecouple_array):
+                force_x = zeros((N,N))
+                force_y = zeros((N,N))
+                
+                for i in range(N):
+                    force_x[i] = psi_1*phi_array
+                    force_y[:,i] = psi_2*phi_array
+                
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                    try:
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0,2))
+                        prob_ss_array = data_array[:,0].reshape((N,N))
+                        pot_array = data_array[:,1].reshape((N,N))
+                        prob_ss_x = trapz(prob_ss_array, axis=1) #integrate using axis=1 integrates out the y component, gives us P(x)
+                        prob_ss_y = trapz(prob_ss_array, axis=0)
+                    except OSError:
+                        print('Missing file')    
+                        print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
+               
+                    prob_ss_x_given_y = prob_ss_array/prob_ss_y
+                    prob_ss_y_given_x = prob_ss_array/prob_ss_x
+                    
+                    pot_array = pot_array + force_x + force_y
+                    
+                    pmf_array_x = - log( trapz( prob_ss_y * exp( - pot_array ), axis=1 ) ) #pmf(\theta_o) = pmf(x)
+                    ax1[ii].plot(phi_array, pmf_array_x)
+                    
+                    if (ii == 0):
+                        ax1[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
+                        ax1[ii].set_ylabel('$PMF( \\theta_\mathrm{o} )$')
+                    else:
+                        ax1[ii].set_title("{}".format(Ecouple))
+                    ax1[ii].set_xlabel('$ \\theta_\mathrm{o} $')
+                    ax1[ii].spines['right'].set_visible(False)
+                    ax1[ii].spines['top'].set_visible(False)
+                    ax1[ii].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                    ax1[ii].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
+                    ax1[ii].set_xticklabels([0, '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'])
+                    
+                    pmf_array_y = - log( trapz( prob_ss_x * exp( - pot_array ), axis=0 ) )
+                    ax2[ii].plot(phi_array, pmf_array_y) #pmf(y) = pmf(\theta_1)
+                
+                    ax2[ii].set_xlabel('$ \\theta_1 $')
+                    if ii==0:
+                        ax2[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
+                        ax2[ii].set_ylabel('$PMF( \\theta_1 )$')
+                    else:
+                        ax2[ii].set_title("{}".format(Ecouple))
+                    ax2[ii].spines['right'].set_visible(False)
+                    ax2[ii].spines['top'].set_visible(False)
+                    ax2[ii].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                    ax2[ii].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
+                    ax2[ii].set_xticklabels([0, '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'])
+            
+                f1.tight_layout()
+                f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+
+                f2.tight_layout()
+                f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+                plt.close()
+
+def plot_pmf_barrier_Ecouple(target_dir):#plot of the pmf along some coordinate
+    output_file_name1 = (target_dir + "pmf_x_marg_barrier_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name2 = (target_dir + "pmf_y_marg_barrier_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+   
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array: #different figures
+            if psi_1 > abs(psi_2):
+                plt.figure()
+                f1, ax1 = plt.subplots(1, figsize=(5,4), sharey='all')
+                f2, ax2 = plt.subplots(1, figsize=(5,4), sharey='all')
+            
+                for jj, phi in enumerate(phase_array): #different lines
+                    min_pmf_x = zeros(len(Ecouple_array))
+                    max_pmf_x = zeros(len(Ecouple_array))
+                    min_pmf_y = zeros(len(Ecouple_array))
+                    max_pmf_y = zeros(len(Ecouple_array))
+                    
+                    for ii, Ecouple in enumerate(Ecouple_array): #different points in a line
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                        try:
+                            data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phi), usecols=(0,2))
+                            prob_ss_array = data_array[:,0].reshape((N,N))
+                            pot_array = data_array[:,1].reshape((N,N))
+                            prob_ss_x = trapz(prob_ss_array, axis=1)
+                            prob_ss_y = trapz(prob_ss_array, axis=0)
+                        except OSError:
+                            print('Missing file')
+                            print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
+
+                        prob_ss_x_given_y = prob_ss_array/prob_ss_y
+                        prob_ss_y_given_x = prob_ss_array/prob_ss_x
+                        pmf_array_y = - log( trapz( prob_ss_x * exp( - pot_array ), axis=0 ) )
+                        pmf_array_x = - log( trapz( prob_ss_y * exp( - pot_array ), axis=1 ) )
+
+                        min_pmf_x[ii] = amin(pmf_array_x)
+                        max_pmf_x[ii] = amax(pmf_array_x)
+                        min_pmf_y[ii] = amin(pmf_array_y)
+                        max_pmf_y[ii] = amax(pmf_array_y)
+
+                    barrier_height_x = max_pmf_x - min_pmf_x
+                    barrier_height_y = max_pmf_y - min_pmf_y
+
+                    ax1.plot(Ecouple_array, barrier_height_x, '-', label=label_lst[jj], color=plt.cm.cool(colorlist[jj]))
+                    ax2.plot(Ecouple_array, barrier_height_y, '-', label=label_lst[jj], color=plt.cm.cool(colorlist[jj]))
+                    
+                ax1.set_ylabel('$ E^{\u2021}_\mathrm{pmf,x} $')
+                ax1.set_xlabel('$ E_\mathrm{couple} $')
+                ax1.spines['right'].set_visible(False)
+                ax1.spines['top'].set_visible(False)
+                ax1.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                ax1.set_xscale('log')
+                ax1.legend(loc='best')
+                
+                ax2.set_ylabel('$ E^{\u2021}_\mathrm{pmf,y} $')
+                ax2.set_xlabel('$ E_\mathrm{couple} $')
+                ax2.spines['right'].set_visible(False)
+                ax2.spines['top'].set_visible(False)
+                ax2.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                ax2.set_xscale('log')
+                ax2.legend(loc='best')
+                
+                f1.tight_layout()
+                f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+                
+                f2.tight_layout()
+                f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+
+                plt.close()
+                
+def plot_scatter_pmf_power(target_dir):
+    output_file_name1 = (target_dir + "scatterplot_pmf_power_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array: #different figures
+            if psi_1 > abs(psi_2):
+                plt.figure()
+                f1, ax1 = plt.subplots(1, figsize=(5,4), sharey='all')
+                
+                ## calculate barrier height
+                barrier_height_x = zeros((len(Ecouple_array), len(phase_array)))
+                barrier_height_y = zeros((len(Ecouple_array), len(phase_array)))
+                # plt1 = zeros(len(phase_array))
+                for jj, phi in enumerate(phase_array): 
+                    min_pmf_x = zeros(len(Ecouple_array))
+                    max_pmf_x = zeros(len(Ecouple_array))
+                    min_pmf_y = zeros(len(Ecouple_array))
+                    max_pmf_y = zeros(len(Ecouple_array))
+                    
+                    for ii, Ecouple in enumerate(Ecouple_array): 
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                        try:
+                            data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phi), usecols=(0,2))
+                            prob_ss_array = data_array[:,0].reshape((N,N))
+                            pot_array = data_array[:,1].reshape((N,N))
+                            prob_ss_x = trapz(prob_ss_array, axis=1)
+                            prob_ss_y = trapz(prob_ss_array, axis=0)
+                        except OSError:
+                            print('Missing file')
+                            print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phi))
+
+                        prob_ss_x_given_y = prob_ss_array/prob_ss_y
+                        prob_ss_y_given_x = prob_ss_array/prob_ss_x
+                        pmf_array_y = - log( trapz( prob_ss_x * exp( - pot_array ), axis=0 ) )
+                        pmf_array_x = - log( trapz( prob_ss_y * exp( - pot_array ), axis=1 ) )
+
+                        min_pmf_x[ii] = amin(pmf_array_x)
+                        max_pmf_x[ii] = amax(pmf_array_x)
+                        min_pmf_y[ii] = amin(pmf_array_y)
+                        max_pmf_y[ii] = amax(pmf_array_y)
+
+                        barrier_height_x[ii, jj] = max_pmf_x[ii] - min_pmf_x[ii]
+                        barrier_height_y[ii, jj] = max_pmf_y[ii] - min_pmf_y[ii]
+                
+                ## grab power data
+                power_array = zeros((len(Ecouple_array), len(phase_array)))
+                for ii, Ecouple in enumerate(Ecouple_array): 
+                    input_file_name = (target_dir + "190624_Twopisweep_complete_set/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    try:
+                        data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(4))
+                        power_array[ii, :] = data_array[:len(phase_array)]
+                    except OSError:
+                        print('Missing file')
+                        print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+                
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    for jj, phi in enumerate(phase_array):
+                        if jj == len(phase_array)-1:
+                            ax1.scatter(-power_array[ii,jj], barrier_height_x[ii,jj], color=plt.cm.cool(colorlist[jj]), marker=marker_lst[ii], label=Ecouple_array[ii])
+                            if ii == 0:
+                                plt1 = ax1.scatter(-power_array[ii,0], barrier_height_x[ii,0], color=plt.cm.cool(colorlist[0]), marker=marker_lst[ii])
+                                plt2 = ax1.scatter(-power_array[ii,1], barrier_height_x[ii,1], color=plt.cm.cool(colorlist[1]), marker=marker_lst[ii])
+                                plt3 = ax1.scatter(-power_array[ii,2], barrier_height_x[ii,2], color=plt.cm.cool(colorlist[2]), marker=marker_lst[ii])
+                                plt4 = ax1.scatter(-power_array[ii,3], barrier_height_x[ii,3], color=plt.cm.cool(colorlist[3]), marker=marker_lst[ii])
+                                plt5 = ax1.scatter(-power_array[ii,4], barrier_height_x[ii,4], color=plt.cm.cool(colorlist[4]), marker=marker_lst[ii])
+                                plt6 = ax1.scatter(-power_array[ii,5], barrier_height_x[ii,5], color=plt.cm.cool(colorlist[5]), marker=marker_lst[ii])
+                        else:
+                            ax1.scatter(-power_array[ii,jj], barrier_height_x[ii,jj], color=plt.cm.cool(colorlist[jj]), marker=marker_lst[ii])
+                ax1.set_xlabel('$ -P_\mathrm{ATP/ADP} $')
+                ax1.set_ylabel('$ E^{\u2021}_\mathrm{pmf,x} $')
+                ax1.spines['right'].set_visible(False)
+                ax1.spines['top'].set_visible(False)
+                ax1.set_xlim([-0.0005, 0.0004])
+                ax1.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+                # ax1.set_xscale('log')
+                # ax1.set_yscale('log')
+                leg1 = ax1.legend(loc='upper left', title='$E_\mathrm{couple}$')
+                leg2 = ax1.legend([plt1, plt2, plt3, plt4, plt5, plt6], label_lst, loc='upper right', title='$\phi$')
+                ax1.add_artist(leg1)
+                
+                f1.tight_layout()
+                f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+                plt.close()
+                
+def plot_prob_coord(target_dir):#plot of the pmf along some coordinate
+    output_file_name1 = (target_dir + "prob_space_plot_scaled_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+   
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            if psi_1 >= abs(psi_2):
+                plt.figure()
+                f1, ax1 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
+                
+                ##Find max prob. to set plot range
                 input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                 try:
-                    data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0,2))
-                    prob_ss_array = data_array[:,0].reshape((N,N))
-                    pot_array = data_array[:,1].reshape((N,N))
-                    prob_ss_x = trapz(prob_ss_array, axis=1)
-                    prob_ss_y = trapz(prob_ss_array, axis=0)
+                    data_array = loadtxt(input_file_name.format(E0, 128.0, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0))
+                    prob_ss_array = data_array.reshape((N,N))
                 except OSError:
                     print('Missing file')    
                     print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
-                prob_ss_x_given_y = prob_ss_array/prob_ss_y
-                prob_ss_y_given_x = prob_ss_array/prob_ss_x
-                print(trapz(prob_ss_x_given_y, axis=0))
-                pmf_array_y = - log( trapz( prob_ss_x_given_y * exp( - pot_array ), axis=0 ) )
-                pmf_array_x = - log( trapz( prob_ss_y_given_x * exp( - pot_array ), axis=1 ) )
-                axarr1[ii].plot(phi_array, pmf_array_y)
-                axarr2[ii].plot(phi_array, pmf_array_x)
+                    
+                prob_max = amax(prob_ss_array)
                 
-                if (ii == 0):
-                    axarr1[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
-                    axarr2[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
-                else:
-                    axarr1[ii].set_title("{}".format(Ecouple))
-                    axarr2[ii].set_title("{}".format(Ecouple))
-                axarr1[ii].set_xlabel('$ \\theta_1 $')
-                axarr2[ii].set_xlabel('$ \\theta_o $')
-                if ii==0:
-                    axarr1[ii].set_ylabel('$PMF( \\theta_1 )$')
-                    axarr2[ii].set_ylabel('$PMF( \\theta_o )$')
-                axarr1[ii].spines['right'].set_visible(False)
-                axarr1[ii].spines['top'].set_visible(False)
-                axarr2[ii].spines['right'].set_visible(False)
-                axarr2[ii].spines['top'].set_visible(False)
-                axarr1[ii].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-                axarr1[ii].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
-                axarr1[ii].set_xticklabels([0, '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'])
-                axarr2[ii].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-                axarr2[ii].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
-                axarr2[ii].set_xticklabels([0, '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'])
+                ##plots
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    try:
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0,2))
+                        prob_ss_array = data_array[:,0].reshape((N,N))
+                        pot_array = data_array[:,1].reshape((N,N))
+                        prob_ss_x = trapz(prob_ss_array, axis=1) #integrate using axis=1 integrates out the y component, gives us P(x)
+                        prob_ss_y = trapz(prob_ss_array, axis=0)
+                    except OSError:
+                        print('Missing file')    
+                        print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
+
+                    prob_ss_new = zeros((N,N))
+
+                    for i in range(N):
+                        for j in range(N):
+                            # prob_ss_new[int(floor(0.5*(i + j))), int(floor(0.5*(i - j)) + 180)] = prob_ss_array[i,j]
+                            prob_ss_new[i ,(j + 180) % N] = prob_ss_array[(i + j) % N, (i - j) % N]
+                    
+                    ax1[ii].contourf(prob_ss_new, vmin=0, vmax=prob_max)
+               
+                    if (ii == 0):
+                        ax1[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
+                        ax1[ii].set_ylabel('$\\theta_\mathrm{cm}$')
+                    else:
+                        ax1[ii].set_title("{}".format(Ecouple))
+                    ax1[ii].set_xlabel('$\\theta_\mathrm{diff}$')
+                    ax1[ii].spines['right'].set_visible(False)
+                    ax1[ii].spines['top'].set_visible(False)
+                    ax1[ii].set_xticks([0, 60, 120, 180, 240, 300, 360])
+                    ax1[ii].set_xticklabels(['$-2\pi$', '', '$-2 \pi/3$', '', '$2\pi/3$', '', '$ 2\pi$'])
+                    ax1[ii].set_yticks([0, 60, 120, 180, 240, 300, 360])
+                    ax1[ii].set_yticklabels(['$0$', '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$ 2\pi$'])
             
-            f1.tight_layout()
-            f2.tight_layout()
-            f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
-            f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
-            plt.close()
+                f1.tight_layout()
+                f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+
+                plt.close()
+
+def plot_pmf_coord(target_dir):#plot of the pmf along some coordinate
+    output_file_name1 = (target_dir + "pmf_coord1_cond_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name2 = (target_dir + "pmf_coord2_cond_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+   
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            if psi_1 >= abs(psi_2):
+                plt.figure()
+                f1, ax1 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
+                f2, ax2 = plt.subplots(1, Ecouple_array.size, figsize=(20,3), sharey='all')
                 
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                    try:
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0), usecols=(0,2))
+                        prob_ss_array = data_array[:,0].reshape((N,N))
+                        pot_array = data_array[:,1].reshape((N,N))
+                        # prob_ss_x = trapz(prob_ss_array, axis=1) #integrate using axis=1 integrates out the y component, gives us P(x)
+                        # prob_ss_y = trapz(prob_ss_array, axis=0)
+                    except OSError:
+                        print('Missing file')    
+                        print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
+               
+                    prob_ss_new = zeros((N,N))
+
+                    for i in range(N):
+                        for j in range(N):
+                            prob_ss_new[i , (j + 180) % N] = prob_ss_array[(i + j) % N, (i - j) % N]
+                    
+                    prob_ss_1 = trapz(prob_ss_new, axis=1)
+                    prob_ss_2 = trapz(prob_ss_new, axis=0)
+                    prob_ss_1_given_2 = prob_ss_new/prob_ss_2
+                    prob_ss_2_given_1 = prob_ss_new/prob_ss_1
+                    
+                    pmf_array_1 = - log( trapz( prob_ss_2_given_1 * exp( - pot_array ), axis=1 ) )
+                    ax1[ii].plot(phi_array, pmf_array_1)
+                    
+                    if (ii == 0):
+                        ax1[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
+                        ax1[ii].set_ylabel('$PMF( \\theta_\mathrm{cm} )$')
+                    else:
+                        ax1[ii].set_title("{}".format(Ecouple))
+                    ax1[ii].set_xlabel('$ \\theta_\mathrm{cm} $')
+                    ax1[ii].spines['right'].set_visible(False)
+                    ax1[ii].spines['top'].set_visible(False)
+                    ax1[ii].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                    ax1[ii].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
+                    ax1[ii].set_xticklabels([0, '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'])
+                    
+                    pmf_array_2 = - log( trapz( prob_ss_1_given_2 * exp( - pot_array ), axis=0 ) )
+                    ax2[ii].plot(phi_array, pmf_array_2)
+                
+                    ax2[ii].set_xlabel('$ \\theta_\mathrm{diff} $')
+                    if ii==0:
+                        ax2[ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
+                        ax2[ii].set_ylabel('$PMF( \\theta_\mathrm{diff} )$')
+                    else:
+                        ax2[ii].set_title("{}".format(Ecouple))
+                    ax2[ii].spines['right'].set_visible(False)
+                    ax2[ii].spines['top'].set_visible(False)
+                    ax2[ii].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                    ax2[ii].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
+                    ax2[ii].set_xticklabels(['-2 \pi', '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'])
+            
+                f1.tight_layout()
+                f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+
+                f2.tight_layout()
+                f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+                plt.close()
+    
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
     # flux_power_efficiency(target_dir)
@@ -1558,4 +1857,8 @@ if __name__ == "__main__":
     # plot_condprob_grid(target_dir)
     # plot_rel_flux_Ecouple(target_dir)
     # plot_marg_prob_space(target_dir)
-    plot_pmf(target_dir)
+    # plot_pmf_space(target_dir)
+    # plot_pmf_barrier_Ecouple(target_dir)
+    # plot_scatter_pmf_power(target_dir)
+    # plot_prob_coord(target_dir)
+    plot_pmf_coord(target_dir )
