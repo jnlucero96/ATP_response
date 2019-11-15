@@ -163,11 +163,11 @@ def flux_power_efficiency(target_dir): #processing of raw data
                         input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/191018_steadystatecheck" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                     else:
                         input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190924_no_vary_n1_3" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
-                    
+
                     output_file_name = (target_dir + "191018_steadystate_check/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
-                    
+
                     print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " + f"Ecouple = {Ecouple}, num_minima1 = {num_minima}, num_minima2 = {num_minima2}")
-                    
+
                     try:
                         data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima, num_minima2, phase_shift), usecols=(0,3,4,5,6,7,8))
                         N = int(sqrt(len(data_array)))
@@ -186,23 +186,23 @@ def flux_power_efficiency(target_dir): #processing of raw data
                         integrate_power_X[ii] = integrate_flux_X[ii]*psi_1
                         integrate_power_Y[ii] = integrate_flux_Y[ii]*psi_2
                     except:
-                        print('Missing file')    
+                        print('Missing file')
                 if (abs(psi_1) <= abs(psi_2)):
                     efficiency_ratio = -(integrate_power_X/integrate_power_Y)
                 else:
                     efficiency_ratio = -(integrate_power_Y/integrate_power_X)
-    
+
                 with open(output_file_name.format(E0, E1, psi_1, psi_2, num_minima2, Ecouple), "w") as ofile:
                     for ii, phase_shift in enumerate(phase_array):
                         ofile.write(
                             f"{phase_shift:.15e}" + "\t"
                             + f"{integrate_flux_X[ii]:.15e}" + "\t"
-                            + f"{integrate_flux_Y[ii]:.15e}" + "\t" 
+                            + f"{integrate_flux_Y[ii]:.15e}" + "\t"
                             + f"{integrate_power_X[ii]:.15e}" + "\t"
                             + f"{integrate_power_Y[ii]:.15e}" + "\t"
                             + f"{efficiency_ratio[ii]:.15e}" + "\n")
                     ofile.flush()
-            
+
 def plot_power_phi_grid(target_dir):#grid of plots of the power as a function of the phase offset, different plots are for different forces
     output_file_name = (target_dir + "power_Y_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
     f,axarr=plt.subplots(3,3,sharex='all',sharey='all')
@@ -1480,19 +1480,18 @@ def plot_marg_prob_space(target_dir):#plot of the relative flux (flux F1 divided
                 plt.close()
             
 def plot_free_energy_space(target_dir):#plot of the pmf along some coordinate
-    output_file_name1 = (target_dir + "FE_xy_force_cond_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name1 = (target_dir + "FE_force_xy_cond_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
    
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             if psi_1 >= abs(psi_2):
                 plt.figure()
                 f1, ax1 = plt.subplots(2, Ecouple_array.size, figsize=(20,6), sharey='all', sharex='all')
-                force_x = zeros((N,N))
-                force_y = zeros((N,N))
-
-                for i in range(N):
-                    force_x[:,i] = psi_1*phi_array
-                    force_y[i] = psi_2*phi_array
+                force_x = zeros(N)
+                force_y = zeros(N)
+                
+                force_x = psi_1*phi_array
+                force_y = psi_2*phi_array
                 
                 for ii, Ecouple in enumerate(Ecouple_array):
                     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
@@ -1509,12 +1508,18 @@ def plot_free_energy_space(target_dir):#plot of the pmf along some coordinate
                     prob_ss_x_given_y = prob_ss_array/prob_ss_y[:,None]
                     prob_ss_y_given_x = prob_ss_array/prob_ss_x
                 
-                    FE_array_x = trapz( prob_ss_y_given_x * (pot_array - force_x - force_y + log( prob_ss_y_given_x )) , axis=1 ) #pmf(\theta_o) = pmf(x)
+                    FE_array_x = trapz( prob_ss_y_given_x * pot_array, axis = 1) - force_x - force_y*(1-exp(-Ecouple)) + trapz( prob_ss_y_given_x * log( prob_ss_y_given_x ) , axis=1 )
+                    # FE_array_x = trapz( prob_ss_y_given_x * (pot_array), axis = 1)
+                   # S_array_x = -trapz( prob_ss_y_given_x * log( prob_ss_y_given_x ), axis = 1 )
                     FE_array_x -= amin(FE_array_x)
                     
-                    FE_array_y = trapz( prob_ss_x_given_y * (pot_array - force_x - force_y + log( prob_ss_x_given_y )) , axis=0 )
+                    FE_array_y = trapz( prob_ss_x_given_y * pot_array, axis = 0) - force_x*(1-exp(-Ecouple)) - force_y + trapz( prob_ss_x_given_y * log( prob_ss_x_given_y ) , axis=0 )
+                    # FE_array_y = trapz( prob_ss_x_given_y * (pot_array), axis = 0)
+  #                   S_array_y = -trapz( prob_ss_x_given_y * log( prob_ss_x_given_y ), axis = 0 )
                     FE_array_y -= amin(FE_array_y)
                     
+                    # ax1[0, ii].plot(phi_array, S_array_x)
+ #                    ax1[1, ii].plot(phi_array, S_array_y)
                     ax1[0, ii].plot(phi_array, FE_array_x)
                     ax1[1, ii].plot(phi_array, FE_array_y) #pmf(y) = pmf(\theta_1)
                 
@@ -1679,8 +1684,8 @@ def plot_pmf_barrier_Ecouple(target_dir):#plot of the pmf along some coordinate
                 plt.close()
                 
 def plot_scatter_pmf_power(target_dir):
-    output_file_name1 = (target_dir + "scatterplot_FE_cond_x_power_extra_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
-    output_file_name2 = (target_dir + "scatterplot_FE_cond_y_power_extra_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name1 = (target_dir + "scatterplot_FE_cond_x_power_extra_force_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name2 = (target_dir + "scatterplot_FE_cond_y_power_extra_force_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
     
     for psi_1 in psi1_array:
         for psi_2 in psi2_array: #different figures
@@ -1689,6 +1694,13 @@ def plot_scatter_pmf_power(target_dir):
                 f1, ax1 = plt.subplots(1, figsize=(5,4), sharey='all')
                 f2, ax2 = plt.subplots(1, figsize=(5,4), sharey='all')
                 ax1.plot()
+                
+                force_x = zeros(N)
+                force_y = zeros(N)
+                
+                force_x = psi_1*phi_array
+                force_y = psi_2*phi_array
+                
                 ## calculate barrier height
                 barrier_height_x = zeros((len(Ecouple_tot_array), len(phase_array)))
                 barrier_height_y = zeros((len(Ecouple_tot_array), len(phase_array)))
@@ -1716,13 +1728,58 @@ def plot_scatter_pmf_power(target_dir):
 
                         prob_ss_x_given_y = prob_ss_array/prob_ss_y[:,None]
                         prob_ss_y_given_x = prob_ss_array/prob_ss_x
-                        pmf_array_y = trapz( prob_ss_y_given_x * (pot_array + log( prob_ss_y_given_x )) , axis=1 )
-                        pmf_array_x = trapz( prob_ss_x_given_y * (pot_array + log( prob_ss_x_given_y )) , axis=0 )
-
-                        min_pmf_x[ii] = amin(pmf_array_x)
-                        max_pmf_x[ii] = amax(pmf_array_x)
-                        min_pmf_y[ii] = amin(pmf_array_y)
-                        max_pmf_y[ii] = amax(pmf_array_y)
+                        pmf_array_y = trapz( prob_ss_y_given_x * (pot_array + log( prob_ss_y_given_x )) , axis=1 ) - force_x - force_y
+                        pmf_array_x = trapz( prob_ss_x_given_y * (pot_array + log( prob_ss_x_given_y )) , axis=0 ) - force_y - force_x
+                        
+                        
+                        if pmf_array_x[1] < pmf_array_x[0]:
+                            for j in range(N-1):
+                                if pmf_array_x[j+1] > pmf_array_x[j]:
+                                    min_pmf_x[ii] = pmf_array_x[j]
+                                    break
+                            
+                            for k in range(j+1, N-1):
+                                if pmf_array_x[k+1] < pmf_array_x[k]:
+                                    max_pmf_x[ii] = pmf_array_x[k]
+                                    break
+                                    
+                        if pmf_array_x[1] > pmf_array_x[0]:
+                            for j in range(N-1):
+                                if pmf_array_x[j+1] < pmf_array_x[j]:
+                                    max_pmf_x[ii] = pmf_array_x[j]
+                                    break
+                            
+                            for k in range(j+1, N-1):
+                                if pmf_array_x[k+1] > pmf_array_x[k]:
+                                    min_pmf_x[ii] = pmf_array_x[k]
+                                    break
+                                    
+                        if pmf_array_y[1] < pmf_array_y[0]:
+                            for j in range(N-1):
+                                if pmf_array_y[j+1] > pmf_array_y[j]:
+                                    min_pmf_y[ii] = pmf_array_y[j]
+                                    break
+                            
+                            for k in range(j+1, N-1):
+                                if pmf_array_y[k+1] < pmf_array_y[k]:
+                                    max_pmf_y[ii] = pmf_array_y[k]
+                                    break
+                                    
+                        if pmf_array_y[1] > pmf_array_y[0]:
+                            for j in range(N-1):
+                                if pmf_array_y[j+1] < pmf_array_y[j]:
+                                    max_pmf_y[ii] = pmf_array_y[j]
+                                    break
+                            
+                            for k in range(j+1, N-1):
+                                if pmf_array_y[k+1] > pmf_array_y[k]:
+                                    min_pmf_y[ii] = pmf_array_y[k]
+                                    break
+                                
+                        # min_pmf_x[ii] = amin(pmf_array_x)
+#                         max_pmf_x[ii] = amax(pmf_array_x)
+                        # min_pmf_y[ii] = amin(pmf_array_y)
+                        # max_pmf_y[ii] = amax(pmf_array_y)
 
                         barrier_height_x[ii, jj] = max_pmf_x[ii] - min_pmf_x[ii]
                         barrier_height_y[ii, jj] = max_pmf_y[ii] - min_pmf_y[ii]
@@ -1922,9 +1979,9 @@ if __name__ == "__main__":
     # plot_condprob_grid(target_dir)
     # plot_rel_flux_Ecouple(target_dir)
     # plot_marg_prob_space(target_dir)
-    plot_free_energy_space(target_dir)
+    # plot_free_energy_space(target_dir)
     # plot_pmf_space(target_dir)
     # plot_pmf_barrier_Ecouple(target_dir)
-    # plot_scatter_pmf_power(target_dir)
+    plot_scatter_pmf_power(target_dir)
     # plot_prob_coord(target_dir)
     # plot_pmf_coord(target_dir)
