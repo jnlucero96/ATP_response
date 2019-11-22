@@ -1,7 +1,7 @@
 import os
 import glob
 import re
-from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt, floor, shape
+from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt, floor, shape, diff, sign, nonzero
 import math
 import matplotlib.pyplot as plt
 from scipy.integrate import trapz
@@ -22,7 +22,7 @@ psi2_array = array([-2.0])
 # Ecouple_array = array([2.0, 8.0, 64.0])
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
-Ecouple_tot_array = array([0.0, 2.0, 4.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 32.0, 64.0, 128.0])
+Ecouple_tot_array = array([10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 32.0, 64.0, 128.0])
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
 phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533]) #selection of twopisweep
 # phase_array = array([0.0])
@@ -1489,9 +1489,16 @@ def plot_free_energy_space(target_dir):#plot of the pmf along some coordinate
                 f1, ax1 = plt.subplots(2, Ecouple_array.size, figsize=(20,6), sharey='all', sharex='all')
                 force_x = zeros(N)
                 force_y = zeros(N)
-                
+
                 force_x = psi_1*phi_array
                 force_y = psi_2*phi_array
+                
+                # force_x = zeros((N,N))
+#                 force_y = zeros((N,N))
+#                 for i in range(N):
+#                     force_x[:,i] = psi_1*phi_array
+#                     force_y[i] = psi_2*phi_array
+
                 
                 for ii, Ecouple in enumerate(Ecouple_array):
                     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
@@ -1508,12 +1515,12 @@ def plot_free_energy_space(target_dir):#plot of the pmf along some coordinate
                     prob_ss_x_given_y = prob_ss_array/prob_ss_y[:,None]
                     prob_ss_y_given_x = prob_ss_array/prob_ss_x
                 
-                    FE_array_x = trapz( prob_ss_y_given_x * pot_array, axis = 1) - force_x - force_y*(1-exp(-Ecouple)) + trapz( prob_ss_y_given_x * log( prob_ss_y_given_x ) , axis=1 )
+                    FE_array_x = trapz(prob_ss_y_given_x * pot_array, axis=1) + trapz( prob_ss_y_given_x * log(prob_ss_y_given_x), axis=1) - force_x - force_y #- trapz(force_x + force_y, axis=1)
                     # FE_array_x = trapz( prob_ss_y_given_x * (pot_array), axis = 1)
                    # S_array_x = -trapz( prob_ss_y_given_x * log( prob_ss_y_given_x ), axis = 1 )
                     FE_array_x -= amin(FE_array_x)
                     
-                    FE_array_y = trapz( prob_ss_x_given_y * pot_array, axis = 0) - force_x*(1-exp(-Ecouple)) - force_y + trapz( prob_ss_x_given_y * log( prob_ss_x_given_y ) , axis=0 )
+                    FE_array_y = trapz(prob_ss_x_given_y * pot_array, axis=0) + trapz(prob_ss_x_given_y * log(prob_ss_x_given_y), axis=0) - force_y - force_x #- trapz(force_x + force_y, axis=0)
                     # FE_array_y = trapz( prob_ss_x_given_y * (pot_array), axis = 0)
   #                   S_array_y = -trapz( prob_ss_x_given_y * log( prob_ss_x_given_y ), axis = 0 )
                     FE_array_y -= amin(FE_array_y)
@@ -1522,7 +1529,7 @@ def plot_free_energy_space(target_dir):#plot of the pmf along some coordinate
  #                    ax1[1, ii].plot(phi_array, S_array_y)
                     ax1[0, ii].plot(phi_array, FE_array_x)
                     ax1[1, ii].plot(phi_array, FE_array_y) #pmf(y) = pmf(\theta_1)
-                
+                    
                     if (ii == 0):
                         ax1[0, ii].set_title("$E_{couple}$" + "={}".format(Ecouple))
                         ax1[0, ii].set_ylabel('$F( \\theta_\mathrm{o} )$')
@@ -1543,6 +1550,8 @@ def plot_free_energy_space(target_dir):#plot of the pmf along some coordinate
                 f1.tight_layout()
                 f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
                 plt.close()
+                
+                
 
 def plot_pmf_space(target_dir):#plot of the pmf along some coordinate
     output_file_name1 = (target_dir + "pmf_x_cond_force_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
@@ -1684,8 +1693,8 @@ def plot_pmf_barrier_Ecouple(target_dir):#plot of the pmf along some coordinate
                 plt.close()
                 
 def plot_scatter_pmf_power(target_dir):
-    output_file_name1 = (target_dir + "scatterplot_FE_cond_x_power_extra_force_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
-    output_file_name2 = (target_dir + "scatterplot_FE_cond_y_power_extra_force_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name1 = (target_dir + "scatterplot_FE_cond_x_power_extra_force_tight_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    output_file_name2 = (target_dir + "scatterplot_FE_cond_y_power_extra_force_tight_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
     
     for psi_1 in psi1_array:
         for psi_2 in psi2_array: #different figures
@@ -1697,9 +1706,16 @@ def plot_scatter_pmf_power(target_dir):
                 
                 force_x = zeros(N)
                 force_y = zeros(N)
-                
+
                 force_x = psi_1*phi_array
                 force_y = psi_2*phi_array
+                
+                # force_x = zeros((N,N))
+#                 force_y = zeros((N,N))
+#
+#                 for i in range(N):
+#                     force_x[:,i] = psi_1*phi_array
+#                     force_y[i] = psi_2*phi_array
                 
                 ## calculate barrier height
                 barrier_height_x = zeros((len(Ecouple_tot_array), len(phase_array)))
@@ -1728,58 +1744,41 @@ def plot_scatter_pmf_power(target_dir):
 
                         prob_ss_x_given_y = prob_ss_array/prob_ss_y[:,None]
                         prob_ss_y_given_x = prob_ss_array/prob_ss_x
-                        pmf_array_y = trapz( prob_ss_y_given_x * (pot_array + log( prob_ss_y_given_x )) , axis=1 ) - force_x - force_y
-                        pmf_array_x = trapz( prob_ss_x_given_y * (pot_array + log( prob_ss_x_given_y )) , axis=0 ) - force_y - force_x
+                        pmf_array_x = trapz(prob_ss_y_given_x * (pot_array + log(prob_ss_y_given_x)), axis=1) - force_x - force_y
+                        pmf_array_y = trapz(prob_ss_x_given_y * (pot_array + log(prob_ss_x_given_y)), axis=0) - force_x - force_y
                         
+                        # mins_x = (diff(sign(diff(pmf_array_x))) > 0).nonzero()[0] #positions of minima
+                        # maxs_x = (diff(sign(diff(pmf_array_x))) < 0).nonzero()[0]
+                        # mins_y = (diff(sign(diff(pmf_array_y))) > 0).nonzero()[0]
+                        # maxs_y = (diff(sign(diff(pmf_array_y))) < 0).nonzero()[0]
+                        #
+                        # if mins_x[0] > 100 or len(mins_x) < 3:
+                        #     try:
+                        #         barrier_height_x[ii, jj] = pmf_array_x[mins_x[0]] - pmf_array_x[mins_x[1]]
+                        #     except:
+                        #         barrier_height_x[ii, jj] = float('NaN')
+                        # else:
+                        #     try:
+                        #         barrier_height_x[ii, jj] = pmf_array_x[mins_x[1]] - pmf_array_x[mins_x[2]]
+                        #     except:
+                        #         barrier_height_x[ii, jj] = float('NaN')
+                        #
+                        # if mins_y[0] > 100 or len(mins_y) < 3:
+                        #     try:
+                        #         barrier_height_y[ii, jj] = pmf_array_y[mins_y[0]] - pmf_array_y[mins_y[1]]
+                        #     except:
+                        #         barrier_height_y[ii, jj] = float('NaN')
+                        # else:
+                        #     try:
+                        #         barrier_height_y[ii, jj] = pmf_array_y[mins_y[1]] - pmf_array_y[mins_y[2]]
+                        #     except:
+                        #         barrier_height_y[ii, jj] = float('NaN')
+                        # print(mins_y)
                         
-                        if pmf_array_x[1] < pmf_array_x[0]:
-                            for j in range(N-1):
-                                if pmf_array_x[j+1] > pmf_array_x[j]:
-                                    min_pmf_x[ii] = pmf_array_x[j]
-                                    break
-                            
-                            for k in range(j+1, N-1):
-                                if pmf_array_x[k+1] < pmf_array_x[k]:
-                                    max_pmf_x[ii] = pmf_array_x[k]
-                                    break
-                                    
-                        if pmf_array_x[1] > pmf_array_x[0]:
-                            for j in range(N-1):
-                                if pmf_array_x[j+1] < pmf_array_x[j]:
-                                    max_pmf_x[ii] = pmf_array_x[j]
-                                    break
-                            
-                            for k in range(j+1, N-1):
-                                if pmf_array_x[k+1] > pmf_array_x[k]:
-                                    min_pmf_x[ii] = pmf_array_x[k]
-                                    break
-                                    
-                        if pmf_array_y[1] < pmf_array_y[0]:
-                            for j in range(N-1):
-                                if pmf_array_y[j+1] > pmf_array_y[j]:
-                                    min_pmf_y[ii] = pmf_array_y[j]
-                                    break
-                            
-                            for k in range(j+1, N-1):
-                                if pmf_array_y[k+1] < pmf_array_y[k]:
-                                    max_pmf_y[ii] = pmf_array_y[k]
-                                    break
-                                    
-                        if pmf_array_y[1] > pmf_array_y[0]:
-                            for j in range(N-1):
-                                if pmf_array_y[j+1] < pmf_array_y[j]:
-                                    max_pmf_y[ii] = pmf_array_y[j]
-                                    break
-                            
-                            for k in range(j+1, N-1):
-                                if pmf_array_y[k+1] > pmf_array_y[k]:
-                                    min_pmf_y[ii] = pmf_array_y[k]
-                                    break
-                                
-                        # min_pmf_x[ii] = amin(pmf_array_x)
-#                         max_pmf_x[ii] = amax(pmf_array_x)
-                        # min_pmf_y[ii] = amin(pmf_array_y)
-                        # max_pmf_y[ii] = amax(pmf_array_y)
+                        min_pmf_x[ii] = amin(pmf_array_x)
+                        max_pmf_x[ii] = amax(pmf_array_x)
+                        min_pmf_y[ii] = amin(pmf_array_y)
+                        max_pmf_y[ii] = amax(pmf_array_y)
 
                         barrier_height_x[ii, jj] = max_pmf_x[ii] - min_pmf_x[ii]
                         barrier_height_y[ii, jj] = max_pmf_y[ii] - min_pmf_y[ii]
@@ -1806,7 +1805,8 @@ def plot_scatter_pmf_power(target_dir):
                 ax1.set_ylabel('$ E^{\u2021}_\mathrm{F,x} $')
                 ax1.spines['right'].set_visible(False)
                 ax1.spines['top'].set_visible(False)
-                ax1.set_xlim([-0.0004, 0.0005])
+                ax1.set_xlim([-0.0004, 0])
+                ax1.set_ylim([0,None])
                 ax1.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
                 ax1.legend(loc='best')
                 
@@ -1817,7 +1817,8 @@ def plot_scatter_pmf_power(target_dir):
                 ax2.set_ylabel('$ E^{\u2021}_\mathrm{F,y} $')
                 ax2.spines['right'].set_visible(False)
                 ax2.spines['top'].set_visible(False)
-                ax2.set_xlim([-0.0004, 0.0005])
+                ax2.set_xlim([-0.0004, 0])
+                ax2.set_ylim([0,None])
                 ax2.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
                 ax2.legend(loc='best')
                 
