@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from math import pi
 from numpy import finfo, asarray, empty, zeros, linspace
 from datetime import datetime
@@ -106,7 +106,10 @@ def main():
     drift_at_pos = zeros((2, N, N))
     diffusion_at_pos = zeros((4, N, N))
 
-    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Launching coupled simulation...")
+    print(
+        f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} "
+        + "Launching FPE simulation..."
+        )
     launchpad_reference(
         n1, n2,
         phase,
@@ -120,9 +123,15 @@ def main():
         E0, Ecouple, E1, psi1, psi2,
         dt, m1, m2, beta, gamma1, gamma2
     )
-    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Coupled simulation done!")
+    print(
+        f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} "
+        + "FPE simulation done!"
+        )
 
-    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Processing data...")
+    print(
+        f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} "
+        + "Processing data..."
+        )
     # recast everything into a numpy array
     p_now = asarray(p_now)
     p_equil = asarray(prob)
@@ -138,10 +147,15 @@ def main():
     assert (abs(p_now.sum(axis=None) - 1.0).__abs__() <= finfo('float32').eps), \
         "ABORT: Probability density is not normalized!"
 
-    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Processing finished!")
+    print(
+        f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} "
+        + "Processing finished!"
+        )
 
     # write to file
-    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving data...")
+    print(
+        f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving data..."
+        )
     save_data_reference(
         n1, n2,
         phase,
