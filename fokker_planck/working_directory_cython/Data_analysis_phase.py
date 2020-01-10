@@ -23,12 +23,12 @@ num_minima2=3.0
 # psi2_array = array([-1., -2.0, -4.])
 # psi1_array = array([4.0])
 # psi2_array = array([-2.0])
-psi1_array = array([8.0, 4.0, 2.0])
-# psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
-psi_ratio = array([0.5, 0.25, 0.125])
+psi1_array = array([2.0, 4.0, 8.0])
+psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
+psi_ratio = array([8, 4, 2])
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
-# Ecouple_array = array([0.0])
-Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
+# Ecouple_array = array([16.0])
+Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 # Ecouple_array = array([2.0, 8.0, 32.0, 128.0])
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 Ecouple_array_extra2 = array([1.41, 2.83, 5.66, 11.31, 22.63, 45.25, 90.51])
@@ -237,7 +237,7 @@ def flux_power_efficiency_extrapoints(target_dir): #processing of raw data
                             input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/191221_morepoints" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                         # input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190610_phaseoffset_extra" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                         
-                        output_file_name = (target_dir + "191217_morepoints/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                        output_file_name = (target_dir + "191217_morepoints/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
 
                         print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " + f"Ecouple = {Ecouple}, num_minima1 = {num_minima1}, num_minima2 = {num_minima2}")
 
@@ -314,14 +314,14 @@ def plot_power_phi_single(target_dir):#plot of the power as a function of the ph
             ax.axhline(0, color='black', linewidth=1)
 
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,3,4))
                     phase_array = data_array[:,0]
                     power_x_array = data_array[:,1]
                     power_y_array = -data_array[:,2]
                     
-                    ax.plot(phase_array[:7], power_y_array[:7], linestyle='-', marker='o', label=f'${Ecouple}$', markersize=8, linewidth=2)
+                    ax.plot(phase_array, power_y_array, linestyle='-', marker='o', label=f'${Ecouple}$', markersize=8, linewidth=2)
                 except OSError:
                     print('Missing file')      
             #Infinite coupling result
@@ -330,7 +330,7 @@ def plot_power_phi_single(target_dir):#plot of the power as a function of the ph
             phase_array = data_array[:,0]
             flux_array = -psi_2*data_array[:,1]
 
-            ax.plot(phase_array[:61], flux_array[:61], '-', color=plt.cm.cool(colorlist[3]), label=f'$\infty$', linewidth=2)
+            ax.plot(phase_array[:61], flux_array[:61], '-', label=f'$\infty$', linewidth=2)
             ax.tick_params(axis='both', labelsize=14)
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
@@ -393,7 +393,7 @@ def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a
             axarr[0].axhline(0, color='black', linewidth=1)#line at zero
             
             #zero-barrier theory lines
-            input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/190624_Twopisweep_complete_set/processed_data/" + "flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
             data_array = loadtxt(input_file_name.format(psi_1, psi_2))
             Ecouple_array3 = array(data_array[:,0])
             flux_x_array = array(data_array[:,1])
@@ -406,7 +406,7 @@ def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a
             E0=2.0
             E1=2.0
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,1,2))
                     phase_array = array(data_array[:,0])
@@ -417,7 +417,7 @@ def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a
             power_x = flux_x_array*psi_1
             power_y = -flux_y_array*psi_2
             # axarr[0].plot(Ecouple_array, psi_1*flux_x_array, 'o', color=plt.cm.cool(0))
-            axarr[0].plot(phase_array[:7], power_y[:7], 'o', color='C1', label='$2$', markersize=8)
+            axarr[0].plot(phase_array, power_y, 'o', color='C1', label='$2$', markersize=8)
 
             axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             # axarr[0].set_yticks(ylabels_flux)
@@ -435,16 +435,16 @@ def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a
             #########################################################    
             #efficiency plot
             axarr[1].axhline(0, color='black', linewidth=1)
-            axarr[1].axhline((flux_y_array[4])/(flux_x_array[4]), color='C0', linewidth=2, label='$0$')
+            axarr[1].axhline(1, color='C0', linewidth=2, label='$0$')
             
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = (target_dir + "191217_morepoints/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(5))
                     eff_array = data_array
                 except OSError:
                     print('Missing file efficiency')    
-            axarr[1].plot(phase_array[:7], eff_array[:7]/(-psi_2/psi_1), 'o', color='C1', label='$2$', markersize=8)
+            axarr[1].plot(phase_array, eff_array/(-psi_2/psi_1), 'o', color='C1', label='$2$', markersize=8)
             
             
             axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
@@ -667,37 +667,39 @@ def plot_flux_phi_grid(target_dir):#grid of plots of the flux as a function of t
 def plot_power_Ecouple_grid(target_dir):#grid of plots of the flux as a function of the phase offset
     output_file_name = (target_dir + "power_ATP_Ecouple_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
     f,axarr=plt.subplots(3, 3, sharex='all', sharey='row', figsize=(8,6))
-    for j, psi_1 in enumerate(psi1_array):
-        for i, ratio in enumerate(psi_ratio):
+    for i, psi_1 in enumerate(psi1_array):
+        for j, ratio in enumerate(psi_ratio):
         # for i, psi_2 in enumerate(psi2_array):
-            psi_2 = -psi_1*ratio
+            psi_2 = -psi_1/ratio
             print(psi_1, psi_2)
         
             #line at highest Ecouple power
-            input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+            input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
             try:
                 data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, 128.0), usecols=(3,4))
-                power_x = array(data_array[0,0])
-                power_y = -array(data_array[0,1])
+                if len(data_array) > 2:
+                    power_x = array(data_array[0,0])
+                    power_y = -array(data_array[0,1])
+                else:
+                    power_x = array(data_array[0])
+                    power_y = -array(data_array[1])
+                axarr[i, j].axhline(power_y, color='grey', linestyle=':', linewidth=1)
             except OSError:
                 print('Missing file flux')
-                
-            if (j == 1 and i == 0) or (j == 2 and i == 0) or (j == 2 and i == 1):
-                axarr[i, j].axhline(power_y, color='grey', linestyle=':', linewidth=1)
             
             #line at zero power
             axarr[i, j].axhline(0, color='black', linewidth=1)
             
             #zero-barrier result
-            # input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "Flux_zerobarrier_evenlyspaced_psi1_{0}_psi2_{1}_outfile.dat")
-            # data_array = loadtxt(input_file_name.format(psi_1, psi_2))
-            # Ecouple_array2 = array(data_array[:,0])
-            # flux_x_array = array(data_array[:,1])
-            # flux_y_array = array(data_array[:,2])
-            # power_x = flux_x_array*psi_1
-            # power_y = -flux_y_array*psi_2
-            #
-            # axarr[i, j].plot(Ecouple_array2, power_y, '-', color='C0', linewidth=3)
+            input_file_name = (target_dir + "191217_morepoints/processed_data/" + "Flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            data_array = loadtxt(input_file_name.format(psi_1, psi_2))
+            Ecouple_array2 = array(data_array[:,0])
+            flux_x_array = array(data_array[:,1])
+            flux_y_array = array(data_array[:,2])
+            power_x = flux_x_array*psi_1
+            power_y = -flux_y_array*psi_2
+
+            axarr[i, j].plot(Ecouple_array2, power_y, '-', color='C0', linewidth=3)
             
             #E0=E1=2 barrier data
             power_x_array = []
@@ -727,15 +729,21 @@ def plot_power_Ecouple_grid(target_dir):#grid of plots of the flux as a function
             axarr[i, j].set_xticks([1., 10., 100.])
             axarr[i, j].set_xlim((1.5, 160))
             
-            if i == 0:
-                # axarr[i, j].set_yticks([-0.0001, 0, 0.0001, 0.0002])
-                axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            if i == 2:
+                axarr[i, j].set_ylim((-0.0026, 0.0014))
+                axarr[i, j].set_yticks([-0.002, -0.001, 0, 0.001])
+                # axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                axarr[i, j].set_yticklabels([r'$-20$', r'$-10$', r'$0$', r'$10$'])
             elif i == 1:
-                # axarr[i, j].set_yticks([-0.0005, -0.00025, 0, 0.00025])
+                axarr[i, j].set_ylim((-0.0007, 0.0004))
+                axarr[i, j].set_yticks([-0.0004, 0, 0.0004])
+                # axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                axarr[i, j].set_yticklabels([r'$-4$', r'$0$', r'$4$'])
+            else:
+                axarr[i, j].set_ylim((-0.00014, 0.00009))
+                axarr[i, j].set_yticks([-0.0001, -0.00005, 0, 0.00005])
                 axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-            # else:
-                # axarr[i, j].set_yticks([-0.002, -0.001, 0])
-                # axarr[i, j].set_yticklabels([r'$-20.$', r'$10.$', r'$0.$'])
+                # axarr[i, j].set_yticklabels([r'$-10.$', r'$0.$', r'$10.$'])
  
             if j == 0 and i > 0:
                 axarr[i, j].yaxis.offsetText.set_fontsize(0)
@@ -743,18 +751,19 @@ def plot_power_Ecouple_grid(target_dir):#grid of plots of the flux as a function
                 axarr[i, j].yaxis.offsetText.set_fontsize(14)
             
             if j == psi1_array.size-1:
-                axarr[i, j].set_ylabel(r'$%.3f$' % psi_ratio[i], labelpad=16, rotation=270, fontsize=14)
+                axarr[i, j].set_ylabel(r'$%.0f$' % psi_ratio[::-1][i], labelpad=16, rotation=270, fontsize=14)
                 axarr[i, j].yaxis.set_label_position('right')
             
             if i == 0:
-                axarr[i,j].set_title(r'$%.0f$' % psi1_array[j], fontsize=14)
+                axarr[i,j].set_title(r'$%.0f$' % psi1_array[::-1][j], fontsize=14)
     
     f.tight_layout()
     f.subplots_adjust(bottom=0.1, left=0.1, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
     f.text(0.5, 0.01, r'$\beta E_{\rm couple}$', ha='center', fontsize=20)
     f.text(0.01, 0.5, r'$\beta \mathcal{P}_{\rm ATP}\ (t_{\rm sim}^{-1})$', va='center', rotation='vertical', fontsize=20)
-    f.text(0.95, 0.5, r'$\mu_{\rm ATP} / \mu_{\rm H^+}$', va='center', rotation=270, fontsize=20)
-    f.text(0.5, 0.95, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', ha='center', fontsize=20)
+    f.text(0.5, 0.95, r'$\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=20)
+    # f.text(0.5, 0.95, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', ha='center', fontsize=20)
+    f.text(0.95, 0.5, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', va='center', rotation=270, fontsize=20)
     
     f.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
         
