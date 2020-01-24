@@ -16,7 +16,7 @@ def get_params():
     beta = 1.0  # 1/kT
     m = 1.0  # mass
 
-    E = 8.0 # energy scale of system
+    E = 8.0  # energy scale of system
 
     psi1 = 8.0 # force on system by chemical bath B1
     psi2 = -2.0 # force on system by chemical bath B2
