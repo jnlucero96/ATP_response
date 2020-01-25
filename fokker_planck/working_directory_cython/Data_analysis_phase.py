@@ -21,19 +21,19 @@ num_minima2=3.0
 # min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
 # psi1_array = array([1., 2., 4.])
 # psi2_array = array([-1., -2.0, -4.])
-# psi1_array = array([4.0])
-# psi2_array = array([-2.0])
-psi1_array = array([2.0, 4.0, 8.0])
-psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
-psi_ratio = array([8, 4, 2])
+psi1_array = array([4.0])
+psi2_array = array([-2.0])
+# psi1_array = array([2.0, 4.0, 8.0])
+# psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
+# psi_ratio = array([8, 4, 2])
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 # Ecouple_array = array([16.0])
-Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
-# Ecouple_array = array([2.0, 8.0, 32.0, 128.0])
+# Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
+Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 Ecouple_array_extra2 = array([1.41, 2.83, 5.66, 11.31, 22.63, 45.25, 90.51])
-Ecouple_array_tot = array([0.0, 1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
-# Ecouple_array_tot = array([0.0, 1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 22.63, 24.0, 32.0, 45.25, 64.0, 90.51, 128.0])
+Ecouple_array_tot = array([1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
+# Ecouple_array_tot = array([1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 22.63, 24.0, 32.0, 45.25, 64.0, 90.51, 128.0])
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
 phase_array = array([0.0, 0.175, 0.349066, 0.524, 0.698132, 0.873, 1.0472, 1.222, 1.39626, 1.571, 1.74533, 1.92, 2.0944]) #selection of twopisweep
 phase_array_test = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
@@ -42,6 +42,7 @@ phase_array_test = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0
 phi_array = linspace(0, 2*pi, N)
 
 colorlist=linspace(0,1,len(phase_array))
+colorlst=['C2', 'C3', 'C1', 'C4']
 # label_lst=['0', '$\pi/9$', '$2\pi/9$', '$\pi/3$', '$4 \pi/9$', '$5 \pi/9$']
 # label_lst=['$0$', ' ', ' ', '$\pi/3$', ' ', ' ', '$2 \pi/3$']
 label_lst = ['$0$', ' ', ' ', '$1/6$', ' ', ' ', '$1/3$']
@@ -321,7 +322,7 @@ def plot_power_phi_single(target_dir):#plot of the power as a function of the ph
                     power_x_array = data_array[:,1]
                     power_y_array = -data_array[:,2]
                     
-                    ax.plot(phase_array, power_y_array, linestyle='-', marker='o', label=f'${Ecouple}$', markersize=8, linewidth=2)
+                    ax.plot(phase_array, power_y_array, linestyle='-', marker='o', label=f'${Ecouple}$', markersize=8, linewidth=2, color=colorlst[ii])
                 except OSError:
                     print('Missing file')      
             #Infinite coupling result
@@ -330,10 +331,11 @@ def plot_power_phi_single(target_dir):#plot of the power as a function of the ph
             phase_array = data_array[:,0]
             flux_array = -psi_2*data_array[:,1]
 
-            ax.plot(phase_array[:61], flux_array[:61], '-', label=f'$\infty$', linewidth=2)
+            ax.plot(phase_array[:61], flux_array[:61], '-', label=f'$\infty$', linewidth=2, color='C6')
             ax.tick_params(axis='both', labelsize=14)
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
             ax.yaxis.offsetText.set_fontsize(14)
             
             handles, labels = ax.get_legend_handles_labels()
@@ -341,12 +343,14 @@ def plot_power_phi_single(target_dir):#plot of the power as a function of the ph
             leg_title = leg.get_title()
             leg_title.set_fontsize(14)
             # plt.xlabel(r'$\phi\ (\rm rad)$', fontsize=20)
-            f.text(0.5, 0.02, r'$\phi\ (\rm rev)$', fontsize=20, ha='center')
+            f.text(0.55, 0.02, r'$\phi\ (\rm rev)$', fontsize=20, ha='center')
             plt.ylabel(r'$\beta \mathcal{P}_{\rm ATP}\ (t_{\rm sim}^{-1})$', fontsize=20)
             plt.xticks(ticklst, label_lst)
-            plt.yticks([-0.0002, 0, 0.0002, 0.0004])
+            plt.yticks([-0.0004, -0.0002, 0, 0.0002, 0.0004])
             # plt.ylim(-0.00035, 0.0005)
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            f.tight_layout()
+            f.subplots_adjust(bottom=0.12)
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
             # plt.close()
             
@@ -385,7 +389,7 @@ def plot_power_phi_single(target_dir):#plot of the power as a function of the ph
 
 def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a function of the coupling strength
     output_file_name = (target_dir + "power_efficiency_phi_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_Ecouple_{4}" + "_log_.pdf")
-    f,axarr=plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6,8))
+    f,axarr=plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6,6))
 
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
@@ -436,6 +440,7 @@ def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a
             #efficiency plot
             axarr[1].axhline(0, color='black', linewidth=1)
             axarr[1].axhline(1, color='C0', linewidth=2, label='$0$')
+            axarr[1].set_aspect(0.5)
             
             for ii, Ecouple in enumerate(Ecouple_array):
                 input_file_name = (target_dir + "191217_morepoints/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
@@ -446,7 +451,6 @@ def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a
                     print('Missing file efficiency')    
             axarr[1].plot(phase_array, eff_array/(-psi_2/psi_1), 'o', color='C1', label='$2$', markersize=8)
             
-            
             axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
             axarr[1].set_ylim((0, 1.1))
             axarr[1].spines['right'].set_visible(False)
@@ -456,14 +460,17 @@ def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a
             axarr[1].set_yticks(ylabels_eff)
             axarr[1].set_xticks(ticklst)
             axarr[1].set_xticklabels(label_lst)
+            # axarr[1].set_xlabel(r'$\phi$', fontsize=20)
             
             leg = axarr[1].legend(title=r'$\beta E_{\rm o} = \beta E_1$', fontsize=14, loc='lower right', frameon=False)
             leg_title = leg.get_title()
             leg_title.set_fontsize(14)
-            # axarr[1].set_xlabel(r'$\phi$', labelpad=12, fontsize=20)
-            f.text(0.55, 0.02, r'$\phi\ (\rm rev)$', fontsize=20, ha='center')
+            
+            f.text(0.55, 0.07, r'$\phi\ (\rm rev)$', fontsize=20, ha='center')
+            f.text(0.03, 0.93, r'$\mathbf{a)}$', fontsize=20)
+            f.text(0.03, 0.37, r'$\mathbf{b)}$', fontsize=20)
             f.tight_layout()
-            f.subplots_adjust(bottom=0.1)
+            # f.subplots_adjust(bottom=0.1)
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
             # f.close()
 
@@ -725,23 +732,29 @@ def plot_power_Ecouple_grid(target_dir):#grid of plots of the flux as a function
             axarr[i, j].set_xscale('log')    
             axarr[i, j].spines['right'].set_visible(False)
             axarr[i, j].spines['top'].set_visible(False)
+            axarr[i, j].spines['bottom'].set_visible(False)
             axarr[i, j].tick_params(axis='both', labelsize=14)
             axarr[i, j].set_xticks([1., 10., 100.])
-            axarr[i, j].set_xlim((1.5, 160))
+            if j == 0:
+                axarr[i, j].set_xlim((1.4, 150))
+            elif j == 1:
+                axarr[i, j].set_xlim((1.9,150))
+            else:
+                axarr[i, j].set_xlim((3.4, 150))
             
             if i == 2:
-                axarr[i, j].set_ylim((-0.0026, 0.0014))
+                axarr[i, j].set_ylim((-0.0024, 0.0014))
                 axarr[i, j].set_yticks([-0.002, -0.001, 0, 0.001])
                 # axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
                 axarr[i, j].set_yticklabels([r'$-20$', r'$-10$', r'$0$', r'$10$'])
             elif i == 1:
-                axarr[i, j].set_ylim((-0.0007, 0.0004))
-                axarr[i, j].set_yticks([-0.0004, 0, 0.0004])
+                axarr[i, j].set_ylim((-0.0005, 0.00035))
+                axarr[i, j].set_yticks([-0.0003, 0, 0.0003])
                 # axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
                 axarr[i, j].set_yticklabels([r'$-4$', r'$0$', r'$4$'])
             else:
-                axarr[i, j].set_ylim((-0.00014, 0.00009))
-                axarr[i, j].set_yticks([-0.0001, -0.00005, 0, 0.00005])
+                axarr[i, j].set_ylim((-0.00007, 0.00009))
+                axarr[i, j].set_yticks([-0.00005, 0, 0.00005])
                 axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
                 # axarr[i, j].set_yticklabels([r'$-10.$', r'$0.$', r'$10.$'])
  
@@ -761,9 +774,19 @@ def plot_power_Ecouple_grid(target_dir):#grid of plots of the flux as a function
     f.subplots_adjust(bottom=0.1, left=0.1, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
     f.text(0.5, 0.01, r'$\beta E_{\rm couple}$', ha='center', fontsize=20)
     f.text(0.01, 0.5, r'$\beta \mathcal{P}_{\rm ATP}\ (t_{\rm sim}^{-1})$', va='center', rotation='vertical', fontsize=20)
-    f.text(0.5, 0.95, r'$\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=20)
+    f.text(0.5, 0.95, r'$-\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=20)
     # f.text(0.5, 0.95, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', ha='center', fontsize=20)
     f.text(0.95, 0.5, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', va='center', rotation=270, fontsize=20)
+    
+    f.text(0.12, 0.88, r'$\mathbf{a)}$', ha='center', fontsize=14)
+    f.text(0.4, 0.88, r'$\mathbf{b)}$', ha='center', fontsize=14)
+    f.text(0.67, 0.88, r'$\mathbf{c)}$', ha='center', fontsize=14)
+    f.text(0.12, 0.6, r'$\mathbf{d)}$', ha='center', fontsize=14)
+    f.text(0.4, 0.6, r'$\mathbf{e)}$', ha='center', fontsize=14)
+    f.text(0.67, 0.6, r'$\mathbf{f)}$', ha='center', fontsize=14)
+    f.text(0.12, 0.32, r'$\mathbf{g)}$', ha='center', fontsize=14)
+    f.text(0.4, 0.32, r'$\mathbf{h)}$', ha='center', fontsize=14)
+    f.text(0.67, 0.32, r'$\mathbf{i)}$', ha='center', fontsize=14)
     
     f.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
         
@@ -1082,7 +1105,7 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
             axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP} (t_{\rm sim}^{-1}) $', fontsize=20)
             axarr[0].spines['right'].set_visible(False)
             axarr[0].spines['top'].set_visible(False)
-            # axarr[0].spines['bottom'].set_visible(False)
+            axarr[0].spines['bottom'].set_visible(False)
             axarr[0].set_xlim((1.7, 135))
             
             leg = axarr[0].legend(title=r'$\beta E_{\rm o} = \beta E_1$', fontsize=14, loc='lower right', frameon=False)
@@ -1124,17 +1147,6 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
                     print('Missing file efficiency')    
             axarr[1].plot(Ecouple_array_tot, eff_array/(-psi_2/psi_1), 'o', color='C1', markersize=8)
             
-            # # add in a extra data points
-            # eff_array=[]
-            # for ii, Ecouple in enumerate(Ecouple_array_extra):
-            #     input_file_name = (target_dir + "190610_Extra_measurements_Ecouple/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
-            #     try:
-            #         data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(5))
-            #         eff_array = append(eff_array, data_array[0])
-            #     except OSError:
-            #         print('Missing file efficiency extra points')
-            # axarr[1].plot(Ecouple_array_extra, eff_array/(-psi_2/psi_1), 'o', color='C1', markersize=8)
-            
             axarr[1].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
             axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
             axarr[1].set_xscale('log')
@@ -1143,9 +1155,12 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
             axarr[1].spines['right'].set_visible(False)
             axarr[1].spines['top'].set_visible(False)
             #axarr[1].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            axarr[1].spines['bottom'].set_visible(False)
             axarr[1].set_yticks(ylabels_eff)
             axarr[1].tick_params(axis='both', labelsize=14)
             
+            f.text(0.05, 0.95, r'$\mathbf{a)}$', ha='center', fontsize=20)
+            f.text(0.05, 0.48, r'$\mathbf{b)}$', ha='center', fontsize=20)
             f.subplots_adjust(hspace=0.01)
             f.tight_layout()
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
@@ -2223,9 +2238,9 @@ if __name__ == "__main__":
     # flux_power_efficiency(target_dir)
     # flux_power_efficiency_extrapoints(target_dir)
     # plot_power_phi_grid(target_dir)
-    # plot_power_phi_single(target_dir)
+    plot_power_phi_single(target_dir)
     # plot_power_efficiency_phi_single(target_dir)
-    plot_power_Ecouple_grid(target_dir)
+    # plot_power_Ecouple_grid(target_dir)
     # plot_efficiency_phi_single(target_dir)
     # plot_efficiency_Ecouple_single(target_dir)
     # plot_efficiency_Ecouple_grid(target_dir)
