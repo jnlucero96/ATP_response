@@ -3556,12 +3556,12 @@ def plot_flux_Ecouple_no_scan_small_ndifferent(target_dir):
 
     cbar_ticks = array([-5.0, -2.5, 0.0, 2.5, 5.0])*1e-4
 
-    cax1 = fig1.add_axes([0.85, 0.25, 0.02, 0.5])
+    cax1 = fig1.add_axes([0.82, 0.25, 0.02, 0.5])
     cbar1 = fig1.colorbar(
         im1, cax=cax1, orientation='vertical', ax=ax1
     )
     cbar1.set_label(
-        r'$\mathcal{P}_{\mathrm{o}}$', fontsize=32
+        r'$\mathcal{P}_{H^+}$', fontsize=32
         )
     cbar1.set_ticks(cbar_ticks)
     cbar1.formatter.set_powerlimits([0,0])
@@ -3572,8 +3572,8 @@ def plot_flux_Ecouple_no_scan_small_ndifferent(target_dir):
 
     #y-axis label
     fig1.text(
-        0.8, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        0.78, 0.51,
+        r'$\beta \psi_{1}$',
         fontsize=30, rotation='vertical', va='center', ha='center'
     )
     fig1.text(
@@ -3584,7 +3584,7 @@ def plot_flux_Ecouple_no_scan_small_ndifferent(target_dir):
     #x-axis label
     fig1.text(
             0.42, 0.93,
-            r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+            r'$\beta \psi_{\mathrm{o}}$',
             fontsize=30, va='center', ha='center'
         )
     fig1.text(
@@ -3599,12 +3599,12 @@ def plot_flux_Ecouple_no_scan_small_ndifferent(target_dir):
     top = 0.88     # the top of the subplots of the figure
     fig1.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
 
-    cax2 = fig2.add_axes([0.85, 0.25, 0.02, 0.5])
+    cax2 = fig2.add_axes([0.82, 0.25, 0.02, 0.5])
     cbar2 = fig2.colorbar(
         im2, cax=cax2, orientation='vertical', ax=ax2
     )
     cbar2.set_label(
-        r'$\mathcal{P}_{1}$', fontsize=32
+        r'$\mathcal{P}_{ATP/ADP}$', fontsize=32
         )
     cbar2.set_ticks(cbar_ticks)
     cbar2.formatter.set_powerlimits([0,0])
@@ -3615,8 +3615,8 @@ def plot_flux_Ecouple_no_scan_small_ndifferent(target_dir):
 
     # y-axis label
     fig2.text(
-        0.8, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        0.78, 0.51,
+        r'$\beta \psi_{1}$',
         fontsize=30, rotation='vertical', va='center', ha='center'
     )
     fig2.text(
@@ -3627,7 +3627,7 @@ def plot_flux_Ecouple_no_scan_small_ndifferent(target_dir):
     # # x-axis label
     fig2.text(
         0.42, 0.93,
-        r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        r'$\beta \psi_{\mathrm{o}}$',
         fontsize=30, va='center', ha='center'
     )
     fig2.text(
@@ -3720,7 +3720,7 @@ def plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir):
                 cmap=cm.get_cmap("coolwarm")
                 )
             im2 = ax2[ii, jj].imshow(
-                (fluxes[ii, jj, 1, :, ::-1]/power_inf_y).T,
+                (fluxes[ii, jj, 1, :, ::-1]/power_inf_y[None,::-1]).T,
                 vmin=-2, vmax=2,
                 cmap=cm.get_cmap("coolwarm")
                 )
@@ -3760,7 +3760,7 @@ def plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir):
 
     cbar_ticks = array([-2.0, -1.0, 0.0, 1.0, 2.0])
 
-    cax1 = fig1.add_axes([0.85, 0.25, 0.02, 0.5])
+    cax1 = fig1.add_axes([0.83, 0.25, 0.02, 0.5])
     cbar1 = fig1.colorbar(
         im1, cax=cax1, orientation='vertical', ax=ax1
     )
@@ -3776,8 +3776,8 @@ def plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir):
 
     #y-axis label
     fig1.text(
-        0.8, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        0.78, 0.51,
+        r'$\beta \psi_{1}$',
         fontsize=30, rotation='vertical', va='center', ha='center'
     )
     fig1.text(
@@ -3788,7 +3788,7 @@ def plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir):
     #x-axis label
     fig1.text(
             0.42, 0.93,
-            r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+            r'$\beta \psi_{\mathrm{o}}$',
             fontsize=30, va='center', ha='center'
         )
     fig1.text(
@@ -3803,7 +3803,7 @@ def plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir):
     top = 0.88     # the top of the subplots of the figure
     fig1.subplots_adjust(left=left, bottom=bottom, right=right, top=top)
 
-    cax2 = fig2.add_axes([0.85, 0.25, 0.02, 0.5])
+    cax2 = fig2.add_axes([0.83, 0.25, 0.02, 0.5])
     cbar2 = fig2.colorbar(
         im2, cax=cax2, orientation='vertical', ax=ax2
     )
@@ -3819,8 +3819,8 @@ def plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir):
 
     # y-axis label
     fig2.text(
-        0.8, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        0.78, 0.51,
+        r'$\beta \psi_{1}$',
         fontsize=30, rotation='vertical', va='center', ha='center'
     )
     fig2.text(
@@ -3831,7 +3831,7 @@ def plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir):
     # # x-axis label
     fig2.text(
         0.42, 0.93,
-        r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        r'$\beta \psi_{\mathrm{o}}$',
         fontsize=30, va='center', ha='center'
     )
     fig2.text(
@@ -3929,12 +3929,12 @@ def plot_efficiency_Ecouple_no_scan_small_ndifferent(target_dir):
 
     cbar_ticks = array([-1.0, -0.5, 0.0, 0.5, 1.0])
 
-    cax1 = fig1.add_axes([0.85, 0.25, 0.02, 0.5])
+    cax1 = fig1.add_axes([0.82, 0.25, 0.02, 0.5])
     cbar1 = fig1.colorbar(
         im1, cax=cax1, orientation='vertical', ax=ax1
     )
     cbar1.set_label(
-        r'$\mathcal{P}_{\mathrm{o}}$', fontsize=32
+        r'$\eta$', fontsize=32
         )
     cbar1.set_ticks(cbar_ticks)
     cbar1.formatter.set_powerlimits([0,0])
@@ -3945,8 +3945,8 @@ def plot_efficiency_Ecouple_no_scan_small_ndifferent(target_dir):
 
     #y-axis label
     fig1.text(
-        0.8, 0.51,
-        r'$\beta \psi_{1}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+        0.78, 0.51,
+        r'$\beta \psi_{1}$',
         fontsize=30, rotation='vertical', va='center', ha='center'
     )
     fig1.text(
@@ -3957,7 +3957,7 @@ def plot_efficiency_Ecouple_no_scan_small_ndifferent(target_dir):
     #x-axis label
     fig1.text(
             0.42, 0.93,
-            r'$\beta \psi_{\mathrm{o}}\ (\mathrm{units\ of\ }\mathrm{rad}^{-1})$',
+            r'$\beta \psi_{\mathrm{o}}$',
             fontsize=30, va='center', ha='center'
         )
     fig1.text(
@@ -4253,8 +4253,8 @@ if __name__ == "__main__":
     # plot_flux_lr_scan(target_dir)
     # plot_flux_Ecouple_no_scan_small_nsame(target_dir)
     # plot_flux_Ecouple_no_scan_small_ndifferent(target_dir)
-    # plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir)
-    plot_efficiency_Ecouple_no_scan_small_ndifferent(target_dir)
+    plot_power_scaled_Ecouple_no_scan_small_ndifferent(target_dir)
+    # plot_efficiency_Ecouple_no_scan_small_ndifferent(target_dir)
     # plot_power_Ecouple_phi_scan_single(target_dir)
     # plot_flux_Ecouple_phi_scan_small(target_dir)
     # plot_power_lr_scan(target_dir)

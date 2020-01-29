@@ -36,6 +36,6 @@ ext_parallel = [
 setup(
     name="FPE_PARALLEL",
     version="1.0",
-    ext_modules=ext_parallel,
+    ext_modules=ext,
     cmdclass={'build_ext': build_ext}
     )

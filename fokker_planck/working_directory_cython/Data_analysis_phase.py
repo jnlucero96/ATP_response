@@ -21,11 +21,11 @@ num_minima2=3.0
 # min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
 # psi1_array = array([1., 2., 4.])
 # psi2_array = array([-1., -2.0, -4.])
-psi1_array = array([4.0])
-psi2_array = array([-2.0])
-# psi1_array = array([2.0, 4.0, 8.0])
-# psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
-# psi_ratio = array([8, 4, 2])
+# psi1_array = array([4.0])
+# psi2_array = array([-2.0])
+psi1_array = array([2.0, 4.0, 8.0])
+psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
+psi_ratio = array([8, 4, 2])
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 # Ecouple_array = array([16.0])
 # Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
@@ -736,27 +736,27 @@ def plot_power_Ecouple_grid(target_dir):#grid of plots of the flux as a function
             axarr[i, j].tick_params(axis='both', labelsize=14)
             axarr[i, j].set_xticks([1., 10., 100.])
             if j == 0:
-                axarr[i, j].set_xlim((1.4, 150))
+                axarr[i, j].set_xlim((1.6, 150))
             elif j == 1:
-                axarr[i, j].set_xlim((1.9,150))
+                axarr[i, j].set_xlim((2.3, 150))
             else:
                 axarr[i, j].set_xlim((3.4, 150))
             
-            if i == 2:
-                axarr[i, j].set_ylim((-0.0024, 0.0014))
-                axarr[i, j].set_yticks([-0.002, -0.001, 0, 0.001])
-                # axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-                axarr[i, j].set_yticklabels([r'$-20$', r'$-10$', r'$0$', r'$10$'])
-            elif i == 1:
-                axarr[i, j].set_ylim((-0.0005, 0.00035))
-                axarr[i, j].set_yticks([-0.0003, 0, 0.0003])
-                # axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-                axarr[i, j].set_yticklabels([r'$-4$', r'$0$', r'$4$'])
-            else:
-                axarr[i, j].set_ylim((-0.00007, 0.00009))
-                axarr[i, j].set_yticks([-0.00005, 0, 0.00005])
+            if i == 0:
+                axarr[i, j].set_ylim((-0.00004, 0.00009))
+                axarr[i, j].set_yticks([-0.00004, 0, 0.00004, 0.00008])
                 axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-                # axarr[i, j].set_yticklabels([r'$-10.$', r'$0.$', r'$10.$'])
+                # axarr[i, j].set_yticklabels([r'$-5.$', r'$0.$', r'$5.$'])
+            elif i == 1:
+                axarr[i, j].set_ylim((-0.00008, 0.00035))
+                axarr[i, j].set_yticks([0, 0.00015, 0.0003])
+                # axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                axarr[i, j].set_yticklabels([r'$0$', r'$15$', r'$30$'])
+            else:
+                axarr[i, j].set_ylim((-0.00045, 0.0014))
+                axarr[i, j].set_yticks([0, 0.0005, 0.001])
+                # axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                axarr[i, j].set_yticklabels([r'$0$', r'$50$', r'$100$'])
  
             if j == 0 and i > 0:
                 axarr[i, j].yaxis.offsetText.set_fontsize(0)
@@ -776,7 +776,7 @@ def plot_power_Ecouple_grid(target_dir):#grid of plots of the flux as a function
     f.text(0.01, 0.5, r'$\beta \mathcal{P}_{\rm ATP}\ (t_{\rm sim}^{-1})$', va='center', rotation='vertical', fontsize=20)
     f.text(0.5, 0.95, r'$-\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=20)
     # f.text(0.5, 0.95, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', ha='center', fontsize=20)
-    f.text(0.95, 0.5, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', va='center', rotation=270, fontsize=20)
+    f.text(0.95, 0.5, r'$\mu_{\rm H^+}\ (\rm k_{\rm B} T / rad)$', va='center', rotation=270, fontsize=20)
     
     f.text(0.12, 0.88, r'$\mathbf{a)}$', ha='center', fontsize=14)
     f.text(0.4, 0.88, r'$\mathbf{b)}$', ha='center', fontsize=14)
@@ -2238,9 +2238,9 @@ if __name__ == "__main__":
     # flux_power_efficiency(target_dir)
     # flux_power_efficiency_extrapoints(target_dir)
     # plot_power_phi_grid(target_dir)
-    plot_power_phi_single(target_dir)
+    # plot_power_phi_single(target_dir)
     # plot_power_efficiency_phi_single(target_dir)
-    # plot_power_Ecouple_grid(target_dir)
+    plot_power_Ecouple_grid(target_dir)
     # plot_efficiency_phi_single(target_dir)
     # plot_efficiency_Ecouple_single(target_dir)
     # plot_efficiency_Ecouple_grid(target_dir)

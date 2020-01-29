@@ -2,8 +2,11 @@
 #SBATCH --mail-user=emma.lathouwers@gmail.com
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mem=1G
+#SBATCH --cpus-per-task=4
 #SBATCH --no-requeue
 #SBATCH --account=rrg-dsivak
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 cd $SLURM_SUBMIT_DIR
 echo "Current working directory is `pwd`"

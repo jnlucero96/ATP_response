@@ -9,7 +9,7 @@ def get_params():
 
     # discretization parameters
     dt = 0.001  # time discretization. Keep this number low
-    N = 360  # inverse space discretization. Keep this number high!
+    N = 540  # inverse space discretization. Keep this number high!
 
     # model-specific parameters
     gamma1 = 1000.0  # drag coefficient of subsystem 1
@@ -18,11 +18,11 @@ def get_params():
     m1 = 1.0  # mass of subsystem 1
     m2 = 1.0  # mass of subsystem 2
 
-    E0 = 3.0 # energy scale of subsystem 1
-    Ecouple = 3.0 # energy scale of coupling between subsystems 1 and 2
-    E1 = 3.0 # energy scale of subsystem 2
-    psi1 = 3.0 #  energy INTO (positive) subsystem 1 by chemical bath 1
-    psi2 = 3.0 # energy INTO (positive) subsystem 2 by chemical bath 2
+    E0 = 2.0 # energy scale of subsystem 1
+    Ecouple = 1.0 # energy scale of coupling between subsystems 1 and 2
+    E1 = 2.0 # energy scale of subsystem 2
+    psi1 = 4.0 #  energy INTO (positive) subsystem 1 by chemical bath 1
+    psi2 = 2.0 # energy INTO (positive) subsystem 2 by chemical bath 2
 
     n1 = 3.0 # number of minima in the potential of system 1
     n2 = 3.0 # number of minima in the potential of system 2
@@ -41,9 +41,9 @@ def save_data_reference(
     N
     ):
 
-    target_dir = '../../../master_output_dir/'
+    target_dir = '../../../../master_output_dir/'
     data_filename = (
-        f"/reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
+        f"reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
         + f"psi1_{psi1}_psi2_{psi2}_"
         + f"n1_{n1}_n2_{n2}_phase_{phase}_"
         + "outfile.dat"
@@ -93,7 +93,7 @@ def main():
 
     # how many time update steps before checking for steady state convergence
     # enforce steady state convergence check every unit time
-    check_step = int(1.0/dt)
+    check_step = int(2.0/dt)
 
     print(f"Number of times before check = {check_step}")
 
