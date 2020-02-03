@@ -21,22 +21,22 @@ num_minima2=3.0
 # min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
 # psi1_array = array([1., 2., 4.])
 # psi2_array = array([-1., -2.0, -4.])
-# psi1_array = array([4.0])
-# psi2_array = array([-2.0])
-psi1_array = array([2.0, 4.0, 8.0])
-psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
-psi_ratio = array([8, 4, 2])
+psi1_array = array([4.0])
+psi2_array = array([-2.0])
+# psi1_array = array([2.0, 4.0, 8.0])
+# psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
+# psi_ratio = array([8, 4, 2])
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
-# Ecouple_array = array([16.0])
+Ecouple_array = array([16.0])
 # Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
-Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
+# Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 Ecouple_array_extra2 = array([1.41, 2.83, 5.66, 11.31, 22.63, 45.25, 90.51])
 Ecouple_array_tot = array([1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
-# Ecouple_array_tot = array([1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 22.63, 24.0, 32.0, 45.25, 64.0, 90.51, 128.0])
+Ecouple_array_tot = array([1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 22.63, 24.0, 32.0, 45.25, 64.0, 90.51, 128.0])
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
 phase_array = array([0.0, 0.175, 0.349066, 0.524, 0.698132, 0.873, 1.0472, 1.222, 1.39626, 1.571, 1.74533, 1.92, 2.0944]) #selection of twopisweep
-phase_array_test = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
+# phase_array_test = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
 # phase_array = array([0.0])
 
 phi_array = linspace(0, 2*pi, N)
@@ -1084,10 +1084,10 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
             for ii, Ecouple in enumerate(Ecouple_array_tot):
                 input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
-                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,3,4))
+                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0, 3, 4))
                     if Ecouple in Ecouple_array:
-                        power_x = array(data_array[i,1])
-                        power_y = array(data_array[i,2])
+                        power_x = array(data_array[i, 1])
+                        power_y = array(data_array[i, 2])
                     else:
                         power_x = array(data_array[1])
                         power_y = array(data_array[2])
@@ -1097,7 +1097,7 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
                     print('Missing file flux')
             axarr[0].plot(Ecouple_array_tot, -power_y_array, 'o', color='C1', label='$2$', markersize=8)
             
-            axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             axarr[0].yaxis.offsetText.set_fontsize(14)
             # axarr[0].set_yticks(ylabels_flux)
             # axarr[0].tick_params(axis='x', which='both', bottom=False, labelbottom=False)
@@ -1827,8 +1827,6 @@ def plot_free_energy_space(target_dir):#plot of the pmf along some coordinate
                 f1.tight_layout()
                 f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
                 plt.close()
-                
-                
 
 def plot_pmf_space(target_dir):#plot of the pmf along some coordinate
     output_file_name1 = (target_dir + "pmf_x_cond_force_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
@@ -2239,8 +2237,8 @@ if __name__ == "__main__":
     # flux_power_efficiency_extrapoints(target_dir)
     # plot_power_phi_grid(target_dir)
     # plot_power_phi_single(target_dir)
-    # plot_power_efficiency_phi_single(target_dir)
-    plot_power_Ecouple_grid(target_dir)
+    plot_power_efficiency_phi_single(target_dir)
+    # plot_power_Ecouple_grid(target_dir)
     # plot_efficiency_phi_single(target_dir)
     # plot_efficiency_Ecouple_single(target_dir)
     # plot_efficiency_Ecouple_grid(target_dir)

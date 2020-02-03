@@ -6,6 +6,10 @@ import math
 import matplotlib.pyplot as plt
 from scipy.integrate import trapz
 
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+rc('text', usetex=True)
+
 N=360
 dx=2*math.pi/N
 positions=linspace(0,2*math.pi-dx,N)
@@ -16,12 +20,16 @@ num_minima2=3.0
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
 
-# psi1_array = array([4.0])
-psi1_array = array([1.0, 2.0, 4.0])
-psi2_array = array([-4.0, -2.0, -1.0])
-# psi2_array = array([-2.0])
-Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) 
-phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346]) 
+psi1_array = array([4.0])
+psi2_array = array([-2.0])
+# psi1_array = array([1.0, 2.0, 4.0])
+# psi2_array = array([-4.0, -2.0, -1.0])
+
+Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
+# phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346])
+phase_array = array([0.0])
+n_labels = ['$1$', '$2$', '$3$', '$6$', '$12$']
+ylabels_eff = [0, 0.5, 1.0]
 
 colorlst = linspace(0,1,len(Ecouple_array))
 
@@ -358,7 +366,91 @@ def plot_power_n1_scaled(target_dir):#plot of scaled power as a function of the 
 
                 plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1))
                 plt.close()
-            
+
+def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency as a function of the coupling strength
+    output_file_name = (
+                target_dir + "/power_efficiency_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}" + "_log_.pdf")
+    f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 8))
+
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            # flux plot
+            axarr[0].axhline(0, color='black', linewidth=1, label='_nolegend_')  # line at zero
+
+            # General data
+            for j, num_min in enumerate(min_array):
+                power_x_array = []
+                power_y_array = []
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    input_file_name = (
+                                target_dir + "/190924_no_vary_n1_3/processed_data/" + "flux_power_efficiency_"
+                                + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                    try:
+                        data_array = loadtxt(
+                            input_file_name.format(E0, E1, psi_1, psi_2, 3.0, Ecouple),
+                            usecols=(0, 3, 4))
+                        power_x = array(data_array[j, 1])
+                        power_y = array(data_array[j, 2])
+                        power_x_array = append(power_x_array, power_x)
+                        power_y_array = append(power_y_array, power_y)
+                    except OSError:
+                        print('Missing file flux')
+                        print(input_file_name.format(E0, E1, psi_1, psi_2, 3.0, Ecouple))
+                axarr[0].plot(Ecouple_array, -power_y_array, marker='o', markersize=6, linestyle='-')
+
+            axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            axarr[0].yaxis.offsetText.set_fontsize(14)
+            # axarr[0].set_yticks(ylabels_flux)
+            # axarr[0].tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+            axarr[0].tick_params(axis='y', labelsize=14)
+            axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP} (t_{\rm sim}^{-1}) $', fontsize=20)
+            axarr[0].spines['right'].set_visible(False)
+            axarr[0].spines['top'].set_visible(False)
+            axarr[0].spines['bottom'].set_visible(False)
+            # axarr[0].set_xlim((1.7, 135))
+
+            leg = axarr[0].legend(n_labels, title=r'$n_{\rm o}$', fontsize=14, loc='lower right', frameon=False, ncol=1)
+            leg_title = leg.get_title()
+            leg_title.set_fontsize(14)
+
+            #########################################################
+            # efficiency plot
+            axarr[1].axhline(0, color='black', linewidth=0.5)
+            # axarr[1].set_aspect(0.5)
+            # axarr[1].axvline(12, color='grey', linestyle=':', linewidth=1)
+
+            for j, num_min in enumerate(min_array):
+                eff_array = []
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    input_file_name = (
+                                target_dir + "/190924_no_vary_n1_3/processed_data/" + "flux_power_efficiency_"
+                                + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                    try:
+                        data_array = loadtxt(
+                            input_file_name.format(E0, E1, psi_1, psi_2, 3.0, Ecouple), usecols=(5))
+                        eff_array = append(eff_array, data_array[0])
+                    except OSError:
+                        print('Missing file efficiency')
+                axarr[1].plot(Ecouple_array, eff_array / (-psi_2 / psi_1), marker='o', markersize=6, linestyle='-')
+
+            axarr[1].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
+            axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
+            axarr[1].set_xscale('log')
+            # axarr[1].set_ylim((None,))
+            axarr[1].set_xlim((1.7, 135))
+            axarr[1].spines['right'].set_visible(False)
+            axarr[1].spines['top'].set_visible(False)
+            # axarr[1].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            axarr[1].spines['bottom'].set_visible(False)
+            axarr[1].set_yticks(ylabels_eff)
+            axarr[1].tick_params(axis='both', labelsize=14)
+
+            f.text(0.05, 0.95, r'$\mathbf{a)}$', ha='center', fontsize=20)
+            f.text(0.05, 0.48, r'$\mathbf{b)}$', ha='center', fontsize=20)
+            # f.subplots_adjust(hspace=0.01)
+            f.tight_layout()
+            f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, 3.0))
+
 def plot_efficiency_Ecouple_single(target_dir):#plot of the efficiency as a function of the coupling strength
     output_file_name = (target_dir + "/efficiency_Ecouple_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_no_{4}" + "_.pdf")
     
@@ -434,3 +526,4 @@ if __name__ == "__main__":
     # plot_efficiency_n1_single(target_dir)
     # plot_power_n1_single(target_dir)
     # plot_power_n1_scaled(target_dir)
+    plot_power_efficiency_Ecouple(target_dir)

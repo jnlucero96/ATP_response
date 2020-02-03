@@ -1,7 +1,7 @@
 import os
 import glob
 import re
-from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt, set_printoptions, isnan
+from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt, set_printoptions, isnan, delete
 import math
 import matplotlib.pyplot as plt
 from matplotlib import rcParams, rc, ticker, colors, cm
@@ -13,44 +13,40 @@ dx=2*math.pi/N
 positions=linspace(0,2*math.pi-dx,N)
 E0=2.0
 E1=2.0
-num_minima1=12.0
-num_minima2=12.0
+num_minima1=3.0
+num_minima2=3.0
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])[::-1]
 
-# psi1_array = array([4.0])
-psi1_array = array([2.0, 4.0])
-psi2_array = array([-2.0, -1.0])
-# psi2_array = array([-2.0])
-Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) 
+psi1_array = array([4.0])
+psi2_array = array([-2.0])
+# Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
+Ecouple_array = array([16.0])
 # phase_array = array([0.0])
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
 phase_array_1 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319])
-phase_array_2 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159])
-phase_array_3 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
-phase_array_6 = array([0.0, 0.349066, 0.698132, 1.0472])
-phase_array_12 = array([0.0, 0.08727, 0.17453, 0.2618, 0.34633, 0.4366, 0.5236])
-phase_array = phase_array_12
+phase_array_2 = array([0.0, 0.698132, 1.39626, 2.0944, 2.79253, 3.49066, 4.18879, 4.88692, 5.58505, 6.28319])
+# phase_array_3 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159])
+phase_array_3 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319])
+phase_array_6 = array([0.0, 2.0944, 4.18879, 6.28319])
+phase_array_12 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 6.28319])
+# phase_array = phase_array_12
+phi_ticks = [0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319]
+phi_ticklabels = ['$0$', '', '', '$0.5$', '', '', '$1$']
 
 colorlst = linspace(0,1,len(min_array))
-min_labels = ['1', '2', '3', '6', '12'][::-1]
 # Ecouple_labels = ['', '4', '', '16', '', '64', '', '\infty']
 Ecouple_labels = ['2', '', '8', '', '32', '', '128']
-phase_labels = ['0', '', '', '$\pi/12$', '', '', '$\pi/6$'][::-1] #n=12
+phase_labels = ['$0$', '', '', '$\pi/12$', '', '', '$\pi/6$'][::-1] #n=12
+n_labels = ['$1$', '$2$', '$3$', '$6$', '$12$'][::-1]
+ylabels_eff = [0, 0.5, 1.0]
 # phase_labels = ['0', '', '', '$\pi/3$'][::-1] #n=6
 # phase_labels = ['0', '', '', '$\pi/3$', '', '', '$2 \pi/3$'][::-1] #n=3
 # phase_labels = ['0', '', '', '$\pi/3$', '', '', '$2 \pi/3$', '', '', '$\pi$'][::-1] #n=2
 # phase_labels = ['0', '', '$2 \pi/3$', '', '$4 \pi/3$', '', '$2 \pi$'][::-1] #n=1
 
-use('seaborn-paper')
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
-rcParams['mathtext.fontset'] = 'cm'
-rcParams['text.latex.preamble'] = [
-    r"\usepackage{amsmath}", r"\usepackage{lmodern}",
-    r"\usepackage{siunitx}", r"\usepackage{units}",
-    r"\usepackage{physics}", r"\usepackage{bm}"
-]
-set_printoptions(linewidth=512)
 
 def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array, N):
     # explicit update of the corners
@@ -164,14 +160,14 @@ def flux_power_efficiency(target_dir): #processing of raw data
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             # if abs(psi_1) >= abs(psi_2):
-            integrate_flux_X = empty(min_array.size)
-            integrate_flux_Y = empty(min_array.size)
-            integrate_power_X = empty(min_array.size)
-            integrate_power_Y = empty(min_array.size)
-            efficiency_ratio = empty(min_array.size)
+            integrate_flux_X = empty(phase_array_3.size)
+            integrate_flux_Y = empty(phase_array_3.size)
+            integrate_power_X = empty(phase_array_3.size)
+            integrate_power_Y = empty(phase_array_3.size)
+            efficiency_ratio = empty(phase_array_3.size)
 
             for Ecouple in Ecouple_array:
-                for ii, phase_shift in enumerate(min_array):
+                for ii, phase_shift in enumerate(phase_array_3):
                     if num_minima1==3.0:
                         input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                     else:
@@ -184,30 +180,32 @@ def flux_power_efficiency(target_dir): #processing of raw data
                     try:
                         data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift), usecols=(0,3,4,5,6,7,8))
                         N = int(sqrt(len(data_array)))
-                        # print(N)
-                        prob_ss_array = data_array[:,0].reshape((N,N))
-                        drift_at_pos = data_array[:,1:3].T.reshape((2,N,N))
-                        diffusion_at_pos = data_array[:,3:].T.reshape((4,N,N))
+                        prob_ss_array = data_array[:, 0].reshape((N, N))
+                        drift_at_pos = data_array[:, 1:3].T.reshape((2, N, N))
+                        diffusion_at_pos = data_array[:, 3:].T.reshape((4, N, N))
 
-                        flux_array = zeros((2,N,N))
+                        flux_array = zeros((2, N, N))
                         calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
                         flux_array = asarray(flux_array)/(dx*dx)
 
-                        integrate_flux_X[ii] = (1./(2*pi))*trapz(trapz(flux_array[0,...], dx=dx, axis=1), dx=dx)
-                        integrate_flux_Y[ii] = (1./(2*pi))*trapz(trapz(flux_array[1,...], dx=dx, axis=0), dx=dx)
+                        integrate_flux_X[ii] = (1./(2*pi))*trapz(trapz(flux_array[0, ...], dx=dx, axis=0), dx=dx)
+                        print(integrate_flux_X[ii])
+                        integrate_flux_Y[ii] = (1./(2*pi))*trapz(trapz(flux_array[1, ...], dx=dx, axis=0), dx=dx)
 
                         integrate_power_X[ii] = integrate_flux_X[ii]*psi_1
                         integrate_power_Y[ii] = integrate_flux_Y[ii]*psi_2
-                    except:
-                        print('Missing file')    
+                    except OSError:
+                        print('Missing file')
+                        print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2,
+                                                     phase_shift))
                         
-                if (abs(psi_1) <= abs(psi_2)):
+                if abs(psi_1) <= abs(psi_2):
                     efficiency_ratio = -(integrate_power_X/integrate_power_Y)
                 else:
                     efficiency_ratio = -(integrate_power_Y/integrate_power_X)
     
                 with open(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), "w") as ofile:
-                    for ii, phase_shift in enumerate(min_array):
+                    for ii, phase_shift in enumerate(phase_array_3):
                         ofile.write(
                             f"{phase_shift:.15e}" + "\t"
                             + f"{integrate_flux_X[ii]:.15e}" + "\t"
@@ -346,7 +344,321 @@ def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupli
                     f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, phase))
                     f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, phase))
                     plt.close()
-                    
+
+def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency as a function of the coupling strength
+    output_file_name = (
+                target_dir + "power_efficiency_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phi_{4}" + "_log_.pdf")
+    f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 8))
+
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            # flux plot
+            axarr[0].axhline(0, color='black', linewidth=0.5, label='_nolegend_')  # line at zero
+            # maxpower = 0.000085247
+            # axarr[0].axhline(maxpower, color='grey', linestyle=':', linewidth=1)  # line at infinite power coupling (calculated in Mathematica)
+            # axarr[0].axhline(1, color='grey', linestyle=':', linewidth=1)#line at infinite power coupling
+            # axarr[0].axvline(12, color='grey', linestyle=':', linewidth=1)  # lining up features in the two plots
+
+            # General data
+            i = 0  # only use phase=0 data
+            for j, num_min in enumerate(min_array):
+                power_x_array = []
+                power_y_array = []
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    input_file_name = (
+                                target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    try:
+                        data_array = loadtxt(
+                            input_file_name.format(E0, E1, psi_1, psi_2, num_min, num_min, Ecouple),
+                            usecols=(0, 3, 4))
+                        power_x = array(data_array[i, 1])
+                        power_y = array(data_array[i, 2])
+                        power_x_array = append(power_x_array, power_x)
+                        power_y_array = append(power_y_array, power_y)
+                    except OSError:
+                        print('Missing file flux')
+                axarr[0].plot(Ecouple_array, -power_y_array, marker='o', markersize=6, linestyle='-')
+
+            axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            axarr[0].yaxis.offsetText.set_fontsize(14)
+            # axarr[0].set_yticks(ylabels_flux)
+            # axarr[0].tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+            axarr[0].tick_params(axis='y', labelsize=14)
+            axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP} (t_{\rm sim}^{-1}) $', fontsize=20)
+            axarr[0].spines['right'].set_visible(False)
+            axarr[0].spines['top'].set_visible(False)
+            axarr[0].spines['bottom'].set_visible(False)
+            # axarr[0].set_xlim((1.7, 135))
+
+            leg = axarr[0].legend(n_labels, title=r'$n_{\rm o} = n_1$', fontsize=14, loc='lower right', frameon=False)
+            leg_title = leg.get_title()
+            leg_title.set_fontsize(14)
+
+            #########################################################
+            # efficiency plot
+            axarr[1].axhline(0, color='black', linewidth=0.5)
+            # axarr[1].set_aspect(0.5)
+            # axarr[1].axvline(12, color='grey', linestyle=':', linewidth=1)
+
+            for j, num_min in enumerate(min_array):
+                eff_array = []
+                for ii, Ecouple in enumerate(Ecouple_array):
+                    input_file_name = (
+                                target_dir + "190729_Varying_n/processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    try:
+                        data_array = loadtxt(
+                            input_file_name.format(E0, E1, psi_1, psi_2, num_min, num_min, Ecouple), usecols=(5))
+                        eff_array = append(eff_array, data_array[0])
+                    except OSError:
+                        print('Missing file efficiency')
+                axarr[1].plot(Ecouple_array, eff_array / (-psi_2 / psi_1), marker='o', markersize=6, linestyle='-')
+
+            axarr[1].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
+            axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
+            axarr[1].set_xscale('log')
+            # axarr[1].set_ylim((None,))
+            axarr[1].set_xlim((1.7, 135))
+            axarr[1].spines['right'].set_visible(False)
+            axarr[1].spines['top'].set_visible(False)
+            # axarr[1].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+            axarr[1].spines['bottom'].set_visible(False)
+            axarr[1].set_yticks(ylabels_eff)
+            axarr[1].tick_params(axis='both', labelsize=14)
+
+
+            f.text(0.05, 0.95, r'$\mathbf{a)}$', ha='center', fontsize=20)
+            f.text(0.05, 0.48, r'$\mathbf{b)}$', ha='center', fontsize=20)
+            # f.subplots_adjust(hspace=0.01)
+            f.tight_layout()
+            f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+
+def plot_power_efficiency_phi(target_dir):  # plot power and efficiency as a function of the coupling strength
+    output_file_name = (
+                target_dir + "power_efficiency_phi_vary_n_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_Ecouple_{4}" + "_log_.pdf")
+    f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 5.5))
+
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            # flux plot
+            axarr[0].axhline(0, color='black', linewidth=1)  # line at zero
+
+            # zero-barrier theory lines
+            input_file_name = (
+                        target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            data_array = loadtxt(input_file_name.format(psi_1, psi_2))
+            flux_x_array = array(data_array[:, 1])
+            flux_y_array = array(data_array[:, 2])
+            # power_x = flux_x_array * psi_1
+            power_y = -flux_y_array * psi_2
+            axarr[0].axhline(power_y[17], color='C0', linewidth=2, label='$0$')
+
+            n = 1.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                            target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                            + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple),
+                        usecols=(0, 3, 4))
+                    phase_array = array(data_array[:, 0])
+                    # power_x = array(data_array[:, 1])
+                    power_y = array(data_array[:, 2])
+                except OSError:
+                    print('Missing file flux')
+            # print(-power_y)
+            power_y = append(power_y, power_y[0])
+            # axarr[0].plot(Ecouple_array, psi_1*flux_x_array, 'o', color=plt.cm.cool(0))
+            axarr[0].plot(phase_array_1, -power_y, '-o', markersize=8, color='C1', label='$1$')
+
+            n = 2.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                        target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple),
+                        usecols=(0, 3, 4))
+                    phase_array = array(data_array[:, 0])
+                    # power_x = array(data_array[:, 1])
+                    power_y = array(data_array[:, 2])
+                except OSError:
+                    print('Missing file flux')
+            power_y = append(power_y, power_y[0])
+            # axarr[0].plot(Ecouple_array, psi_1*flux_x_array, 'o', color=plt.cm.cool(0))
+            axarr[0].plot(phase_array_2, -power_y, '-o', markersize=8, color='C2', label='$2$')
+
+            n = 3.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                        target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple),
+                        usecols=(0, 3, 4))
+                    phase_array = array(data_array[:, 0])
+                    # power_x = array(data_array[:, 1])
+                    power_y = array(data_array[:, 2])
+                except OSError:
+                    print('Missing file flux')
+            print(phase_array[:7].size)
+            print(phase_array_3.size)
+            # power_y = append(power_y, power_y[0])
+            # axarr[0].plot(Ecouple_array, psi_1*flux_x_array, 'o', color=plt.cm.cool(0))
+            axarr[0].plot(phase_array_3, -power_y[:7], '-o', markersize=8, color='C3', label='$3$')
+
+            n = 6.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                        target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple),
+                        usecols=(0, 3, 4))
+                    phase_array = array(data_array[:, 0])
+                    # power_x = array(data_array[:, 1])
+                    power_y = array(data_array[:, 2])
+                except OSError:
+                    print('Missing file flux')
+            # axarr[0].plot(Ecouple_array, psi_1*flux_x_array, 'o', color=plt.cm.cool(0))
+            axarr[0].plot(phase_array_6, -power_y[:4], '-o', markersize=8, color='C4', label='$6$')
+
+            n = 12.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                        target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple),
+                        usecols=(0, 3, 4))
+                    phase_array = array(data_array[:, 0])
+                    # power_x = array(data_array[:, 1])
+                    power_y = array(data_array[:, 2])
+                except OSError:
+                    print('Missing file flux')
+            power_y = delete(power_y, 5)
+            # axarr[0].plot(Ecouple_array, psi_1*flux_x_array, 'o', color=plt.cm.cool(0))
+            axarr[0].plot(phase_array_12, -power_y, '-o', markersize=8, color='C6', label='$12$')
+
+            axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            axarr[0].set_xticks(phi_ticks)
+            axarr[0].yaxis.offsetText.set_fontsize(14)
+            axarr[0].tick_params(axis='both', labelsize=14)
+            axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP}\ (t_{\rm sim}^{-1})$', fontsize=20)
+            axarr[0].spines['right'].set_visible(False)
+            axarr[0].spines['top'].set_visible(False)
+            axarr[0].set_ylim((0, None))
+
+            leg = axarr[0].legend(title=r'$n_{\rm o} = n_1$', fontsize=14, loc='lower center', frameon=False, ncol=3)
+            leg_title = leg.get_title()
+            leg_title.set_fontsize(14)
+
+            #########################################################
+            # efficiency plot
+            axarr[1].axhline(0, color='black', linewidth=1)
+            axarr[1].axhline(1, color='C0', linewidth=2, label='$0$')
+            axarr[1].set_aspect(1.5)
+
+            n = 1.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                            target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                            + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple), usecols=5)
+                    eff_array = data_array
+                    # print(eff_array)
+                except OSError:
+                    print('Missing file efficiency')
+            eff_array = append(eff_array, eff_array[0])
+            axarr[1].plot(phase_array_1, eff_array / (-psi_2 / psi_1), 'o', label='1', markersize=8, color='C1')
+
+            n = 2.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                        target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple), usecols=5)
+                    eff_array = data_array
+                    # print(eff_array)
+                except OSError:
+                    print('Missing file efficiency')
+            eff_array = append(eff_array, eff_array[0])
+            axarr[1].plot(phase_array_2, eff_array / (-psi_2 / psi_1), 'o', label='2', markersize=8, color='C2')
+
+            n = 3.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                        target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple), usecols=5)
+                    eff_array = data_array
+                    # print(eff_array)
+                except OSError:
+                    print('Missing file efficiency')
+            eff_array = append(eff_array, eff_array[0])
+            axarr[1].plot(phase_array_3, eff_array[:7] / (-psi_2 / psi_1), 'o', label='3', markersize=8, color='C3')
+
+            n = 6.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                        target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple), usecols=5)
+                    eff_array = data_array
+                    print(eff_array)
+                except OSError:
+                    print('Missing file efficiency')
+            axarr[1].plot(phase_array_6, eff_array[:4] / (-psi_2 / psi_1), 'o', label='6', markersize=8, color='C4')
+
+            n = 12.0
+            for ii, Ecouple in enumerate(Ecouple_array):
+                input_file_name = (
+                        target_dir + "190729_Varying_n/processed_data/" + "flux_power_efficiency_"
+                        + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, n, n, Ecouple), usecols=5)
+                    eff_array = data_array
+                    # print(eff_array)
+                except OSError:
+                    print('Missing file efficiency')
+            eff_array = delete(eff_array, 5)
+            axarr[1].plot(phase_array_12, eff_array / (-psi_2 / psi_1), 'o', label='12', markersize=8, color='C6')
+
+            axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
+            axarr[1].set_xlim((-0.2, 6.4))
+            axarr[1].set_ylim((0, 1.1))
+            axarr[1].spines['right'].set_visible(False)
+            axarr[1].spines['top'].set_visible(False)
+            axarr[1].yaxis.offsetText.set_fontsize(14)
+            axarr[1].tick_params(axis='both', labelsize=14)
+            axarr[1].set_yticks(ylabels_eff)
+            axarr[1].set_xticks(phi_ticks)
+            axarr[1].set_xticklabels(phi_ticklabels)
+
+            # leg = axarr[1].legend(title=r'$n_{\rm o} = n_1$', fontsize=14, loc='lower right', frameon=False)
+            # leg_title = leg.get_title()
+            # leg_title.set_fontsize(14)
+
+            f.text(0.55, 0.02, r'$n \phi \ (\rm rev)$', fontsize=20, ha='center')
+            f.text(0.03, 0.93, r'$\mathbf{a)}$', fontsize=20)
+            f.text(0.03, 0.37, r'$\mathbf{b)}$', fontsize=20)
+            f.tight_layout()
+            # f.subplots_adjust(bottom=0.1)
+            f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
+
 def plot_heatmap_power_Ecouple_n_scan(target_dir):
         
     input_file_name2 = (
@@ -589,6 +901,8 @@ if __name__ == "__main__":
     # plot_flux_n_single(target_dir)
     # plot_efficiency_Ecouple_single(target_dir)
     # plot_power_Ecouple_single(target_dir)
+    # plot_power_efficiency_Ecouple(target_dir)
+    plot_power_efficiency_phi(target_dir)
     # plot_heatmap_power_Ecouple_n_scan(target_dir)
-    plot_heatmap_power_Ecouple_phase_scan(target_dir)
+    # plot_heatmap_power_Ecouple_phase_scan(target_dir)
     
