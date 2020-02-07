@@ -199,7 +199,7 @@ def flux_power_efficiency(target_dir):
                             + f"{efficiency_ratio[ii]:.15e}" + "\n")
                     ofile.flush()
                     
-def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupling strength
+def plot_power_Ecouple_single(target_dir): # plot of power as a function of coupling strength
     output_file_name = (target_dir + "/power_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_no_{4}" + "_log_.pdf")
     
     for psi_1 in psi1_array:
