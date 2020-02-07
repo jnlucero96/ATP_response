@@ -26,8 +26,8 @@ psi2_array = array([-2.0])
 # psi1_array = array([2.0, 4.0, 8.0])
 # psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
 # psi_ratio = array([8, 4, 2])
-# Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
-Ecouple_array = array([16.0])
+Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
+# Ecouple_array = array([2.0])
 # Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
@@ -309,27 +309,42 @@ def plot_power_phi_single(target_dir):#plot of the power as a function of the ph
     
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
-            #Power subsystem 2
+            # Power subsystem 2
             plt.figure()    
-            f,ax=plt.subplots(1, 1, figsize=(8,6))
+            f, ax = plt.subplots(1, 1, figsize=(8,6))
             ax.axhline(0, color='black', linewidth=1)
 
+            # zero-barrier theory lines
+            input_file_name = (
+                        target_dir + "190624_Twopisweep_complete_set/processed_data/" + "flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            data_array = loadtxt(input_file_name.format(psi_1, psi_2))
+            # Ecouple_array3 = array(data_array[:, 0])
+            flux_x_array = array(data_array[:, 1])
+            flux_y_array = array(data_array[:, 2])
+            # power_x = flux_x_array * psi_1
+            power_y = -flux_y_array * psi_2
+            ax.axhline(power_y[17], color='C0', linewidth=2, label=None)
+
             for ii, Ecouple in enumerate(Ecouple_array):
-                input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
+                                   + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
-                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,3,4))
-                    phase_array = data_array[:,0]
-                    power_x_array = data_array[:,1]
-                    power_y_array = -data_array[:,2]
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple),
+                        usecols=(0, 3, 4))
+                    phase_array = data_array[:, 0]
+                    power_x_array = data_array[:, 1]
+                    power_y_array = -data_array[:, 2]
                     
                     ax.plot(phase_array, power_y_array, linestyle='-', marker='o', label=f'${Ecouple}$', markersize=8, linewidth=2, color=colorlst[ii])
                 except OSError:
                     print('Missing file')      
-            #Infinite coupling result
-            input_file_name = (target_dir + "190530_Twopisweep/master_output_dir/processed_data/" + "Flux_phi_Ecouple_inf_Fx_4.0_Fy_-2.0_test.dat")
-            data_array = loadtxt(input_file_name, usecols=(0,1))
-            phase_array = data_array[:,0]
-            flux_array = -psi_2*data_array[:,1]
+            # Infinite coupling result
+            input_file_name = (target_dir + "190530_Twopisweep/master_output_dir/processed_data/"
+                               + "Flux_phi_Ecouple_inf_Fx_4.0_Fy_-2.0_test.dat")
+            data_array = loadtxt(input_file_name, usecols=(0, 1))
+            phase_array = data_array[:, 0]
+            flux_array = -psi_2*data_array[:, 1]
 
             ax.plot(phase_array[:61], flux_array[:61], '-', label=f'$\infty$', linewidth=2, color='C6')
             ax.tick_params(axis='both', labelsize=14)
@@ -352,39 +367,6 @@ def plot_power_phi_single(target_dir):#plot of the power as a function of the ph
             f.tight_layout()
             f.subplots_adjust(bottom=0.12)
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
-            # plt.close()
-            
-            #Power subsystem 1
-            # output_file_name = (target_dir + "Power1_phi_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
-            # plt.figure()
-            # ax=plt.subplot(111)
-            # ax.axhline(0, color='black', linewidth=2)
-            # print('Figure for psi1=%f, psi2=%f' % (psi_1, psi_2))
-            # for ii, Ecouple in enumerate(Ecouple_array):
-            #     try:
-            #         data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0,3,4))
-            #         phase_array = data_array[:,0]
-            #         power_x_array = data_array[:,1]
-            #         power_y_array = data_array[:,2]
-            #
-            #         plt.plot(phase_array, power_x_array, 'o', color=plt.cm.cool(colorlist[ii]), label=f'{Ecouple}')
-            #     except OSError:
-            #         print('Missing file')
-            #infinite coupling limit
-            # input_file_name = (target_dir + "190530_Twopisweep/master_output_dir/processed_data/" + "Flux_phi_Ecouple_inf_Fx_4.0_Fy_-2.0_test.dat")
-            # data_array = loadtxt(input_file_name, usecols=(0,1))
-            # phase_array = data_array[:,0]
-            # flux_array = psi_2*data_array[:,1]
-            #
-            # ax.plot(phase_array, flux_array, '-', color=plt.cm.cool(colorlist[3]), label=f'$\infty$')
-            #
-            # plt.legend(title="$E_{couple}$", loc='upper left')
-            # plt.xlabel('$\phi$')
-            # plt.ylabel('$P_{H^+}$')
-            # plt.xticks(ticklst, ticklabels)
-            # plt.ylim(-0.00035, 0.0005)
-            # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-            # plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
             # plt.close()
 
 def plot_power_efficiency_phi_single(target_dir):#plot power and efficiency as a function of the coupling strength
@@ -1060,16 +1042,17 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
             #flux plot
             axarr[0].axhline(0, color='black', linewidth=0.5)#line at zero
             maxpower = 0.000085247
-            axarr[0].axhline(maxpower, color='grey', linestyle=':', linewidth=1)#line at infinite power coupling (calculated in Mathematica)
+            # axarr[0].axhline(maxpower, color='grey', linestyle=':', linewidth=1)#line at infinite power coupling (calculated in Mathematica)
             # axarr[0].axhline(1, color='grey', linestyle=':', linewidth=1)#line at infinite power coupling
-            axarr[0].axvline(12, color='grey', linestyle=':', linewidth=1)#lining up features in the two plots
+            # axarr[0].axvline(12, color='grey', linestyle=':', linewidth=1)#lining up features in the two plots
             
             #zero-barrier theory lines
-            input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/" + "Flux_zerobarrier_evenlyspaced_psi1_{0}_psi2_{1}_outfile.dat")
+            input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/"
+                               + "Flux_zerobarrier_evenlyspaced_psi1_{0}_psi2_{1}_outfile.dat")
             data_array = loadtxt(input_file_name.format(psi_1, psi_2))
-            Ecouple_array2 = array(data_array[:,0])
-            flux_x_array = array(data_array[:,1])
-            flux_y_array = array(data_array[:,2])
+            Ecouple_array2 = array(data_array[:, 0])
+            flux_x_array = array(data_array[:, 1])
+            flux_y_array = array(data_array[:, 2])
             power_x = flux_x_array*psi_1
             power_y = -flux_y_array*psi_2
             # axarr[0].plot(Ecouple_array2, power_x, '--', color=plt.cm.cool(.99))
@@ -1082,9 +1065,12 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
             E0=2.0
             E1=2.0
             for ii, Ecouple in enumerate(Ecouple_array_tot):
-                input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
+                                   + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
-                    data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=(0, 3, 4))
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple),
+                        usecols=(0, 3, 4))
                     if Ecouple in Ecouple_array:
                         power_x = array(data_array[i, 1])
                         power_y = array(data_array[i, 2])
@@ -1095,7 +1081,7 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
                     power_y_array = append(power_y_array, power_y)
                 except OSError:
                     print('Missing file flux')
-            axarr[0].plot(Ecouple_array_tot, -power_y_array, 'o', color='C1', label='$2$', markersize=8)
+            # axarr[0].plot(Ecouple_array_tot, -power_y_array, 'o', color='C1', label='$2$', markersize=8)
             
             axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             axarr[0].yaxis.offsetText.set_fontsize(14)
@@ -2236,8 +2222,8 @@ if __name__ == "__main__":
     # flux_power_efficiency(target_dir)
     # flux_power_efficiency_extrapoints(target_dir)
     # plot_power_phi_grid(target_dir)
-    # plot_power_phi_single(target_dir)
-    plot_power_efficiency_phi_single(target_dir)
+    plot_power_phi_single(target_dir)
+    # plot_power_efficiency_phi_single(target_dir)
     # plot_power_Ecouple_grid(target_dir)
     # plot_efficiency_phi_single(target_dir)
     # plot_efficiency_Ecouple_single(target_dir)
