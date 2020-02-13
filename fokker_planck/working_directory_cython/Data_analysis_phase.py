@@ -1,7 +1,7 @@
 import os
 import glob
 import re
-from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt, floor, shape, diff, sign, nonzero
+from numpy import array, linspace, empty, loadtxt, asarray, pi, meshgrid, shape, amax, amin, zeros, round, append, exp, log, ones, sqrt, floor, shape, diff, sign, nonzero, where
 import math
 import matplotlib.pyplot as plt
 from scipy.integrate import trapz
@@ -26,9 +26,9 @@ psi2_array = array([-2.0])
 # psi1_array = array([2.0, 4.0, 8.0])
 # psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
 # psi_ratio = array([8, 4, 2])
-Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
+# Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 # Ecouple_array = array([2.0])
-# Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
+Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 Ecouple_array_extra2 = array([1.41, 2.83, 5.66, 11.31, 22.63, 45.25, 90.51])
@@ -2216,13 +2216,82 @@ def plot_pmf_coord(target_dir):#plot of the pmf along some coordinate
                 f2.tight_layout()
                 f2.savefig(output_file_name2.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
                 plt.close()
-    
+
+def calculate_lag(target_dir):
+
+    psi_1 = 4.0
+    psi_2 = -2.0
+    # phase_offset = 0.0
+    phi_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533])
+    input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
+                       "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                       "_outfile.dat")
+
+    lag_data = zeros((phi_array.size, Ecouple_array.size))
+    max_lag = zeros(Ecouple_array.size)
+    max_phi = zeros((phi_array.size, Ecouple_array.size))
+
+    # calculating the lag from probability distributions
+    for i, Ecouple in enumerate(Ecouple_array):
+        for j, phase_offset in enumerate(phi_array):
+            try:
+                data_array = loadtxt(
+                            input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_offset),
+                            usecols=0)
+                prob_ss_array = data_array.reshape((N, N))
+                prob_ss_array = array(prob_ss_array[:120, :120])
+            except OSError:
+                print('Missing file')
+                print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_offset))
+
+            # mode lag
+            maxprob = amax(prob_ss_array)
+            pos = where(prob_ss_array == maxprob)
+            # print(maxprob, pos)
+            # print(Ecouple, ((pos[0]-pos[1]) % 120))
+            lag_data[j, i] = array((pos[0]-pos[1]) % 120)
+
+            # mean lag
+            # angle = array(linspace(0, 2*pi/3, 120, endpoint=False))
+            # av_prob_x = trapz(trapz(prob_ss_array.T * angle, dx=1, axis=1), dx=1, axis=0)
+            # av_prob_y = trapz(trapz(prob_ss_array * angle, dx=1, axis=1), dx=1, axis=0)
+            # print(Ecouple, av_prob_x - av_prob_y)
+
+        # print(amax(lag_data[:, i]))
+        # print(where(lag_data[:, i] == amax(lag_data[:, i]))[0])
+        if len(where(lag_data[:, i] == amax(lag_data[:, i]))[0]) == 1:
+            max_lag[i] = where(lag_data[:, i] == amax(lag_data[:, i]))[0]
+        else:
+            # print(where(lag_data[:, i] == amax(lag_data[:, i]))[0])
+            max_lag[i] = where(lag_data[:, i] == amax(lag_data[:, i]))[0][0]
+
+    print(max_lag)
+
+    # Calculate the phase offset that leads to the highest power output
+    for i, Ecouple in enumerate(Ecouple_array):
+        input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
+                           + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+        try:
+            data_array = loadtxt(
+                input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple),
+                usecols=(0, 4))
+            phi_array = data_array[::2, 0]
+            power_y_array = -data_array[::2, 1]
+        except OSError:
+            print('Missing file')
+
+        # print(where(power_y_array == amax(power_y_array))[0][0])
+        max_phi[i] = where(power_y_array == amax(power_y_array))[0][0]
+
+    print(max_phi)
+
+
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
     # flux_power_efficiency(target_dir)
     # flux_power_efficiency_extrapoints(target_dir)
     # plot_power_phi_grid(target_dir)
-    plot_power_phi_single(target_dir)
+    # plot_power_phi_single(target_dir)
     # plot_power_efficiency_phi_single(target_dir)
     # plot_power_Ecouple_grid(target_dir)
     # plot_efficiency_phi_single(target_dir)
@@ -2250,3 +2319,4 @@ if __name__ == "__main__":
     # plot_scatter_pmf_power(target_dir)
     # plot_prob_coord(target_dir)
     # plot_pmf_coord(target_dir)
+    calculate_lag(target_dir)
