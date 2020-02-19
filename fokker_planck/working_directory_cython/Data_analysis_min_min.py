@@ -25,13 +25,14 @@ psi2_array = array([-2.0])
 # psi1_array = array([1.0, 2.0, 4.0])
 # psi2_array = array([-4.0, -2.0, -1.0])
 
-Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
-# phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346])
-phase_array = array([0.0])
+Ecouple_array = array([16.0])
+# Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
+phase_array = array([0.0, 0.1745, 0.349066, 0.5236, 0.698132, 0.8727, 1.0472, 1.2217, 1.39626, 1.5708, 1.74533, 2.0944])
+# phase_array = array([0.0])
 n_labels = ['$1$', '$2$', '$3$', '$6$', '$12$']
 ylabels_eff = [0, 0.5, 1.0]
 
-colorlst = linspace(0,1,len(Ecouple_array))
+colorlst = linspace(0, 1, len(Ecouple_array))
 
 def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array, N):
     # explicit update of the corners
@@ -167,23 +168,23 @@ def flux_power_efficiency(target_dir):
                         data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima, num_minima2, phase_shift), usecols=(0,3,4,5,6,7,8))
                         N = int(sqrt(len(data_array)))
                         print(N)
-                        prob_ss_array = data_array[:,0].reshape((N,N))
-                        drift_at_pos = data_array[:,1:3].T.reshape((2,N,N))
-                        diffusion_at_pos = data_array[:,3:].T.reshape((4,N,N))
+                        prob_ss_array = data_array[:, 0].reshape((N, N))
+                        drift_at_pos = data_array[:, 1:3].T.reshape((2, N, N))
+                        diffusion_at_pos = data_array[:, 3:].T.reshape((4, N, N))
 
-                        flux_array = zeros((2,N,N))
+                        flux_array = zeros((2, N, N))
                         calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
                         flux_array = asarray(flux_array)/(dx*dx)
 
-                        integrate_flux_X[ii] = (1./(2*pi))*trapz(trapz(flux_array[0,...], dx=dx, axis=1), dx=dx)
-                        integrate_flux_Y[ii] = (1./(2*pi))*trapz(trapz(flux_array[1,...], dx=dx, axis=0), dx=dx)
+                        integrate_flux_X[ii] = (1./(2*pi))*trapz(trapz(flux_array[0, ...], dx=dx, axis=1), dx=dx)
+                        integrate_flux_Y[ii] = (1./(2*pi))*trapz(trapz(flux_array[1, ...], dx=dx, axis=0), dx=dx)
 
-                        #print(sum(integrate_flux_Y))
+                        # print(sum(integrate_flux_Y))
                         integrate_power_X[ii] = integrate_flux_X[ii]*psi_1
                         integrate_power_Y[ii] = integrate_flux_Y[ii]*psi_2
                     except:
                         print('Missing file')    
-                if (abs(psi_1) <= abs(psi_2)):
+                if abs(psi_1) <= abs(psi_2):
                     efficiency_ratio = -(integrate_power_X/integrate_power_Y)
                 else:
                     efficiency_ratio = -(integrate_power_Y/integrate_power_X)
@@ -519,11 +520,11 @@ def plot_efficiency_n1_single(target_dir):#plot of the efficiency as a function 
                     
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython"
-    # flux_power_efficiency(target_dir)
+    flux_power_efficiency(target_dir)
     # plot_power_Ecouple_single(target_dir)
     # plot_power_Ecouple_scaled(target_dir)
     # plot_efficiency_Ecouple_single(target_dir)
     # plot_efficiency_n1_single(target_dir)
     # plot_power_n1_single(target_dir)
     # plot_power_n1_scaled(target_dir)
-    plot_power_efficiency_Ecouple(target_dir)
+    # plot_power_efficiency_Ecouple(target_dir)

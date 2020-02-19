@@ -13,8 +13,8 @@ dx=2*math.pi/N
 positions=linspace(0,2*math.pi-dx,N)
 E0=2.0
 E1=2.0
-num_minima1=3.0
-num_minima2=3.0
+num_minima1=12.0
+num_minima2=12.0
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])[::-1]
 
@@ -24,12 +24,12 @@ psi2_array = array([-2.0])
 Ecouple_array = array([16.0])
 # phase_array = array([0.0])
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
-phase_array_1 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319])
-phase_array_2 = array([0.0, 0.698132, 1.39626, 2.0944, 2.79253, 3.49066, 4.18879, 4.88692, 5.58505, 6.28319])
-# phase_array_3 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159])
-phase_array_3 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319])
-phase_array_6 = array([0.0, 2.0944, 4.18879, 6.28319])
-phase_array_12 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 6.28319])
+phase_array_1 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599])
+phase_array_2 = array([0.0, 0.5236, 1.0472, 1.5708, 2.0944, 2.6180])
+phase_array_3 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533])
+# phase_array_3 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319])
+phase_array_6 = array([0.0, 0.1745, 0.349066, 0.5236, 0.698132, 0.8727])
+phase_array_12 = array([0.0, 0.08727, 0.17453, 0.2618, 0.34633, 0.4363])
 # phase_array = phase_array_12
 phi_ticks = [0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319]
 phi_ticklabels = ['$0$', '', '', '$0.5$', '', '', '$1$']
@@ -167,18 +167,34 @@ def flux_power_efficiency(target_dir): #processing of raw data
             efficiency_ratio = empty(phase_array_3.size)
 
             for Ecouple in Ecouple_array:
-                for ii, phase_shift in enumerate(phase_array_3):
-                    if num_minima1==3.0:
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                for ii, phase_shift in enumerate(phase_array_12):
+                    if num_minima1 == 3.0:
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
+                                           "/reference_" +
+                                           "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                                           "_outfile.dat")
+                    elif (num_minima1 == 2.0 and (ii == 1 or ii == 3 or ii == 5)) \
+                            or (num_minima1 == 6.0 and (ii == 1 or ii == 3 or ii == 5)) \
+                            or (num_minima1 == 12.0 and ii == 5):
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200213_extrapoints" +
+                                            "/reference_" +
+                                            "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                                            "_outfile.dat")
                     else:
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190729_varying_n" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190729_varying_n/n12" +
+                                           "/reference_" +
+                                           "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                                           "_outfile.dat")
                     
-                    output_file_name = (target_dir + "/190729_Varying_n/processed_data/" + "flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    output_file_name = (target_dir + "200218_morepoints/processed_data/" + "flux_power_efficiency_" +
+                                        "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                     
-                    print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " + f"Ecouple = {Ecouple}, num_minima1 = {num_minima1}, num_minima2 = {num_minima2}")
+                    print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " +
+                          f"Ecouple = {Ecouple}, num_minima1 = {num_minima1}, num_minima2 = {num_minima2}")
                     
                     try:
-                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift), usecols=(0,3,4,5,6,7,8))
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1,
+                                                                    num_minima2, phase_shift), usecols=(0,3,4,5,6,7,8))
                         N = int(sqrt(len(data_array)))
                         prob_ss_array = data_array[:, 0].reshape((N, N))
                         drift_at_pos = data_array[:, 1:3].T.reshape((2, N, N))
@@ -897,12 +913,12 @@ def plot_heatmap_power_Ecouple_phase_scan(target_dir):
         
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
-    # flux_power_efficiency(target_dir)
+    flux_power_efficiency(target_dir)
     # plot_flux_n_single(target_dir)
     # plot_efficiency_Ecouple_single(target_dir)
     # plot_power_Ecouple_single(target_dir)
     # plot_power_efficiency_Ecouple(target_dir)
-    plot_power_efficiency_phi(target_dir)
+    # plot_power_efficiency_phi(target_dir)
     # plot_heatmap_power_Ecouple_n_scan(target_dir)
     # plot_heatmap_power_Ecouple_phase_scan(target_dir)
     

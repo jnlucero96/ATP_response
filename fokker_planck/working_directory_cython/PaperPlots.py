@@ -33,6 +33,7 @@ Ecouple_array_tot = array([1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 
 # phase_array_test = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
+color_lst = ['C2', 'C3', 'C1', 'C4', 'C6']
 
 def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs coupling strength
     output_file_name = (
@@ -180,7 +181,7 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
             #     print('Missing file flux')
 
             # line at zero power
-            axarr[i, j].axhline(0, color='black', linewidth=1)
+            # axarr[i, j].axhline(0, color='black', linewidth=1)
 
             # zero-barrier result
             input_file_name = (
@@ -218,7 +219,7 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
             axarr[i, j].set_xscale('log')
             axarr[i, j].spines['right'].set_visible(False)
             axarr[i, j].spines['top'].set_visible(False)
-            axarr[i, j].spines['bottom'].set_visible(False)
+            # axarr[i, j].spines['bottom'].set_visible(False)
             axarr[i, j].tick_params(axis='both', labelsize=14)
             axarr[i, j].set_xticks([1., 10., 100.])
             if j == 0:
@@ -226,18 +227,18 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
             elif j == 1:
                 axarr[i, j].set_xlim((2.3, 150))
             else:
-                axarr[i, j].set_xlim((3.4, 150))
+                axarr[i, j].set_xlim((5, 150))
 
             if i == 0:
-                axarr[i, j].set_ylim((-0.00004, 0.00009))
-                axarr[i, j].set_yticks([-0.00004, 0, 0.00004, 0.00008])
+                axarr[i, j].set_ylim((0, 0.000085))
+                axarr[i, j].set_yticks([0, 0.00004, 0.00008])
                 axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             elif i == 1:
-                axarr[i, j].set_ylim((-0.00008, 0.00035))
+                axarr[i, j].set_ylim((0, 0.00033))
                 axarr[i, j].set_yticks([0, 0.00015, 0.0003])
                 axarr[i, j].set_yticklabels([r'$0$', r'$15$', r'$30$'])
             else:
-                axarr[i, j].set_ylim((-0.00045, 0.0014))
+                axarr[i, j].set_ylim((0, 0.0013))
                 axarr[i, j].set_yticks([0, 0.0005, 0.001])
                 axarr[i, j].set_yticklabels([r'$0$', r'$50$', r'$100$'])
 
@@ -424,7 +425,8 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
 
 def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency as a function of the coupling strength
 
-    f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 8))
+    f, axarr = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(6, 6),
+                            gridspec_kw={'width_ratios': [10, 1], 'height_ratios': [2, 1]})
 
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
@@ -432,9 +434,8 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                     target_dir + "power_nn_efficiency_Ecouple_plot_"
                     + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phi_{4}" + "_log_.pdf")
             # flux plot
-            axarr[0].axhline(0, color='black', linewidth=1, label='_nolegend_')  # line at zero
+            # axarr[0, 0].axhline(0, color='black', linewidth=1, label='_nolegend_')  # line at zero
 
-            Ecouple_array_new = append(Ecouple_array, 300)
             # General data
             i = 0  # only use phase=0 data
             for j, num_min in enumerate(min_array):
@@ -458,29 +459,41 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                 try:
                     data_array = loadtxt(input_file_name)
                     power_inf = array(data_array[j, 1])
-                    power_y_array = append(power_y_array, -power_inf)
+                    # power_y_array = append(power_y_array, -power_inf)
                 except OSError:
                     print('Missing file infinite coupling power')
 
-                axarr[0].plot(Ecouple_array_new, -power_y_array, marker='o', markersize=6, linestyle='-')
+                axarr[0, 0].plot(Ecouple_array, -power_y_array, marker='o', markersize=6, linestyle='-',
+                                 color=color_lst[j])
+                axarr[0, 1].plot([300], power_inf, marker='o', markersize=6, linestyle='-',
+                                 color=color_lst[j])
 
-            axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-            axarr[0].yaxis.offsetText.set_fontsize(14)
-            axarr[0].tick_params(axis='y', labelsize=14)
-            axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP} (t_{\rm sim}^{-1}) $', fontsize=20)
-            axarr[0].spines['right'].set_visible(False)
-            axarr[0].spines['top'].set_visible(False)
-            axarr[0].spines['bottom'].set_visible(False)
+            axarr[0, 0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            axarr[0, 0].yaxis.offsetText.set_fontsize(14)
+            axarr[0, 0].tick_params(axis='y', labelsize=14)
+            axarr[0, 0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP} (t_{\rm sim}^{-1}) $', fontsize=20)
+            axarr[0, 0].spines['right'].set_visible(False)
+            axarr[0, 0].spines['top'].set_visible(False)
+            axarr[0, 0].set_ylim((0, None))
+            axarr[0, 0].set_xlim((8, None))
 
-            leg = axarr[0].legend(['$1$', '$2$', '$3$', '$6$', '$12$'], title=r'$n_{\rm o} = n_1$', fontsize=14,
-                                  loc='lower right', frameon=False)
-            leg_title = leg.get_title()
-            leg_title.set_fontsize(14)
+            axarr[0, 1].spines['right'].set_visible(False)
+            axarr[0, 1].spines['top'].set_visible(False)
+            axarr[0, 1].spines['left'].set_visible(False)
+            axarr[0, 1].set_xticks([300])
+            axarr[0, 1].set_xticklabels(['$\infty$'])
+            axarr[0, 1].tick_params(axis='y', color='white')
+
+            d = .015  # how big to make the diagonal lines in axes coordinates
+            kwargs = dict(transform=axarr[0, 0].transAxes, color='k', clip_on=False)
+            axarr[0, 0].plot((1 - 0.3 * d, 1 + 0.3 * d), (-d, +d), **kwargs)
+            kwargs.update(transform=axarr[0, 1].transAxes)  # switch to the bottom axes
+            axarr[0, 1].plot((-2.5 * d - 0.05, +2.5 * d - 0.05), (-d, +d), **kwargs)
 
             #########################################################
             # efficiency plot
-            axarr[1].axhline(0, color='black', linewidth=1)
-            axarr[1].axhline(1, color='grey', linestyle=':', linewidth=1)
+            # axarr[1, 0].axhline(0, color='black', linewidth=1, label='_nolegend_')
+            axarr[1, 0].axhline(1, color='grey', linestyle=':', linewidth=1, label='_nolegend_')
 
             for j, num_min in enumerate(min_array):
                 eff_array = []
@@ -496,23 +509,45 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                         print('Missing file efficiency')
 
                 # infinite coupling value
-                eff_array = append(eff_array, 0.5)
-                axarr[1].plot(Ecouple_array_new, eff_array / (-psi_2 / psi_1), marker='o', markersize=6, linestyle='-')
+                # eff_array = append(eff_array, 0.5)
+                axarr[1, 0].plot(Ecouple_array, eff_array/0.5, marker='o', markersize=6, linestyle='-',
+                                 color=color_lst[j])
+                axarr[1, 1].plot([300], 1, marker='o', markersize=6, linestyle='-',
+                                 color=color_lst[j])
 
-            axarr[1].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
-            axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
-            axarr[1].set_xscale('log')
-            axarr[1].set_xlim((1.9, 320))
-            axarr[1].spines['right'].set_visible(False)
-            axarr[1].spines['top'].set_visible(False)
-            axarr[1].spines['bottom'].set_visible(False)
-            axarr[1].set_yticks([0, 0.5, 1.0])
-            axarr[1].tick_params(axis='both', labelsize=14)
-            axarr[1].set_xticks([10, 100, 300])
-            axarr[1].set_xticklabels(['$10^1$', '$10^2$', '$\infty$'])
+            axarr[1, 0].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
+            axarr[1, 0].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
+            axarr[1, 0].set_xscale('log')
+            axarr[1, 0].set_xlim((8, None))
+            axarr[1, 0].set_ylim((0, None))
+            axarr[1, 0].spines['right'].set_visible(False)
+            axarr[1, 0].spines['top'].set_visible(False)
+            axarr[1, 0].set_yticks([0, 0.5, 1.0])
+            axarr[1, 0].tick_params(axis='both', labelsize=14)
+            axarr[1, 0].set_xticks([10, 100])
+            axarr[1, 0].set_xticklabels(['$10^1$', '$10^2$'])
 
-            f.text(0.05, 0.95, r'$\mathbf{a)}$', ha='center', fontsize=20)
-            f.text(0.05, 0.48, r'$\mathbf{b)}$', ha='center', fontsize=20)
+            axarr[1, 1].spines['right'].set_visible(False)
+            axarr[1, 1].spines['top'].set_visible(False)
+            axarr[1, 1].spines['left'].set_visible(False)
+            axarr[1, 1].set_xticks([300])
+            axarr[1, 1].set_xticklabels(['$\infty$'])
+            axarr[1, 1].set_xlim((295, 305))
+            axarr[1, 1].tick_params(axis='y', color='white')
+            axarr[1, 1].tick_params(axis='x', labelsize=14)
+
+            kwargs = dict(transform=axarr[1, 0].transAxes, color='k', clip_on=False)
+            axarr[1, 0].plot((1 - 0.3 * d, 1 + 0.3 * d), (-2 * d, +2 * d), **kwargs)
+            kwargs.update(transform=axarr[1, 1].transAxes)  # switch to the bottom axes
+            axarr[1, 1].plot((-2.5 * d - 0.05, +2.5 * d - 0.05), (-2 * d, +2 * d), **kwargs)
+
+            leg = axarr[1, 0].legend(['$1$', '$2$', '$3$', '$6$', '$12$'], title=r'$n_{\rm o} = n_1$', fontsize=14,
+                                     loc='lower right', frameon=False, ncol=3)
+            leg_title = leg.get_title()
+            leg_title.set_fontsize(14)
+
+            f.text(0.05, 0.92, r'$\mathbf{a)}$', ha='center', fontsize=20)
+            f.text(0.05, 0.37, r'$\mathbf{b)}$', ha='center', fontsize=20)
             f.tight_layout()
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
 
@@ -557,7 +592,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                     print('Missing file flux')
 
             power_y = append(power_y, power_y[0])
-            axarr[0].plot(phase_array_1, -power_y, '-o', markersize=8, color='C1', label='$1$')
+            axarr[0].plot(phase_array_1, -power_y, '-o', markersize=8, color=color_lst[0], label='$1$')
 
             n = 2.0
             for ii, Ecouple in enumerate(Ecouple_array):
@@ -572,7 +607,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                 except OSError:
                     print('Missing file flux')
             power_y = append(power_y, power_y[0])
-            axarr[0].plot(phase_array_2, -power_y, '-o', markersize=8, color='C2', label='$2$')
+            axarr[0].plot(phase_array_2, -power_y, '-o', markersize=8, color=color_lst[1], label='$2$')
 
             n = 3.0
             for ii, Ecouple in enumerate(Ecouple_array):
@@ -586,7 +621,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                     power_y = array(data_array)
                 except OSError:
                     print('Missing file flux')
-            axarr[0].plot(phase_array_3, -power_y[:7], '-o', markersize=8, color='C3', label='$3$')
+            axarr[0].plot(phase_array_3, -power_y[:7], '-o', markersize=8, color=color_lst[2], label='$3$')
 
             n = 6.0
             for ii, Ecouple in enumerate(Ecouple_array):
@@ -600,7 +635,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                     power_y = array(data_array)
                 except OSError:
                     print('Missing file flux')
-            axarr[0].plot(phase_array_6, -power_y[:4], '-o', markersize=8, color='C4', label='$6$')
+            axarr[0].plot(phase_array_6, -power_y[:4], '-o', markersize=8, color=color_lst[3], label='$6$')
 
             n = 12.0
             for ii, Ecouple in enumerate(Ecouple_array):
@@ -615,7 +650,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                 except OSError:
                     print('Missing file flux')
             power_y = delete(power_y, 5)
-            axarr[0].plot(phase_array_12, -power_y, '-o', markersize=8, color='C6', label='$12$')
+            axarr[0].plot(phase_array_12, -power_y, '-o', markersize=8, color=color_lst[4], label='$12$')
 
             axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             axarr[0].set_xticks([0, pi/9, 2*pi/9, pi/3, 4*pi/9, 5*pi/9, 2*pi/3])
@@ -649,7 +684,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                 except OSError:
                     print('Missing file efficiency')
             eff_array = append(eff_array, eff_array[0])
-            axarr[1].plot(phase_array_1, eff_array / (-psi_2 / psi_1), 'o', label='1', markersize=8, color='C1')
+            axarr[1].plot(phase_array_1, eff_array / (-psi_2 / psi_1), 'o', label='1', markersize=8, color=color_lst[0])
 
             n = 2.0
             for ii, Ecouple in enumerate(Ecouple_array):
@@ -664,7 +699,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                 except OSError:
                     print('Missing file efficiency')
             eff_array = append(eff_array, eff_array[0])
-            axarr[1].plot(phase_array_2, eff_array / (-psi_2 / psi_1), 'o', label='2', markersize=8, color='C2')
+            axarr[1].plot(phase_array_2, eff_array / (-psi_2 / psi_1), 'o', label='2', markersize=8, color=color_lst[1])
 
             n = 3.0
             for ii, Ecouple in enumerate(Ecouple_array):
@@ -679,7 +714,8 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                 except OSError:
                     print('Missing file efficiency')
             eff_array = append(eff_array, eff_array[0])
-            axarr[1].plot(phase_array_3, eff_array[:7] / (-psi_2 / psi_1), 'o', label='3', markersize=8, color='C3')
+            axarr[1].plot(phase_array_3, eff_array[:7] / (-psi_2 / psi_1), 'o', label='3', markersize=8,
+                          color=color_lst[2])
 
             n = 6.0
             for ii, Ecouple in enumerate(Ecouple_array):
@@ -693,7 +729,8 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                     print(eff_array)
                 except OSError:
                     print('Missing file efficiency')
-            axarr[1].plot(phase_array_6, eff_array[:4] / (-psi_2 / psi_1), 'o', label='6', markersize=8, color='C4')
+            axarr[1].plot(phase_array_6, eff_array[:4] / (-psi_2 / psi_1), 'o', label='6', markersize=8,
+                          color=color_lst[3])
 
             n = 12.0
             for ii, Ecouple in enumerate(Ecouple_array):
@@ -708,7 +745,8 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                 except OSError:
                     print('Missing file efficiency')
             eff_array = delete(eff_array, 5)
-            axarr[1].plot(phase_array_12, eff_array / (-psi_2 / psi_1), 'o', label='12', markersize=8, color='C6')
+            axarr[1].plot(phase_array_12, eff_array / (-psi_2 / psi_1), 'o', label='12', markersize=8,
+                           color=color_lst[4])
 
             axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
             axarr[1].set_ylim((0, 1.1))
@@ -734,14 +772,15 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
 def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency as a function of the coupling strength
     output_file_name = (
                 target_dir + "/power_efficiency_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}" + "_log_.pdf")
-    f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 8))
+    f, axarr = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(6, 6),
+                            gridspec_kw={'width_ratios': [10, 1], 'height_ratios': [2, 1]})
 
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             # flux plot
-            axarr[0].axhline(0, color='black', linewidth=1, label='_nolegend_')  # line at zero
+            # axarr[0, 0].axhline(0, color='black', linewidth=1, label='_nolegend_')  # line at zero
 
-            Ecouple_array_new = append(Ecouple_array, 300)
+            # Ecouple_array_new = append(Ecouple_array, 300)
             # General data
             for j, num_min in enumerate(min_array):
                 power_y_array = []
@@ -758,6 +797,10 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                     except OSError:
                         print('Missing file flux')
                         print(input_file_name.format(E0, E1, psi_1, psi_2, 3.0, Ecouple))
+
+                axarr[0, 0].plot(Ecouple_array, -power_y_array, marker='o', markersize=6, linestyle='-',
+                              color=color_lst[j])
+
                 # infinite coupling result
                 input_file_name = (target_dir + "/190924_no_vary_n1_3/processed_data/" +
                                    "Power_ATP_Ecouple_inf_no_varies_n1_3.0_E0_2.0_E1_2.0_psi1_4.0_psi2_-2.0_outfile.dat"
@@ -765,32 +808,39 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                 try:
                     data_array = loadtxt(input_file_name)
                     power_inf = array(data_array[j, 1])
-                    power_y_array = append(power_y_array, -power_inf)
+                    # power_y_array = append(power_y_array, -power_inf)
                 except OSError:
                     print('Missing file infinite coupling power')
 
-                axarr[0].plot(Ecouple_array_new , -power_y_array, marker='o', markersize=6, linestyle='-')
+                axarr[0, 1].plot([300], power_inf, marker='o', markersize=6, color=color_lst[j])
 
-            axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-            axarr[0].yaxis.offsetText.set_fontsize(14)
-            # axarr[0].set_yticks(ylabels_flux)
-            # axarr[0].tick_params(axis='x', which='both', bottom=False, labelbottom=False)
-            axarr[0].tick_params(axis='y', labelsize=14)
-            axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP} (t_{\rm sim}^{-1}) $', fontsize=20)
-            axarr[0].spines['right'].set_visible(False)
-            axarr[0].spines['top'].set_visible(False)
-            axarr[0].spines['bottom'].set_visible(False)
-            # axarr[0].set_xlim((1.7, 135))
+            axarr[0, 0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            axarr[0, 0].yaxis.offsetText.set_fontsize(14)
+            axarr[0, 0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP} (t_{\rm sim}^{-1}) $', fontsize=20)
+            axarr[0, 0].spines['right'].set_visible(False)
+            axarr[0, 0].spines['top'].set_visible(False)
+            axarr[0, 0].set_ylim((0, None))
+            axarr[0, 0].set_xlim((8, None))
+            axarr[0, 0].tick_params(axis='both', labelsize=14)
 
-            leg = axarr[0].legend(['$1$', '$2$', '$3$', '$6$', '$12$'], title=r'$n_{\rm o}$', fontsize=14, loc='best',
-                                  frameon=False)
-            leg_title = leg.get_title()
-            leg_title.set_fontsize(14)
+            axarr[0, 1].spines['right'].set_visible(False)
+            axarr[0, 1].spines['top'].set_visible(False)
+            axarr[0, 1].spines['left'].set_visible(False)
+            axarr[0, 1].set_xticks([300])
+            axarr[0, 1].set_xticklabels(['$\infty$'])
+            axarr[0, 1].tick_params(axis='y', color='white')
+
+            d = .015  # how big to make the diagonal lines in axes coordinates
+            kwargs = dict(transform=axarr[0, 0].transAxes, color='k', clip_on=False)
+            axarr[0, 0].plot((1 - 0.3*d, 1 + 0.3*d), (-d, +d), **kwargs)
+            kwargs.update(transform=axarr[0, 1].transAxes)  # switch to the bottom axes
+            axarr[0, 1].plot((-2.5*d-0.05, +2.5*d-0.05), (-d, +d), **kwargs)
 
             #########################################################
             # efficiency plot
-            axarr[1].axhline(0, color='black', linewidth=1)
-            axarr[1].axhline(1, color='grey', linestyle=':', linewidth=1)
+            # axarr[1, 0].axhline(0, color='black', linewidth=1, label='_nolegend_')
+            axarr[1, 0].axhline(1, color='grey', linestyle=':', linewidth=1, label='_nolegend_')
+            # axarr[1].set_aspect(0.5)
 
             for j, num_min in enumerate(min_array):
                 eff_array = []
@@ -805,27 +855,44 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                     except OSError:
                         print('Missing file efficiency')
 
-                eff_array = append(eff_array, 0.5)
-                axarr[1].plot(Ecouple_array_new, eff_array / (-psi_2 / psi_1), marker='o', markersize=6, linestyle='-')
+                # eff_array = append(eff_array, 0.5)
+                axarr[1, 0].plot(Ecouple_array, eff_array / (-psi_2 / psi_1), marker='o', markersize=6, linestyle='-',
+                                 color=color_lst[j])
+                axarr[1, 1].plot([300], [1], marker='o', markersize=6, color=color_lst[j])
 
-            axarr[1].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
-            axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
-            axarr[1].set_xscale('log')
-            # axarr[1].set_ylim((None,))
-            axarr[1].set_xlim((1.9, 320))
-            axarr[1].spines['right'].set_visible(False)
-            axarr[1].spines['top'].set_visible(False)
-            # axarr[1].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-            axarr[1].spines['bottom'].set_visible(False)
-            axarr[1].set_yticks([0, 0.5, 1.0])
-            axarr[1].tick_params(axis='both', labelsize=14)
-            axarr[1].set_xticks([10, 100, 300])
-            axarr[1].set_xticklabels(['$10^1$', '$10^2$', '$\infty$'])
+            axarr[1, 0].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
+            axarr[1, 0].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
+            axarr[1, 0].set_xscale('log')
+            axarr[1, 0].set_ylim((0, None))
+            axarr[1, 0].spines['right'].set_visible(False)
+            axarr[1, 0].spines['top'].set_visible(False)
+            axarr[1, 0].set_yticks([0, 0.5, 1.0])
+            axarr[1, 0].tick_params(axis='both', labelsize=14)
+            axarr[1, 0].set_xticks([10, 100])
+            axarr[1, 0].set_xticklabels(['$10^1$', '$10^2$'])
 
-            f.text(0.875, 0.77, r'$n_1=3$', ha='center', fontsize=14)
-            f.text(0.05, 0.95, r'$\mathbf{a)}$', ha='center', fontsize=20)
-            f.text(0.05, 0.48, r'$\mathbf{b)}$', ha='center', fontsize=20)
-            # f.subplots_adjust(hspace=0.01)
+            axarr[1, 1].spines['right'].set_visible(False)
+            axarr[1, 1].spines['top'].set_visible(False)
+            axarr[1, 1].spines['left'].set_visible(False)
+            axarr[1, 1].set_xticks([300])
+            axarr[1, 1].set_xticklabels(['$\infty$'])
+            axarr[1, 1].set_xlim((295, 305))
+            axarr[1, 1].tick_params(axis='y', color='white')
+            axarr[1, 1].tick_params(axis='x', labelsize=14)
+
+            kwargs = dict(transform=axarr[1, 0].transAxes, color='k', clip_on=False)
+            axarr[1, 0].plot((1 - 0.3*d, 1 + 0.3*d), (-2*d, +2*d), **kwargs)
+            kwargs.update(transform=axarr[1, 1].transAxes)  # switch to the bottom axes
+            axarr[1, 1].plot((-2.5*d-0.05, +2.5*d-0.05), (-2*d, +2*d), **kwargs)
+
+            leg = axarr[1, 0].legend(['$1$', '$2$', '$3$', '$6$', '$12$'], title=r'$n_{\rm o}$', fontsize=14, loc='best',
+                                    frameon=False, ncol=3)
+            leg_title = leg.get_title()
+            leg_title.set_fontsize(14)
+
+            f.text(0.77, 0.25, r'$n_1=3$', ha='center', fontsize=14)
+            f.text(0.05, 0.92, r'$\mathbf{a)}$', ha='center', fontsize=20)
+            f.text(0.05, 0.37, r'$\mathbf{b)}$', ha='center', fontsize=20)
             f.tight_layout()
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, 3.0))
 
@@ -835,6 +902,6 @@ if __name__ == "__main__":
     # plot_power_Ecouple_grid(target_dir)
     # plot_power_efficiency_phi(target_dir)
     # plot_power_phi_single(target_dir)
-    # plot_nn_power_efficiency_Ecouple(target_dir)
+    plot_nn_power_efficiency_Ecouple(target_dir)
     # plot_nn_power_efficiency_phi(target_dir)
-    plot_n0_power_efficiency_Ecouple(target_dir)
+    # plot_n0_power_efficiency_Ecouple(target_dir)

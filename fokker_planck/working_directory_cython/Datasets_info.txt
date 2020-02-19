@@ -32,3 +32,14 @@ Checking if a higher coupling strength approaches the infinite coupling limit mo
 
 190924_no_vary_n1_3:
 n1={1,2,3,6,12}, n2=3, E0=E1=2, psi1={0,1,2,4}, psi2={0,-1,-2,-4}, Ecouple={2,4,8,16,32,64,128}, phi=0.
+
+191018_steadystate_check:
+n1=n2=3, E0=E1=2, psi1=4, psi2=-2, Ecouple={0,2,4,8,16,32,64,128}, phi=0.
+Ran with a stricter steady-state condition to check that the simulations indeed reach the steady state.
+
+191217_morepoints:
+n1=n2=3, E0=E1=2, psi1={2,4,8}, -psi1/psi2={2,4,8}, Ecouple={0,1.41,2,2.83,4,5.66,8,11.31,16,22.62,32,45.25,64,90.51,128}, phi=0.
+Adding points halfway between the original Ecouple ones (on a log-scale).
+
+200128_biologicalnumbers:
+n1=10, n2=3, E0=E1=6, psi1=10, psi2=-9, Ecouple={0,2,4,8,16,32,64,128}, phi=0.
