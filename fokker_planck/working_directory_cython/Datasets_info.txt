@@ -43,3 +43,11 @@ Adding points halfway between the original Ecouple ones (on a log-scale).
 
 200128_biologicalnumbers:
 n1=10, n2=3, E0=E1=6, psi1=10, psi2=-9, Ecouple={0,2,4,8,16,32,64,128}, phi=0.
+
+200218_morepoints:
+Three different sets of extra data points for the plots in the varying n appendices of the paper.
+1) a) n1=n2=2, E0=E1=2, psi1=4, psi2=-2, Ecouple=16, phi={pi/6, pi/2, 5pi/6}.
+1) b) n1=n2=6, E0=E1=2, psi1=4, psi2=-2, Ecouple=16, phi={pi/18, pi/6, 5pi/18}.
+1) c) n1=n2=12, E0=E1=2, psi1=4, psi2=-2, Ecouple=16, phi=5 pi/36.
+2) n1=n2={1,2,6,12}, E0=E1=2, psi1=4, psi2=-2, Ecouple={10,11.31,12,14,18,20,22,22.63,24,45.25,90.51}, phi=0.
+3) n1={1,2,6,12}, n2=3, E0=E1=2, psi1=4, psi2=-2, Ecouple={10,11.31,12,14,18,20,22,22.63,24,45.25,90.51}, phi=0.
