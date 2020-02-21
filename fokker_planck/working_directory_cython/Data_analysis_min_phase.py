@@ -13,32 +13,32 @@ dx = 2*math.pi/N
 positions = linspace(0, 2*math.pi-dx, N)
 E0 = 2.0
 E1 = 2.0
-num_minima1 = 1.0
-num_minima2 = 1.0
+num_minima1 = 3.0
+num_minima2 = 3.0
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])[::-1]
 
-psi1_array = array([4.0])
-psi2_array = array([-2.0])
-# Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
+psi1_array = array([8.0])
+psi2_array = array([-5.33, -6.4, -7.11])
+Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
 # Ecouple_array_peak = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0])
 # Ecouple_array_double = array([11.31, 22.63, 45.25, 90.51])
 # Ecouple_array_tot = array([2.0, 4.0, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 22.63, 24.0, 32.0, 45.25,
 #                            64.0, 90.51, 128.0])
-Ecouple_array = array([16.0])
-# phase_array = array([0.0])
-phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533])
-phase_array_1 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599])
-phase_array_2 = array([0.0, 0.5236, 1.0472, 1.5708, 2.0944, 2.6180])
-phase_array_3 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533])
-phase_array_6 = array([0.0, 0.1745, 0.349066, 0.5236, 0.698132, 0.8727])
-phase_array_12 = array([0.0, 0.08727, 0.17453, 0.2618, 0.34633, 0.4363])
+# Ecouple_array = array([16.0])
+phase_array = array([0.0])
+# phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533])
+# phase_array_1 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599])
+# phase_array_2 = array([0.0, 0.5236, 1.0472, 1.5708, 2.0944, 2.6180])
+# phase_array_3 = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533])
+# phase_array_6 = array([0.0, 0.1745, 0.349066, 0.5236, 0.698132, 0.8727])
+# phase_array_12 = array([0.0, 0.08727, 0.17453, 0.2618, 0.34633, 0.4363])
 # phase_array_3 = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319])
 # phase_array = phase_array_12
 phi_ticks = [0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319]
 phi_ticklabels = ['$0$', '', '', '$0.5$', '', '', '$1$']
 
-colorlst = linspace(0,1,len(min_array))
+colorlst = linspace(0, 1, len(min_array))
 # Ecouple_labels = ['', '4', '', '16', '', '64', '', '\infty']
 Ecouple_labels = ['2', '', '8', '', '32', '', '128']
 phase_labels = ['$0$', '', '', '$\pi/12$', '', '', '$\pi/6$'][::-1] #n=12
@@ -163,7 +163,7 @@ def flux_power_efficiency(target_dir): #processing of raw data
 
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
-            phase_array = phase_array_1
+            # phase_array = phase_array_1
             integrate_flux_X = empty(phase_array.size)
             integrate_flux_Y = empty(phase_array.size)
             integrate_power_X = empty(phase_array.size)
@@ -172,32 +172,63 @@ def flux_power_efficiency(target_dir): #processing of raw data
 
             for Ecouple in Ecouple_array:
                 for ii, phase_shift in enumerate(phase_array):
-                    if num_minima1 == 3.0:
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
-                                           "/reference_" +
-                                           "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
-                                           "_outfile.dat")
-                    elif (num_minima1 == 12.0) and (phase_shift == 0.4363):
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200213_extrapoints" +
-                                           "/reference_" +
-                                           "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
-                                           "_outfile.dat")
-                    elif (num_minima1 == 2.0) and (phase_shift == 0.5236 or phase_shift == 1.5708 or phase_shift == 2.618):
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200213_extrapoints" +
-                                           "/reference_" +
-                                           "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
-                                           "_outfile.dat")
-                    elif (num_minima1 == 6.0) and (phase_shift == 0.1745 or phase_shift == 0.5236 or phase_shift == 0.8727):
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200213_extrapoints" +
-                                           "/reference_" +
-                                           "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
-                                           "_outfile.dat")
-                    else:
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190729_Varying_n/n1" +
-                                           "/reference_" +
-                                           "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
-                                           "_outfile.dat")
-                    # if (num_minima1 == 3.0) and (Ecouple in Ecouple_array):
+                    input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200220_moregrid" +
+                                       "/reference_" +
+                                       "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                                       "_outfile.dat")
+                    # if (num_minima1 == 3.0) and (Ecouple in Ecouple_array):  # this set of if's is for Ecouple and n varying data
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+                    # elif (num_minima1 == 3.0) and (Ecouple in Ecouple_array_double):
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/191221_morepoints" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+                    # elif (num_minima1 == 3.0) and (Ecouple in Ecouple_array_peak):
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190610_phaseoffset_extra" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+                    # elif Ecouple in Ecouple_array:
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190924_no_vary_n1_3" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+                    # else:
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200213_extrapoints" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+
+                    # if num_minima1 == 3.0: # this set of if's is for the varying n and phase offset data
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+                    # elif (num_minima1 == 12.0) and (phase_shift == 0.4363):
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200213_extrapoints" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+                    # elif (num_minima1 == 2.0) and (phase_shift == 0.5236 or phase_shift == 1.5708 or phase_shift == 2.618):
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200213_extrapoints" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+                    # elif (num_minima1 == 6.0) and (phase_shift == 0.1745 or phase_shift == 0.5236 or phase_shift == 0.8727):
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200213_extrapoints" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+                    # else:
+                    #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190729_Varying_n/n1" +
+                    #                        "/reference_" +
+                    #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                    #                        "_outfile.dat")
+
+                    # if (num_minima1 == 3.0) and (Ecouple in Ecouple_array):  # this set of if's is for Ecouple and n varying data
                     #     input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
                     #                        "/reference_" +
                     #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
@@ -222,7 +253,7 @@ def flux_power_efficiency(target_dir): #processing of raw data
                     #                        "/reference_" +
                     #                        "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
                     #                        "_outfile.dat")
-                    output_file_name = (target_dir + "200218_morepoints/processed_data/" +
+                    output_file_name = (target_dir + "200220_moregrid/processed_data/" +
                                         "flux_power_efficiency_" +
                                         "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" +
                                         "_outfile.dat")
