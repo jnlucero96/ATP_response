@@ -18,11 +18,11 @@ num_minima2 = 3.0
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])[::-1]
 
-psi1_array = array([8.0])
-psi2_array = array([-5.33, -6.4, -7.11])
-Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
+psi1_array = array([2.0])
+psi2_array = array([-1.33, -1.6, -1.78])6
+# Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
 # Ecouple_array_peak = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0])
-# Ecouple_array_double = array([11.31, 22.63, 45.25, 90.51])
+Ecouple_array = array([11.31, 22.63, 45.25, 90.51])
 # Ecouple_array_tot = array([2.0, 4.0, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 22.63, 24.0, 32.0, 45.25,
 #                            64.0, 90.51, 128.0])
 # Ecouple_array = array([16.0])

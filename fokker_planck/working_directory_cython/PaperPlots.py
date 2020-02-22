@@ -20,10 +20,10 @@ psi1_array = array([2.0, 4.0, 8.0])
 psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
 psi_ratio = array([8, 4, 2, 1.5, 1.25, 1.125])
 
-Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
-# Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0])  # extra measurements
+# Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
+# Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0])
 # Ecouple_array_extra2 = array([11.31, 22.63, 45.25, 90.51])
-# Ecouple_array_tot = array([8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
+Ecouple_array_tot = array([8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
 # Ecouple_array_tot = array(
 #     [8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 32.0, 45.25, 64.0,
 #      90.51, 128.0])  # fig 1
@@ -405,6 +405,7 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
             ax.spines['top'].set_visible(False)
             ax.spines['bottom'].set_visible(False)
             ax.yaxis.offsetText.set_fontsize(14)
+            ax.set_xlim((0,2.1))
 
             handles, labels = ax.get_legend_handles_labels()
             leg = ax.legend(handles[::-1], labels[::-1], title=r'$\beta E_{\rm couple}$', fontsize=14, loc=[0.8, 0.1],
@@ -789,31 +790,42 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
             psi_2 = round(-psi_1 / ratio, 2)
             print(psi_1, psi_2)
 
-            # line at highest Ecouple power
-            # input_file_name = (
-            #                 target_dir + "190624_Twopisweep_complete_set/processed_data/"
-            #                 + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_n1_3.0_n2_3.0_outfile.dat")
-            # try:
-            #     inf_array = loadtxt(input_file_name, usecols=2)
-            # except OSError:
-            #     print('Missing file Infinite Power Coupling')
-            #
-            # axarr[i, j].axhline(inf_array[i*3 + j], color='grey', linestyle=':', linewidth=1)
+            # line at infinite Ecouple power
+            if ratio == 8 or ratio == 4 or ratio == 2:
+                input_file_name = (
+                                target_dir + "190624_Twopisweep_complete_set/processed_data/"
+                                + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_n1_3.0_n2_3.0_outfile.dat")
+            else:
+                input_file_name = (
+                        target_dir + "200220_moregrid/processed_data/"
+                        + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_n1_3.0_n2_3.0_outfile.dat")
+            try:
+                inf_array = loadtxt(input_file_name, usecols=2)
+                axarr[i, j].axhline(inf_array[i * 3 + j], color='grey', linestyle=':', linewidth=1)
+            except OSError:
+                print('Missing file Infinite Power Coupling')
 
             # zero-barrier result
-            # input_file_name = (
-            #             target_dir + "191217_morepoints/processed_data/"
-            #             + "Flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
-            # data_array = loadtxt(input_file_name.format(psi_1, psi_2))
-            # Ecouple_array2 = array(data_array[:, 0])
-            # flux_y_array = array(data_array[:, 2])
-            # power_y = -flux_y_array * psi_2
-
-            # axarr[i, j].plot(Ecouple_array2, power_y, '-', color='C0', linewidth=3)
+            if ratio == 8 or ratio == 4 or ratio == 2:
+                input_file_name = (
+                            target_dir + "191217_morepoints/processed_data/"
+                            + "Flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            else:
+                input_file_name = (
+                        target_dir + "200220_moregrid/processed_data/"
+                        + "Flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            try:
+                data_array = loadtxt(input_file_name.format(psi_1, psi_2))
+                Ecouple_array2 = array(data_array[:, 0])
+                flux_y_array = array(data_array[:, 2])
+                power_y = -flux_y_array * psi_2
+                axarr[i, j].plot(Ecouple_array2, power_y, '-', color='C0', linewidth=3)
+            except OSError:
+                print('Zero-barrier file missing')
 
             # E0=E1=2 barrier data
             power_y_array = []
-            for ii, Ecouple in enumerate(Ecouple_array):
+            for ii, Ecouple in enumerate(Ecouple_array_tot):
                 if ratio == 8 or ratio == 4 or ratio == 2:
                     input_file_name = (
                                 target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
@@ -835,8 +847,8 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
                 except OSError:
                     print('Missing file flux')
                     print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
-            print(power_y_array)
-            axarr[i, j].plot(Ecouple_array, -power_y_array, '.', color='C1', markersize=14)
+
+            axarr[i, j].plot(Ecouple_array_tot, -power_y_array, '.', color='C1', markersize=14)
 
             # print('Max power/ infinite power', amax(-power_y_array)/inf_array[i*3 + j])
 
@@ -872,7 +884,7 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
                 axarr[i, j].yaxis.offsetText.set_fontsize(14)
 
             if j == psi_ratio.size - 1:
-                axarr[i, j].set_ylabel(r'$%.0f$' % psi1_array[::-1][i], labelpad=16, rotation=270, fontsize=14)
+                axarr[i, j].set_ylabel(r'$%.0f$' % psi1_array[i], labelpad=16, rotation=270, fontsize=14)
                 axarr[i, j].yaxis.set_label_position('right')
 
             if i == 0:
