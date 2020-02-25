@@ -2225,6 +2225,7 @@ def calculate_lag(target_dir):
     phi_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
 
     lag_data = zeros((phase_array.size, Ecouple_array.size))
+    super_power = zeros((phase_array.size, Ecouple_array.size))
     max_lag = zeros(Ecouple_array.size)
     max_phi = zeros(Ecouple_array.size)
 
@@ -2252,30 +2253,28 @@ def calculate_lag(target_dir):
                 print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_offset))
 
             # mode lag
-            maxprob = amax(prob_ss_array)
-            pos = where(prob_ss_array == maxprob)
-            # print(maxprob, pos)
-            # print(Ecouple, ((pos[0]-pos[1]) % 120))
-            lag_data[j, i] = array((pos[0]-pos[1]) % 120)
+            # maxprob = amax(prob_ss_array)
+            # pos = where(prob_ss_array == maxprob)
+            # # print(maxprob, pos)
+            # # print(Ecouple, ((pos[0]-pos[1]) % 120))
+            # lag_data[j, i] = array((pos[0]-pos[1]) % 120)
 
             # mean lag
             angle = array(linspace(0, 2*pi/3, 120, endpoint=False))
             av_prob_x = trapz(trapz(prob_ss_array.T * angle, dx=1, axis=1), dx=1, axis=0)
             av_prob_y = trapz(trapz(prob_ss_array * angle, dx=1, axis=1), dx=1, axis=0)
-            print(Ecouple, av_prob_x - av_prob_y)
+            print(Ecouple, av_prob_x, av_prob_y)
             lag_data[j, i] = av_prob_x - av_prob_y
 
         # print(amax(lag_data[:, i]))
         # print(where(lag_data[:, i] == amax(lag_data[:, i]))[0])
-        if len(where(lag_data[:, i] == amax(lag_data[:, i]))[0]) == 1:
-            max_lag[i] = where(lag_data[:, i] == amax(lag_data[:, i]))[0]
-        else:
-            # print(where(lag_data[:, i] == amax(lag_data[:, i]))[0])
-            max_lag[i] = where(lag_data[:, i] == amax(lag_data[:, i]))[0][0]
+        # if len(where(lag_data[:, i] == amax(lag_data[:, i]))[0]) == 1:
+        #     max_lag[i] = where(lag_data[:, i] == amax(lag_data[:, i]))[0]
+        # else:
+        #     # print(where(lag_data[:, i] == amax(lag_data[:, i]))[0])
+        #     max_lag[i] = where(lag_data[:, i] == amax(lag_data[:, i]))[0][0]
 
-    print(max_lag)
-
-    # print(lag_data)
+    print(lag_data)
 
     # Calculate the phase offset that leads to the highest power output
     for i, Ecouple in enumerate(Ecouple_array):
@@ -2287,31 +2286,34 @@ def calculate_lag(target_dir):
                 usecols=(0, 4))
             phi_array = data_array[:, 0]
             power_y_array = -data_array[:, 1]
+            super_power[:, i] = power_y_array
         except OSError:
             print('Missing file')
 
         # print(where(power_y_array == amax(power_y_array))[0][0])
-        max_phi[i] = where(power_y_array == amax(power_y_array))[0][0]
+        # max_phi[i] = where(power_y_array == amax(power_y_array))[0][0]
 
-    print(max_phi)
+    # print(max_phi)
+    print(super_power)
 
     plt.figure()
     f1, ax1 = plt.subplots(1, 1, figsize=(6, 6), sharey='all')
-    ax1.plot(max_phi, max_lag, 'o')
-    ax1.set_xlim((0, 11))
-    ax1.set_ylim((0, 11))
-    ax1.set_xlabel('$\phi_{\\rm max power}$', fontsize=20)
-    ax1.set_ylabel('$\phi_{\\rm max lag}$', fontsize=20)
-    ax1.set_xticks(range(0, 2*len(max_phi), 2))
-    ax1.set_xticklabels(['$0$', '', '', '$1/6$', '', '', '$1/3$'])
-    ax1.set_yticks(range(0, 2*len(max_phi), 2))
-    ax1.set_yticklabels(['$0$', '', '', '$1/6$', '', '', '$1/3$'])
+    ax1.plot(super_power, lag_data, 'o')
+    # ax1.set_xlim((0, 11))
+    # ax1.set_ylim((0, 11))
+    ax1.set_xlabel('$\phi_{\\rm Power}$', fontsize=20)
+    ax1.set_ylabel('$\phi_{\\rm Lag}$', fontsize=20)
+    # ax1.set_xticks(range(0, 2*len(max_phi), 2))
+    # ax1.set_xticklabels(['$0$', '', '', '$1/6$', '', '', '$1/3$'])
+    # ax1.set_yticks(range(0, 2*len(max_phi), 2))
+    # ax1.set_yticklabels(['$0$', '', '', '$1/6$', '', '', '$1/3$'])
     ax1.spines['right'].set_visible(False)
     ax1.spines['top'].set_visible(False)
+    ax1.legend(Ecouple_array)
 
     f1.tight_layout()
     output_file_name1 = (
-                target_dir + "Max_lag_opt_phi_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+                target_dir + "Lag_power_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
     f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
 
 if __name__ == "__main__":
