@@ -16,7 +16,7 @@ num_minima2 = 3.0
 
 psi1_array = array([4.0])
 psi2_array = array([-2.0])
-timescale = 3.7 * 10**4
+timescale = 1.5 * 10**4
 # psi1_array = array([2.0, 4.0, 8.0])
 # psi_ratio = array([8, 4, 2])
 # psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
@@ -25,19 +25,18 @@ timescale = 3.7 * 10**4
 Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
 # Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0])
 # Ecouple_array_extra2 = array([11.31, 22.63, 45.25, 90.51])
-# Ecouple_array_tot = array([5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
 Ecouple_array_tot = array(
     [8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 32.0, 45.25, 64.0,
-     90.51, 128.0])  # fig 1
-
-# phase_array = array([0.0, 0.175, 0.349066, 0.524, 0.698132, 0.873, 1.0472, 1.222, 1.39626, 1.571, 1.74533, 1.92,
-#                      2.0944])  # selection of twopisweep
-# phase_array_test = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
+     90.51, 128.0])
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
 color_lst = ['C2', 'C3', 'C1', 'C4', 'C6']
 
 def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs coupling strength
+    Ecouple_array_tot = array(
+        [2.0, 2.83, 4.0, 5.66, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 32.0, 45.25, 64.0,
+         90.51, 128.0])
+
     output_file_name = (
             target_dir + "power_efficiency_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phi_{4}" + "_log_.pdf")
     f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 8))
@@ -86,8 +85,8 @@ def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs c
             axarr[0].spines['top'].set_visible(False)
             axarr[0].spines['bottom'].set_visible(False)
             axarr[0].set_xlim((1.7, 135))
-            axarr[0].set_ylim((-22.5, 12))
-            axarr[0].set_yticks([-20, -10, 0, 10])
+            # axarr[0].set_ylim((-11.5, 6))
+            axarr[0].set_yticks([-10, -5, 0, 5])
 
             leg = axarr[0].legend(title=r'$\beta E_{\rm o} = \beta E_1$', fontsize=14, loc='lower right', frameon=False)
             leg_title = leg.get_title()
@@ -153,6 +152,11 @@ def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs c
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
 
 def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a function of the phase offset
+    Ecouple_array_tot = array([5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
+    psi1_array = array([2.0, 4.0, 8.0])
+    psi_ratio = array([8, 4, 2])
+    psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
+
     output_file_name = (target_dir + "power_ATP_Ecouple_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
     f, axarr = plt.subplots(3, 3, sharex='all', sharey='row', figsize=(8, 6))
     for i, psi_1 in enumerate(psi1_array):
@@ -234,17 +238,17 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
                 axarr[i, j].set_xlim((5, 150))
 
             if i == 0:
-                axarr[i, j].set_ylim((0, 3.15))
-                axarr[i, j].set_yticks([0, 1, 2, 3])
+                axarr[i, j].set_ylim((0, 1.3))
+                axarr[i, j].set_yticks([0, 0.5, 1.0])
                 axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             elif i == 1:
-                axarr[i, j].set_ylim((0, 12))
-                axarr[i, j].set_yticks([0, 5, 10])
-                axarr[i, j].set_yticklabels([r'$0$', r'$5$', r'$10$'])
+                axarr[i, j].set_ylim((0, 5))
+                axarr[i, j].set_yticks([0, 2, 4])
+                axarr[i, j].set_yticklabels([r'$0$', r'$2$', r'$4$'])
             else:
-                axarr[i, j].set_ylim((0, 48))
-                axarr[i, j].set_yticks([0, 20, 40])
-                axarr[i, j].set_yticklabels([r'$0$', r'$20$', r'$40$'])
+                axarr[i, j].set_ylim((0, 20))
+                axarr[i, j].set_yticks([0, 10, 20])
+                axarr[i, j].set_yticklabels([r'$0$', r'$10$', r'$20$'])
 
             if j == 0 and i > 0:
                 axarr[i, j].yaxis.offsetText.set_fontsize(0)
@@ -410,7 +414,7 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
             ax.spines['bottom'].set_visible(False)
             ax.yaxis.offsetText.set_fontsize(14)
             ax.set_xlim((0, 2.1))
-            ax.set_ylim((-16, 12))
+            ax.set_ylim((-6.5, 5))
 
             handles, labels = ax.get_legend_handles_labels()
             leg = ax.legend(handles[::-1], labels[::-1], title=r'$\beta E_{\rm couple}$', fontsize=14, loc=[0.8, 0.1],
@@ -422,7 +426,7 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
             plt.ylabel(r'$\beta \mathcal{P}_{\rm ATP}\ (\rm s^{-1})$', fontsize=20)
             plt.xticks([0, pi / 9, 2 * pi / 9, pi / 3, 4 * pi / 9, 5 * pi / 9, 2 * pi / 3],
                        ['$0$', '', '', '$1/6$', '', '', '$1/3$'])
-            plt.yticks([-10, 0, 10])
+            # plt.yticks([-, 0, 10])
 
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             f.tight_layout()
@@ -609,8 +613,8 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
             axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP}\ (\rm s^{-1})$', fontsize=20)
             axarr[0].spines['right'].set_visible(False)
             axarr[0].spines['top'].set_visible(False)
-            axarr[0].set_ylim((0, None))
-            axarr[0].set_yticks([0, 5, 10])
+            axarr[0].set_ylim((0, 5))
+            # axarr[0].set_yticks([0, 5, 10])
             axarr[0].set_xlim((0, 6.3))
 
             leg = axarr[0].legend(title=r'$n_{\rm o} = n_1$', fontsize=14, loc='lower center', frameon=False, ncol=3)
@@ -910,10 +914,10 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
 if __name__ == "__main__":
     target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
     # plot_power_efficiency_Ecouple(target_dir)
-    # plot_power_Ecouple_grid(target_dir)
+    plot_power_Ecouple_grid(target_dir)
     # plot_power_efficiency_phi(target_dir)
     # plot_power_phi_single(target_dir)
     # plot_nn_power_efficiency_Ecouple(target_dir)
     # plot_nn_power_efficiency_phi(target_dir)
-    plot_n0_power_efficiency_Ecouple(target_dir)
+    # plot_n0_power_efficiency_Ecouple(target_dir)
     # plot_power_Ecouple_grid_extended(target_dir)
