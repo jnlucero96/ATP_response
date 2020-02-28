@@ -14,13 +14,13 @@ E1 = 2.0
 num_minima1 = 3.0
 num_minima2 = 3.0
 
-psi1_array = array([4.0])
-psi2_array = array([-2.0])
+# psi1_array = array([4.0])
+# psi2_array = array([-2.0])
 timescale = 1.5 * 10**4
-# psi1_array = array([2.0, 4.0, 8.0])
+psi1_array = array([2.0, 4.0, 8.0])
 # psi_ratio = array([8, 4, 2])
-# psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
-# psi_ratio = array([8, 4, 2, 1.5, 1.25, 1.125])
+psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
+psi_ratio = array([8, 4, 2, 1.5, 1.25, 1.125])
 
 Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
 # Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0])
@@ -28,6 +28,8 @@ Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
 Ecouple_array_tot = array(
     [8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 32.0, 45.25, 64.0,
      90.51, 128.0])
+Ecouple_array_tot = array(
+    [8.0, 11.31, 16.0, 22.63,  32.0, 45.25, 64.0, 90.51, 128.0])
 
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
 color_lst = ['C2', 'C3', 'C1', 'C4', 'C6']
@@ -269,7 +271,7 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
            fontsize=20)
     f.text(0.5, 0.95, r'$-\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=20)
     # f.text(0.5, 0.95, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', ha='center', fontsize=20)
-    f.text(0.95, 0.5, r'$\mu_{\rm H^+}\ (\rm k_{\rm B} T / rad)$', va='center', rotation=270, fontsize=20)
+    f.text(0.95, 0.5, r'$\mu_{\rm H^+}\ (k_{\rm B} T / \rm rad)$', va='center', rotation=270, fontsize=20)
 
     f.text(0.12, 0.88, r'$\mathbf{a)}$', ha='center', fontsize=14)
     f.text(0.4, 0.88, r'$\mathbf{b)}$', ha='center', fontsize=14)
@@ -801,17 +803,12 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
             print(psi_1, psi_2)
 
             # line at infinite Ecouple power
-            if ratio == 8 or ratio == 4 or ratio == 2:
-                input_file_name = (
-                                target_dir + "190624_Twopisweep_complete_set/processed_data/"
-                                + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_n1_3.0_n2_3.0_outfile.dat")
-            else:
-                input_file_name = (
-                        target_dir + "200220_moregrid/processed_data/"
-                        + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_n1_3.0_n2_3.0_outfile.dat")
+            input_file_name = (
+                            target_dir + "200220_moregrid/processed_data/"
+                            + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_psi1_4.0_psi2_-2.0_n1_3.0_n2_3.0_outfile.dat")
             try:
                 inf_array = loadtxt(input_file_name, usecols=2)
-                axarr[i, j].axhline(inf_array[i * 3 + j], color='grey', linestyle=':', linewidth=1)
+                axarr[i, j].axhline(inf_array[i * 6 + j], color='grey', linestyle=':', linewidth=1)
             except OSError:
                 print('Missing file Infinite Power Coupling')
 
@@ -858,9 +855,9 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
                     print('Missing file flux')
                     print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
 
-            axarr[i, j].plot(Ecouple_array_tot, -power_y_array, '.', color='C1', markersize=14)
+            axarr[i, j].plot(Ecouple_array_tot, -power_y_array, '.', color='C1', markersize=14, fmarker='.')
 
-            # print('Max power/ infinite power', amax(-power_y_array)/inf_array[i*3 + j])
+            print('Max power/ infinite power', amax(-power_y_array)/inf_array[i*6 + j])
 
             axarr[i, j].set_xscale('log')
             axarr[i, j].spines['right'].set_visible(False)
@@ -914,10 +911,10 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
 if __name__ == "__main__":
     target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
     # plot_power_efficiency_Ecouple(target_dir)
-    plot_power_Ecouple_grid(target_dir)
+    # plot_power_Ecouple_grid(target_dir)
     # plot_power_efficiency_phi(target_dir)
     # plot_power_phi_single(target_dir)
     # plot_nn_power_efficiency_Ecouple(target_dir)
     # plot_nn_power_efficiency_phi(target_dir)
     # plot_n0_power_efficiency_Ecouple(target_dir)
-    # plot_power_Ecouple_grid_extended(target_dir)
+    plot_power_Ecouple_grid_extended(target_dir)

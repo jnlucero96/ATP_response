@@ -2301,7 +2301,7 @@ def calculate_lag(target_dir):
     ax1.plot(super_power, lag_data, 'o')
     # ax1.set_xlim((0, 11))
     # ax1.set_ylim((0, 11))
-    ax1.set_xlabel('$\phi_{\\rm Power}$', fontsize=20)
+    ax1.set_xlabel('$\mathcal{P}_{\\rm ATP}$', fontsize=20)
     ax1.set_ylabel('$\phi_{\\rm Lag}$', fontsize=20)
     # ax1.set_xticks(range(0, 2*len(max_phi), 2))
     # ax1.set_xticklabels(['$0$', '', '', '$1/6$', '', '', '$1/3$'])
