@@ -13,8 +13,8 @@ psi_2 = -1.0
 Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
 # Ecouple_array = array([0.0])
 num_minima = 3.0
-E0 = 2.0
-E1 = 2.0
+E0 = 0.0
+E1 = 0.0
 phase_shift = 0.0
 xlst = linspace(0, 2*pi, N)
 
@@ -31,7 +31,10 @@ def energy_flow_li_ma(target_dir): #processing of raw data
         energyflow_xy = zeros((N, N))
         couple_energy = zeros((N, N))
         for k, Ecouple in enumerate(Ecouple_array):
-            input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
+            # input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
+            #                    "/reference_E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+            #                    "_outfile.dat")
+            input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Zero-barriers-FP/2019-05-14" +
                                "/reference_E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
                                "_outfile.dat")
 
