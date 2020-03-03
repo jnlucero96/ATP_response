@@ -279,7 +279,7 @@ def flux_power_efficiency_extrapoints(target_dir): #processing of raw data
                     
 def plot_power_phi_grid(target_dir):#grid of plots of the power as a function of the phase offset, different plots are for different forces
     output_file_name = (target_dir + "power_Y_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
-    f,axarr=plt.subplots(3,3,sharex='all',sharey='all')
+    f,axarr = plt.subplots(3, 3, sharex='all', sharey='all')
     
     for i, psi_1 in enumerate(psi1_array):
         for j, psi_2 in enumerate(psi2_array):
@@ -2247,7 +2247,7 @@ def calculate_lag(target_dir):
                             input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_offset),
                             usecols=0)
                 prob_ss_array = data_array.reshape((N, N))
-                prob_ss_array = array(prob_ss_array[:120, :120])
+                # prob_ss_array = array(prob_ss_array[:120, :120])
             except OSError:
                 print('Missing file')
                 print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_offset))
@@ -2260,10 +2260,10 @@ def calculate_lag(target_dir):
             # lag_data[j, i] = array((pos[0]-pos[1]) % 120)
 
             # mean lag
-            angle = array(linspace(0, 2*pi/3, 120, endpoint=False))
+            angle = array(linspace(0, 2*pi, 360, endpoint=False))
             av_prob_x = trapz(trapz(prob_ss_array.T * angle, dx=1, axis=1), dx=1, axis=0)
             av_prob_y = trapz(trapz(prob_ss_array * angle, dx=1, axis=1), dx=1, axis=0)
-            print(Ecouple, av_prob_x, av_prob_y)
+            # print(Ecouple, av_prob_x, av_prob_y)
             lag_data[j, i] = av_prob_x - av_prob_y
 
         # print(amax(lag_data[:, i]))
@@ -2294,15 +2294,17 @@ def calculate_lag(target_dir):
         # max_phi[i] = where(power_y_array == amax(power_y_array))[0][0]
 
     # print(max_phi)
-    print(super_power)
+    # print(super_power)
 
     plt.figure()
     f1, ax1 = plt.subplots(1, 1, figsize=(6, 6), sharey='all')
-    ax1.plot(super_power, lag_data, 'o')
+    ax1.axhline(0, color='grey', linewidth=1, linestyle='--', label='_nolegend_')
+    ax1.axvline(0, color='grey', linewidth=1, linestyle='--', label='_nolegend_')
+    ax1.plot(super_power, lag_data, marker='o', linestyle='-')
     # ax1.set_xlim((0, 11))
     # ax1.set_ylim((0, 11))
-    ax1.set_xlabel('$\mathcal{P}_{\\rm ATP}$', fontsize=20)
-    ax1.set_ylabel('$\phi_{\\rm Lag}$', fontsize=20)
+    ax1.set_xlabel('$\\beta \mathcal{P}_{\\rm ATP}\ (t_{\\rm sim}^{-1})$', fontsize=20)
+    ax1.set_ylabel('$\phi_{\\rm Lag}\ (\\rm rad)$', fontsize=20)
     # ax1.set_xticks(range(0, 2*len(max_phi), 2))
     # ax1.set_xticklabels(['$0$', '', '', '$1/6$', '', '', '$1/3$'])
     # ax1.set_yticks(range(0, 2*len(max_phi), 2))

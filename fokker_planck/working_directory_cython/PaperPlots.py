@@ -855,7 +855,7 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
                     print('Missing file flux')
                     print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
 
-            axarr[i, j].plot(Ecouple_array_tot, -power_y_array, '.', color='C1', markersize=14, fmarker='.')
+            axarr[i, j].plot(Ecouple_array_tot, -power_y_array, '.', color='C1', markersize=14, marker='.')
 
             print('Max power/ infinite power', amax(-power_y_array)/inf_array[i*6 + j])
 
