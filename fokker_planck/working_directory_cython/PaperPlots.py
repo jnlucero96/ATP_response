@@ -796,7 +796,7 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
 
 def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux as a function of the phase offset
     output_file_name = (target_dir + "power_ATP_Ecouple_grid_extended_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
-    f, axarr = plt.subplots(3, 6, sharex='all', sharey='row', figsize=(16, 6))
+    f, axarr = plt.subplots(3, 6, sharex='col', sharey='row', figsize=(16, 6))
     for i, psi_1 in enumerate(psi1_array):
         for j, ratio in enumerate(psi_ratio):
             psi_2 = round(-psi_1 / ratio, 2)
@@ -832,6 +832,13 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
 
             # E0=E1=2 barrier data
             power_y_array = []
+            if ratio == 8 or ratio == 4 or ratio == 2:
+                Ecouple_array_tot = array(
+                    [2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
+            else:
+                Ecouple_array_tot = array(
+                    [8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
+
             for ii, Ecouple in enumerate(Ecouple_array_tot):
                 if ratio == 8 or ratio == 4 or ratio == 2:
                     input_file_name = (
@@ -866,11 +873,17 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
             axarr[i, j].tick_params(axis='both', labelsize=14)
             axarr[i, j].set_xticks([1., 10., 100.])
             if j == 0:
-                axarr[i, j].set_xlim((1.6, 150))
+                axarr[i, j].set_xlim((2, 150))
             elif j == 1:
-                axarr[i, j].set_xlim((2.3, 150))
-            else:
+                axarr[i, j].set_xlim((3, 150))
+            elif j == 2:
                 axarr[i, j].set_xlim((5, 150))
+            elif j == 3:
+                axarr[i, j].set_xlim((6, 150))
+            elif j == 4:
+                axarr[i, j].set_xlim((7, 150))
+            else:
+                axarr[i, j].set_xlim((8.5, 150))
 
             if i == 0:
                 axarr[i, j].set_ylim((0, 0.000085))
