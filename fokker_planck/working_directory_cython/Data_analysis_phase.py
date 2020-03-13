@@ -13,31 +13,31 @@ rc('text', usetex=True)
 N=360
 dx=2*math.pi/N
 positions=linspace(0,2*math.pi-dx,N)
-E0=2.0
-E1=2.0
-num_minima1=3.0
+E0=6.0
+E1=6.0
+num_minima1=10.0
 num_minima2=3.0
 
-# min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])
+min_array = array([3.0])
 # psi1_array = array([1., 2., 4.])
 # psi2_array = array([-1., -2.0, -4.])
-psi1_array = array([4.0])
-psi2_array = array([-2.0])
+psi1_array = array([10.0])
+psi2_array = array([-9.0])
 # psi1_array = array([2.0, 4.0, 8.0])
 # psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
 # psi_ratio = array([8, 4, 2])
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 # Ecouple_array = array([2.0])
-Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
+Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0]) #twopisweep
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 Ecouple_array_extra2 = array([1.41, 2.83, 5.66, 11.31, 22.63, 45.25, 90.51])
 Ecouple_array_tot = array([1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
 Ecouple_array_tot = array([1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 22.63, 24.0, 32.0, 45.25, 64.0, 90.51, 128.0])
 # phase_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944, 2.44346, 2.79253, 3.14159, 3.49066, 3.83972, 4.18879, 4.53786, 4.88692, 5.23599, 5.58505, 5.93412, 6.28319]) #twopisweep
-phase_array = array([0.0, 0.175, 0.349066, 0.524, 0.698132, 0.873, 1.0472, 1.222, 1.39626, 1.571, 1.74533, 1.92, 2.0944]) #selection of twopisweep
+# phase_array = array([0.0, 0.175, 0.349066, 0.524, 0.698132, 0.873, 1.0472, 1.222, 1.39626, 1.571, 1.74533, 1.92, 2.0944]) #selection of twopisweep
 # phase_array_test = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
-# phase_array = array([0.0])
+phase_array = array([0.0])
 
 phi_array = linspace(0, 2*pi, N)
 
@@ -175,17 +175,17 @@ def flux_power_efficiency(target_dir): #processing of raw data
 
             for Ecouple in Ecouple_array:
                 for ii, phase_shift in enumerate(phase_array):
-                    if num_minima==3.0:
-                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/191018_steadystatecheck" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
+                    if num_minima1==10.0:
+                        input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200116_bioparameters" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                     else:
                         input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190924_no_vary_n1_3" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
 
-                    output_file_name = (target_dir + "191018_steadystate_check/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}_Ecouple_{5}" + "_outfile.dat")
+                    output_file_name = (target_dir + "200128_biologicalnumbers/" + "processed_data/flux_power_efficiency_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
 
-                    print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " + f"Ecouple = {Ecouple}, num_minima1 = {num_minima}, num_minima2 = {num_minima2}")
+                    print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " + f"Ecouple = {Ecouple}, num_minima1 = {num_minima1}, num_minima2 = {num_minima2}")
 
                     try:
-                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima, num_minima2, phase_shift), usecols=(0,3,4,5,6,7,8))
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift), usecols=(0,3,4,5,6,7,8))
                         N = int(sqrt(len(data_array)))
                         print(N)
                         prob_ss_array = data_array[:,0].reshape((N,N))
@@ -203,12 +203,13 @@ def flux_power_efficiency(target_dir): #processing of raw data
                         integrate_power_Y[ii] = integrate_flux_Y[ii]*psi_2
                     except:
                         print('Missing file')
+                        print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase_shift))
                 if (abs(psi_1) <= abs(psi_2)):
                     efficiency_ratio = -(integrate_power_X/integrate_power_Y)
                 else:
                     efficiency_ratio = -(integrate_power_Y/integrate_power_X)
 
-                with open(output_file_name.format(E0, E1, psi_1, psi_2, num_minima2, Ecouple), "w") as ofile:
+                with open(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1 ,num_minima2, Ecouple), "w") as ofile:
                     for ii, phase_shift in enumerate(phase_array):
                         ofile.write(
                             f"{phase_shift:.15e}" + "\t"
@@ -2223,6 +2224,7 @@ def calculate_lag(target_dir):
     psi_2 = -2.0
     # phase_offset = 0.0
     phi_array = array([0.0, 0.349066, 0.698132, 1.0472, 1.39626, 1.74533, 2.0944])
+    # phi_array = array([0.0])
 
     lag_data = zeros((phase_array.size, Ecouple_array.size))
     super_power = zeros((phase_array.size, Ecouple_array.size))
@@ -2260,9 +2262,31 @@ def calculate_lag(target_dir):
             # lag_data[j, i] = array((pos[0]-pos[1]) % 120)
 
             # mean lag
-            angle = array(linspace(0, 2*pi, 360, endpoint=False))
-            av_prob_x = trapz(trapz(prob_ss_array.T * angle, dx=1, axis=1), dx=1, axis=0)
-            av_prob_y = trapz(trapz(prob_ss_array * angle, dx=1, axis=1), dx=1, axis=0)
+            # define moving window to calculate lag accurately
+            angle = zeros((N, N))
+            for ii in range(N):
+                if ii <= int(N/2):
+                    angle[ii, :(ii + int(N/2))] = array(linspace(0, ii*dx + pi, ii + int(N/2), endpoint=False))
+                    angle[ii, (ii + int(N/2)):] = array(linspace(ii*dx - pi, 2*pi, int(N/2) - ii, endpoint=False))
+                else:
+                    angle[ii, :(ii - int(N/2))] = array(linspace(2 * pi, ii * dx + pi, ii - int(N/2), endpoint=False))
+                    angle[ii, (ii - int(N/2)):] = array(linspace(ii * dx - pi, 2 * pi, int(3*N/2) - ii, endpoint=False))
+
+            Pss_window = prob_ss_array*angle
+            for ii in range(N):  # loop over Fo positions
+                if ii < int(N/4):
+                    # Pss_window[ii, :] =
+                    Pss_window[ii, (int(N/4) + ii):(int(3*N/4) + ii)] = 0
+                elif ii > int(3*N/4):
+                    Pss_window[ii, (ii - int(3*N/2)):(ii - int(N/4))] = 0
+                else:
+                    Pss_window[ii, :(ii - int(N/4))] = 0
+                    Pss_window[ii, (ii + int(N/4)):] = 0
+
+
+
+            av_prob_x = trapz(trapz(Pss_window.T * angle, dx=1, axis=1), dx=1, axis=0)
+            av_prob_y = trapz(trapz(Pss_window * angle, dx=1, axis=1), dx=1, axis=0)
             # print(Ecouple, av_prob_x, av_prob_y)
             lag_data[j, i] = av_prob_x - av_prob_y
 
@@ -2300,11 +2324,11 @@ def calculate_lag(target_dir):
     f1, ax1 = plt.subplots(1, 1, figsize=(6, 6), sharey='all')
     ax1.axhline(0, color='grey', linewidth=1, linestyle='--', label='_nolegend_')
     ax1.axvline(0, color='grey', linewidth=1, linestyle='--', label='_nolegend_')
-    ax1.plot(super_power, lag_data, marker='o', linestyle='-')
+    ax1.plot(super_power, lag_data/(2*pi), marker='o', linestyle='-')
     # ax1.set_xlim((0, 11))
     # ax1.set_ylim((0, 11))
     ax1.set_xlabel('$\\beta \mathcal{P}_{\\rm ATP}\ (t_{\\rm sim}^{-1})$', fontsize=20)
-    ax1.set_ylabel('$\phi_{\\rm Lag}\ (\\rm rad)$', fontsize=20)
+    ax1.set_ylabel('$\phi_{\\rm Lag}\ (\\rm rev)$', fontsize=20)
     # ax1.set_xticks(range(0, 2*len(max_phi), 2))
     # ax1.set_xticklabels(['$0$', '', '', '$1/6$', '', '', '$1/3$'])
     # ax1.set_yticks(range(0, 2*len(max_phi), 2))
@@ -2318,9 +2342,72 @@ def calculate_lag(target_dir):
                 target_dir + "Lag_power_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
     f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
 
+def plot_path(target_dir):
+    input_file_name = (
+                "/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
+                "/reference_" +
+                "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                "_outfile.dat")
+    Ecouple_array = [8.0, 16.0, 32.0]
+    psi_1 = 4.0
+    psi_2 = -2.0
+    angle = array(linspace(0, 2*pi, N, endpoint=False))
+
+    plt.figure()
+    f1, ax1 = plt.subplots(1, 3, figsize=(12, 4), sharey='all')
+    flux_X = zeros(N)
+    flux_Y = zeros(N)
+    traj_X = zeros(100000)
+    traj_Y = zeros(100000)
+
+    for i, Ecouple in enumerate(Ecouple_array):
+        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, 3.0, 3.0, 0.0))
+        prob_ss_array = data_array[:, 0].reshape((N, N))
+        prob_eq_array = data_array[:, 1].reshape((N, N))
+        pot_array = data_array[:, 2].reshape((N, N))
+        drift_at_pos = data_array[:, 3:5].T.reshape((2, N, N))
+        diffusion_at_pos = data_array[:, 5:].T.reshape((4, N, N))
+
+        flux_array = zeros((2, N, N))
+        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
+        flux_array = asarray(flux_array) / (dx * dx)
+
+        flux_X = (1. / (2 * pi)) * trapz(flux_array[0, ...], dx=dx, axis=0)
+        flux_Y = (1. / (2 * pi)) * trapz(flux_array[1, ...], dx=dx, axis=1)
+
+        current_X = 0
+        dt = 0.3
+        j = 1
+        k = 0
+        while current_X < 2*pi and j < 100000:
+            current_X += 2*pi*flux_X[k]*dt
+            traj_X[j] += current_X
+            j += 1
+            if current_X > positions[k+1]:
+                k += 1
+
+        # prob_ss_x = trapz(prob_ss_array, dx=1, axis=1)
+        # prob_ss_y = trapz(prob_ss_array, dx=1, axis=0)
+        #
+        # for j in range(N):
+        #     prob_y_given_x[j, :] = prob_ss_array[j, :]/prob_ss_x[j]
+        #     prob_x_given_y[j, :] = prob_ss_array[j, :]/prob_ss_y[j]
+
+        # test = trapz(prob_y_given_x, dx=1, axis=0)
+
+        ax1[i].contourf(angle, angle, flux_array[0, ...])
+        # ax1[i].plot(linspace(0, traj_X[-1], 100000), traj_X, linestyle='-')
+        # ax1[i].legend()
+        # ax1[i].set_ylim((0, 0.05))
+
+    f1.tight_layout()
+    output_filename = (
+                target_dir + "PSS_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+    f1.savefig(output_filename.format(E0, E1, psi_1, psi_2, 3.0, 3.0))
+
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
-    # flux_power_efficiency(target_dir)
+    flux_power_efficiency(target_dir)
     # flux_power_efficiency_extrapoints(target_dir)
     # plot_power_phi_grid(target_dir)
     # plot_power_phi_single(target_dir)
@@ -2351,4 +2438,5 @@ if __name__ == "__main__":
     # plot_scatter_pmf_power(target_dir)
     # plot_prob_coord(target_dir)
     # plot_pmf_coord(target_dir)
-    calculate_lag(target_dir)
+    # calculate_lag(target_dir)
+    # plot_path(target_dir)

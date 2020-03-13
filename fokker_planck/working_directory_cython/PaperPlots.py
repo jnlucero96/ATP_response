@@ -14,13 +14,13 @@ E1 = 2.0
 num_minima1 = 3.0
 num_minima2 = 3.0
 
-# psi1_array = array([4.0])
-# psi2_array = array([-2.0])
+psi1_array = array([4.0])
+psi2_array = array([-2.0])
 timescale = 1.5 * 10**4
-psi1_array = array([2.0, 4.0, 8.0])
+# psi1_array = array([2.0, 4.0, 8.0])
 # psi_ratio = array([8, 4, 2])
-psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
-psi_ratio = array([8, 4, 2, 1.5, 1.25, 1.125])
+# psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
+# psi_ratio = array([8, 4, 2, 1.5, 1.25, 1.125])
 
 Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])
 # Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0])
@@ -79,7 +79,7 @@ def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs c
                     print('Missing file flux')
             axarr[0].plot(Ecouple_array_tot, -power_y_array*timescale, 'o', color='C1', label='$2$', markersize=8)
 
-            axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            # axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             axarr[0].yaxis.offsetText.set_fontsize(14)
             axarr[0].tick_params(axis='y', labelsize=14)
             axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP} (\rm s^{-1}) $', fontsize=20)
@@ -176,22 +176,6 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
                 print('Missing file Infinite Power Coupling')
 
             axarr[i, j].axhline(inf_array[i*3 + j] * timescale, color='grey', linestyle=':', linewidth=1)
-            # input_file_name = (
-            #             target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
-            #             + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
-            # try:
-            #     data_array = loadtxt(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, 128.0),
-            #                          usecols=4)
-            #     if data_array.size > 2:
-            #         power_y = array(data_array[0])
-            #     else:
-            #         power_y = array(data_array)
-            #     axarr[i, j].axhline(power_y, color='grey', linestyle=':', linewidth=1)
-            # except OSError:
-            #     print('Missing file flux')
-
-            # line at zero power
-            # axarr[i, j].axhline(0, color='black', linewidth=1)
 
             # zero-barrier result
             input_file_name = (
@@ -229,8 +213,6 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
             axarr[i, j].set_xscale('log')
             axarr[i, j].spines['right'].set_visible(False)
             axarr[i, j].spines['top'].set_visible(False)
-            # axarr[i, j].spines['bottom'].set_visible(False)
-            axarr[i, j].tick_params(axis='both', labelsize=14)
             axarr[i, j].set_xticks([1., 10., 100.])
             if j == 0:
                 axarr[i, j].set_xlim((1.6, 150))
@@ -264,6 +246,14 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
             if i == 0:
                 axarr[i, j].set_title(r'$%.0f$' % psi1_array[::-1][j], fontsize=14)
 
+            if j == 2 and i == 1:
+                axarr[i, j].tick_params(axis='x', colors='red', which='both')
+                axarr[i, j].tick_params(axis='y', colors='red', which='both')
+                axarr[i, j].spines['left'].set_color('red')
+                axarr[i, j].spines['bottom'].set_color('red')
+            else:
+                axarr[i, j].tick_params(axis='both', labelsize=14)
+
     f.tight_layout()
     f.subplots_adjust(bottom=0.1, left=0.1, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
     f.text(0.5, 0.01, r'$\beta E_{\rm couple}$', ha='center', fontsize=20)
@@ -272,16 +262,6 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
     f.text(0.5, 0.95, r'$-\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=20)
     # f.text(0.5, 0.95, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', ha='center', fontsize=20)
     f.text(0.95, 0.5, r'$\mu_{\rm H^+}\ (k_{\rm B} T / \rm rad)$', va='center', rotation=270, fontsize=20)
-
-    f.text(0.12, 0.88, r'$\mathbf{a)}$', ha='center', fontsize=14)
-    f.text(0.4, 0.88, r'$\mathbf{b)}$', ha='center', fontsize=14)
-    f.text(0.67, 0.88, r'$\mathbf{c)}$', ha='center', fontsize=14)
-    f.text(0.12, 0.6, r'$\mathbf{d)}$', ha='center', fontsize=14)
-    f.text(0.4, 0.6, r'$\mathbf{e)}$', ha='center', fontsize=14)
-    f.text(0.67, 0.6, r'$\mathbf{f)}$', ha='center', fontsize=14)
-    f.text(0.12, 0.32, r'$\mathbf{g)}$', ha='center', fontsize=14)
-    f.text(0.4, 0.32, r'$\mathbf{h)}$', ha='center', fontsize=14)
-    f.text(0.67, 0.32, r'$\mathbf{i)}$', ha='center', fontsize=14)
 
     f.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
 
@@ -489,6 +469,7 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
             axarr[0, 0].spines['top'].set_visible(False)
             axarr[0, 0].set_ylim((0, None))
             axarr[0, 0].set_xlim((8, None))
+            axarr[0, 0].set_yticks([0, 1, 2, 3])
 
             axarr[0, 1].spines['right'].set_visible(False)
             axarr[0, 1].spines['top'].set_visible(False)
@@ -718,6 +699,7 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
             axarr[0, 0].set_ylim((0, None))
             axarr[0, 0].set_xlim((8, None))
             axarr[0, 0].tick_params(axis='both', labelsize=14)
+            axarr[0, 0].set_yticks([0, 1, 2, 3])
 
             axarr[0, 1].spines['right'].set_visible(False)
             axarr[0, 1].spines['top'].set_visible(False)
@@ -929,5 +911,5 @@ if __name__ == "__main__":
     # plot_power_phi_single(target_dir)
     # plot_nn_power_efficiency_Ecouple(target_dir)
     # plot_nn_power_efficiency_phi(target_dir)
-    # plot_n0_power_efficiency_Ecouple(target_dir)
-    plot_power_Ecouple_grid_extended(target_dir)
+    plot_n0_power_efficiency_Ecouple(target_dir)
+    # plot_power_Ecouple_grid_extended(target_dir)
