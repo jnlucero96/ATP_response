@@ -348,6 +348,7 @@ def plot_power_efficiency_phi(target_dir): # plot power and efficiency as a func
 
 def plot_power_phi_single(target_dir):  # plot of the power as a function of the phase offset
     colorlst = ['C2', 'C3', 'C1', 'C4']
+    markerlst = ['D', 's', 'o', 'v']
     Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 
     for psi_1 in psi1_array:
@@ -377,8 +378,8 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
                     phase_array = data_array[:, 0]
                     power_y_array = -data_array[:, 1]
 
-                    ax.plot(phase_array, power_y_array*timescale, linestyle='-', marker='o', label=f'${Ecouple}$', markersize=8,
-                            linewidth=2, color=colorlst[ii])
+                    ax.plot(phase_array, power_y_array*timescale, linestyle='-', marker=markerlst[ii],
+                            label=f'${Ecouple}$', markersize=8, linewidth=2, color=colorlst[ii])
                 except OSError:
                     print('Missing file')
 
@@ -416,6 +417,8 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
 
 def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency as a function of the coupling strength
+    markerlst = ['D', 's', 'o', 'v', 'x']
+    Ecouple_array_tot = array([8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
 
     f, axarr = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(6, 6),
                             gridspec_kw={'width_ratios': [10, 1], 'height_ratios': [2, 1]})
@@ -456,9 +459,9 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                 except OSError:
                     print('Missing file infinite coupling power')
 
-                axarr[0, 0].plot(Ecouple_array_tot, -power_y_array*timescale, marker='o', markersize=6, linestyle='-',
-                                 color=color_lst[j])
-                axarr[0, 1].plot([300], power_inf*timescale, marker='o', markersize=6, linestyle='-',
+                axarr[0, 0].plot(Ecouple_array_tot, -power_y_array*timescale, marker=markerlst[j], markersize=6,
+                                 linestyle='-', color=color_lst[j])
+                axarr[0, 1].plot([300], power_inf*timescale, marker=markerlst[j], markersize=6, linestyle='-',
                                  color=color_lst[j])
 
             axarr[0, 0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
@@ -508,9 +511,9 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
 
                 # infinite coupling value
                 # eff_array = append(eff_array, 0.5)
-                axarr[1, 0].plot(Ecouple_array_tot, eff_array/0.5, marker='o', markersize=6, linestyle='-',
+                axarr[1, 0].plot(Ecouple_array_tot, eff_array/0.5, marker=markerlst[j], markersize=6, linestyle='-',
                                  color=color_lst[j])
-                axarr[1, 1].plot([300], 1, marker='o', markersize=6, linestyle='-',
+                axarr[1, 1].plot([300], 1, marker=markerlst[j], markersize=6, linestyle='-',
                                  color=color_lst[j])
 
             axarr[1, 0].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
@@ -553,6 +556,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
     phase_array = array([0.0, 1.0472, 2.0944, 3.14159, 4.18879, 5.23599, 6.28319])
     Ecouple_array = array([16.0])
     n_labels = ['$1$', '$2$', '$3$', '$6$', '$12$']
+    markerlst = ['D', 's', 'o', 'v', 'x']
 
     f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 5.5))
 
@@ -587,7 +591,8 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                     except OSError:
                         print('Missing file flux')
                 power_y = append(power_y, power_y[0])
-                axarr[0].plot(phase_array, -power_y*timescale, '-o', markersize=8, color=color_lst[i], label=n_labels[i])
+                axarr[0].plot(phase_array, -power_y*timescale, '-', markersize=8, color=color_lst[i],
+                              marker=markerlst[i], label=n_labels[i])
 
             axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             axarr[0].set_xticks([0, pi/9, 2*pi/9, pi/3, 4*pi/9, 5*pi/9, 2*pi/3])
@@ -623,7 +628,8 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
                     except OSError:
                         print('Missing file efficiency')
                 eff_array = append(eff_array, eff_array[0])
-                axarr[1].plot(phase_array, eff_array / (-psi_2 / psi_1), 'o', label=n_labels[i], markersize=8, color=color_lst[i])
+                axarr[1].plot(phase_array, eff_array / (-psi_2 / psi_1), marker=markerlst[i], label=n_labels[i],
+                              markersize=8, color=color_lst[i])
 
             axarr[1].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
             axarr[1].set_ylim((0, 1.1))
@@ -639,7 +645,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
             # leg_title = leg.get_title()
             # leg_title.set_fontsize(14)
 
-            f.text(0.55, 0.02, r'$n \phi \ (\rm rev)$', fontsize=20, ha='center')
+            f.text(0.55, 0.03, r'$n \phi \ (\rm rev)$', fontsize=20, ha='center')
             f.text(0.03, 0.93, r'$\mathbf{a)}$', fontsize=20)
             f.text(0.03, 0.37, r'$\mathbf{b)}$', fontsize=20)
             f.tight_layout()
@@ -647,6 +653,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
 
 def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency as a function of the coupling strength
+    markerlst = ['D', 's', 'o', 'v', 'x']
     output_file_name = (
                 target_dir + "/power_efficiency_Ecouple_plot_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n2_{4}" + "_log_.pdf")
     f, axarr = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(6, 6),
@@ -675,8 +682,8 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                         print('Missing file flux')
                         print(input_file_name.format(E0, E1, psi_1, psi_2, num_min, 3.0, Ecouple))
 
-                axarr[0, 0].plot(Ecouple_array_tot, -power_y_array*timescale, marker='o', markersize=6, linestyle='-',
-                              color=color_lst[j])
+                axarr[0, 0].plot(Ecouple_array_tot, -power_y_array*timescale, marker=markerlst[j], markersize=6,
+                                 linestyle='-', color=color_lst[j])
 
                 # infinite coupling result
                 input_file_name = (target_dir + "/190924_no_vary_n1_3/processed_data/" +
@@ -689,7 +696,7 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                 except OSError:
                     print('Missing file infinite coupling power')
 
-                axarr[0, 1].plot([300], power_inf*timescale, marker='o', markersize=6, color=color_lst[j])
+                axarr[0, 1].plot([300], power_inf*timescale, marker=markerlst[j], markersize=6, color=color_lst[j])
 
             axarr[0, 0].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             axarr[0, 0].yaxis.offsetText.set_fontsize(14)
@@ -736,9 +743,9 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                         print('Missing file efficiency')
 
                 # eff_array = append(eff_array, 0.5)
-                axarr[1, 0].plot(Ecouple_array_tot, eff_array / (-psi_2 / psi_1), marker='o', markersize=6, linestyle='-',
-                                 color=color_lst[j])
-                axarr[1, 1].plot([300], [1], marker='o', markersize=6, color=color_lst[j])
+                axarr[1, 0].plot(Ecouple_array_tot, eff_array / (-psi_2 / psi_1), marker=markerlst[j], markersize=6,
+                                 linestyle='-', color=color_lst[j])
+                axarr[1, 1].plot([300], [1], marker=markerlst[j], markersize=6, color=color_lst[j])
 
             axarr[1, 0].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
             axarr[1, 0].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
@@ -777,6 +784,7 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, 3.0))
 
 def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux as a function of the phase offset
+
     output_file_name = (target_dir + "power_ATP_Ecouple_grid_extended_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
     f, axarr = plt.subplots(3, 6, sharex='col', sharey='row', figsize=(16, 6))
     for i, psi_1 in enumerate(psi1_array):
