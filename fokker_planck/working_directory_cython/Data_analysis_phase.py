@@ -10,19 +10,19 @@ from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
 
-N=540
+N=360
 dx=2*math.pi/N
 positions=linspace(0,2*math.pi-dx,N)
-E0=6.0
-E1=6.0
-num_minima1=10.0
+E0=2.0
+E1=2.0
+num_minima1=3.0
 num_minima2=3.0
 
-min_array = array([10.0])
+min_array = array([3.0])
 # psi1_array = array([1., 2., 4.])
 # psi2_array = array([-1., -2.0, -4.])
-psi1_array = array([10.0])
-psi2_array = array([-9.0])
+psi1_array = array([4.0])
+psi2_array = array([-2.0])
 # psi1_array = array([2.0, 4.0, 8.0])
 # psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
 # psi_ratio = array([8, 4, 2])
@@ -49,12 +49,12 @@ colorlst=['C2', 'C3', 'C1', 'C4']
 label_lst = ['$0$', ' ', ' ', '$1/6$', ' ', ' ', '$1/3$']
 size_lst=[8,7,6,5,4,3]
 marker_lst = [".", "v", "+", "s", "p", "^", "x", "D", ".", "v", "+", "s", "p", "^", "x", "D"]
-ticklst=linspace(0, 2*math.pi/3, 7)
+ticklst=linspace(0, 2*math.pi, 7)
 # ylabels_flux = [-0.0003, -0.0002, -0.0001, 0]
 ylabels_flux = [-0.0006, -0.0003, 0, 0.0003]
 ylabels_eff = [0, 0.5, 1.0]
-ticklabels=['0', '$\pi/6$', '$\pi/3$', '$\pi/2$', '$2 \pi / 3$']
-# ticklabels=['0', '', '$2\pi/3$', '', '$4\pi/3$', '', '$2 \pi$']
+# ticklabels=['0', '$\pi/6$', '$\pi/3$', '$\pi/2$', '$2 \pi / 3$']
+ticklabels=['$0$', '', '$2\pi/3$', '', '$4\pi/3$', '', '$2 \pi$']
 
 def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array, N):
     # explicit update of the corners
@@ -176,7 +176,7 @@ def flux_power_efficiency(target_dir): #processing of raw data
 
             for Ecouple in Ecouple_array:
                 for ii, phase_shift in enumerate(phase_array):
-                    if num_minima1==10.0:
+                    if num_minima1 == 10.0:
                         input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200116_bioparameters" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
                     else:
                         input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190924_no_vary_n1_3" + "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" + "_outfile.dat")
@@ -1525,30 +1525,34 @@ def plot_prob_flux_grid(target_dir):#grid of contourplots of the 2D equilibrium 
     for psi_1 in psi1_array:
         for psi_2 in psi2_array:
             f, axarr = plt.subplots(1, 7, sharex='all', sharey='all', figsize=(12, 2))
-            output_file_name = (target_dir + "Pss_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
+            output_file_name = (target_dir + "Pss_y|x_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
             
-            ##determining the max. potential height in the grid of plots, and the max. flux in the whole grid, so that we can scale the colors and arrows by it
-            input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/200116_bioparameters" +
+            # determining the max. potential height in the grid of plots, and the max. flux in the whole grid, so that we can scale the colors and arrows by it
+            input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset" +
                                "/reference_" + "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
                                "_outfile.dat")
             print(input_file_name.format(E0, 64.0, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
             data_array = loadtxt(input_file_name.format(E0, 64.0, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
             prob_ss_array = data_array[:, 0].reshape((N,N))
-            prob_eq_array = data_array[:, 1].reshape((N,N))
-            pot_array = data_array[:, 2].reshape((N,N))
-            maxprob=amax(prob_ss_array)
-            maxpot=amax(pot_array)
-            drift_at_pos = data_array[:, 3:5].T.reshape((2,N,N))
-            diffusion_at_pos = data_array[:, 5:].T.reshape((4,N,N))
-            flux_array = empty((2,N,N))
-            calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
-            flux_array = asarray(flux_array)/(dx*dx)
-            flux_length_array = empty((N,N))
-            flux_x_array = flux_array[0]
-            flux_y_array = flux_array[1]
-            flux_length_array = flux_x_array*flux_x_array + flux_y_array*flux_y_array
-            maxflux=amax(flux_length_array)
-            print(maxpot, math.sqrt(maxflux))
+            prob_ss_y = trapz(prob_ss_array, dx=1, axis=0)
+            prob_ss_y = prob_ss_y.reshape((1,N))
+            prob_ss_yx = prob_ss_array/prob_ss_y
+
+            # prob_eq_array = data_array[:, 1].reshape((N,N))
+            # pot_array = data_array[:, 2].reshape((N,N))
+            maxprob=amax(prob_ss_yx)
+            # maxpot=amax(pot_array)
+            # drift_at_pos = data_array[:, 3:5].T.reshape((2,N,N))
+            # diffusion_at_pos = data_array[:, 5:].T.reshape((4,N,N))
+            # flux_array = empty((2,N,N))
+            # calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
+            # flux_array = asarray(flux_array)/(dx*dx)
+            # flux_length_array = empty((N,N))
+            # flux_x_array = flux_array[0]
+            # flux_y_array = flux_array[1]
+            # flux_length_array = flux_x_array*flux_x_array + flux_y_array*flux_y_array
+            # maxflux=amax(flux_length_array)
+            # print(maxpot, math.sqrt(maxflux))
             
             #plotting
             for i, Ecouple in enumerate(Ecouple_array):
@@ -1557,15 +1561,20 @@ def plot_prob_flux_grid(target_dir):#grid of contourplots of the 2D equilibrium 
                 print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase))
                 flux_array = empty((2,N,N))
                 try:
-                    data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, phase), usecols=(0,1,2,3,4,5,6,7,8))
+                    data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2,
+                                                                phase), usecols=(0,1,2,3,4,5,6,7,8))
                     prob_ss_array = data_array[:,0].reshape((N,N))
                     prob_eq_array = data_array[:,1].reshape((N,N))
                     pot_array = data_array[:,2].reshape((N,N))
                     drift_at_pos = data_array[:,3:5].T.reshape((2,N,N))
                     diffusion_at_pos = data_array[:,5:].T.reshape((4,N,N))
-                    im = axarr[i].contourf(positions, positions, prob_ss_array.T, vmin=0, vmax= maxprob,
-                                           cmap=plt.cm.cool)#plot energy landscape
-                    axarr[i].set_title(Ecouple)
+                    prob_ss_y = trapz(prob_ss_array, dx=1, axis=0)
+                    prob_ss_y = prob_ss_y.reshape((1,N))
+                    prob_ss_yx = prob_ss_array/prob_ss_y
+                                                                
+                    im = axarr[i].contourf(positions, positions, prob_ss_yx, vmin=0, vmax=maxprob,
+                                           cmap=plt.cm.cool)  # plot energy landscape
+                    axarr[i].set_title('$%.1f$' % Ecouple)
                     axarr[i].set_xlim([0,2*pi])
                     axarr[i].set_ylim([0,2*pi]) 
                     # axarr[i,j].plot(positions, positions, color='grey', linewidth=1.0) #line on the diagonal
@@ -1589,12 +1598,12 @@ def plot_prob_flux_grid(target_dir):#grid of contourplots of the 2D equilibrium 
                     
                 except OSError:
                     print('Missing file')
-            f.text(0.52, 0.94, '$E_{couple}$', ha='center')
-            f.text(0.52, 0.01, '$F_o$', ha='center')
-            f.text(0.04, 0.5, '$F_1$', va='center', rotation='vertical')
+            f.text(0.52, 0.94, '$E_{\\rm couple}$', ha='center')
+            f.text(0.52, 0.01, '$\\theta_{\\rm o}$', ha='center')
+            f.text(0.04, 0.5, '$\\theta_1$', va='center', rotation='vertical')
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-            # plt.xticks(ticklst, ticklabels)
-            # plt.yticks(ticklst, ticklabels)
+            plt.xticks(ticklst, ticklabels)
+            plt.yticks(ticklst, ticklabels)
 
             f.tight_layout()
             top=0.8
@@ -2418,6 +2427,134 @@ def plot_path(target_dir):
                 target_dir + "PSS_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
     f1.savefig(output_filename.format(E0, E1, psi_1, psi_2, 3.0, 3.0))
 
+def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux as a function of the phase offset
+
+    output_file_name = (target_dir + "power_ATP_Ecouple_grid_extended_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
+    f, axarr = plt.subplots(3, 6, sharex='col', sharey='row', figsize=(16, 6))
+    for i, psi_1 in enumerate(psi1_array):
+        for j, ratio in enumerate(psi_ratio):
+            psi_2 = round(-psi_1 / ratio, 2)
+            print(psi_1, psi_2)
+
+            # line at infinite Ecouple power
+            input_file_name = (
+                            target_dir + "200220_moregrid/processed_data/"
+                            + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_psi1_4.0_psi2_-2.0_n1_3.0_n2_3.0_outfile.dat")
+            try:
+                inf_array = loadtxt(input_file_name, usecols=2)
+                axarr[i, j].axhline(inf_array[i * 6 + j], color='grey', linestyle=':', linewidth=1)
+            except OSError:
+                print('Missing file Infinite Power Coupling')
+
+            # zero-barrier result
+            if ratio == 8 or ratio == 4 or ratio == 2:
+                input_file_name = (
+                            target_dir + "191217_morepoints/processed_data/"
+                            + "Flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            else:
+                input_file_name = (
+                        target_dir + "200220_moregrid/processed_data/"
+                        + "Flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            try:
+                data_array = loadtxt(input_file_name.format(psi_1, psi_2))
+                Ecouple_array2 = array(data_array[:, 0])
+                flux_y_array = array(data_array[:, 2])
+                power_y = -flux_y_array * psi_2
+                axarr[i, j].plot(Ecouple_array2, power_y, '-', color='C0', linewidth=3)
+            except OSError:
+                print('Zero-barrier file missing')
+
+            # E0=E1=2 barrier data
+            power_y_array = []
+            if ratio == 8 or ratio == 4 or ratio == 2:
+                Ecouple_array_tot = array(
+                    [2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
+            else:
+                Ecouple_array_tot = array(
+                    [8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
+
+            for ii, Ecouple in enumerate(Ecouple_array_tot):
+                if ratio == 8 or ratio == 4 or ratio == 2:
+                    input_file_name = (
+                                target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
+                                + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                else:
+                    input_file_name = (
+                            target_dir + "200220_moregrid/processed_data/" + "flux_power_efficiency_"
+                            + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                try:
+                    # print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+                    data_array = loadtxt(
+                        input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), usecols=4)
+
+                    if data_array.size > 2:
+                        power_y = array(data_array[0])
+                    else:
+                        power_y = array(data_array)
+                    power_y_array = append(power_y_array, power_y)
+                except OSError:
+                    print('Missing file flux')
+                    print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+
+            axarr[i, j].plot(Ecouple_array_tot, -power_y_array, '.', color='C1', markersize=14, marker='.')
+
+            print('Max power/ infinite power', amax(-power_y_array)/inf_array[i*6 + j])
+
+            axarr[i, j].set_xscale('log')
+            axarr[i, j].spines['right'].set_visible(False)
+            axarr[i, j].spines['top'].set_visible(False)
+            # axarr[i, j].spines['bottom'].set_visible(False)
+            axarr[i, j].tick_params(axis='both', labelsize=14)
+            axarr[i, j].set_xticks([1., 10., 100.])
+            if j == 0:
+                axarr[i, j].set_xlim((2, 150))
+            elif j == 1:
+                axarr[i, j].set_xlim((3, 150))
+            elif j == 2:
+                axarr[i, j].set_xlim((5, 150))
+            elif j == 3:
+                axarr[i, j].set_xlim((6, 150))
+            elif j == 4:
+                axarr[i, j].set_xlim((7, 150))
+            else:
+                axarr[i, j].set_xlim((8.5, 150))
+
+            if i == 0:
+                axarr[i, j].set_ylim((0, 0.000085))
+                axarr[i, j].set_yticks([0, 0.00004, 0.00008])
+                axarr[i, j].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            elif i == 1:
+                axarr[i, j].set_ylim((0, 0.00033))
+                axarr[i, j].set_yticks([0, 0.00015, 0.0003])
+                axarr[i, j].set_yticklabels([r'$0$', r'$15$', r'$30$'])
+            else:
+                axarr[i, j].set_ylim((0, 0.0013))
+                axarr[i, j].set_yticks([0, 0.0005, 0.001])
+                axarr[i, j].set_yticklabels([r'$0$', r'$50$', r'$100$'])
+
+            if j == 0 and i > 0:
+                axarr[i, j].yaxis.offsetText.set_fontsize(0)
+            else:
+                axarr[i, j].yaxis.offsetText.set_fontsize(14)
+
+            if j == psi_ratio.size - 1:
+                axarr[i, j].set_ylabel(r'$%.0f$' % psi1_array[i], labelpad=16, rotation=270, fontsize=14)
+                axarr[i, j].yaxis.set_label_position('right')
+
+            if i == 0:
+                axarr[i, j].set_title(r'$%.2f$' % psi_ratio[j], fontsize=14)
+
+
+    f.subplots_adjust(bottom=0.1, left=0.1, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
+    f.text(0.5, 0.01, r'$\beta E_{\rm couple}$', ha='center', fontsize=20)
+    f.text(0.01, 0.5, r'$\beta \mathcal{P}_{\rm ATP}\ (t_{\rm sim}^{-1})$', va='center', rotation='vertical',
+           fontsize=20)
+    f.text(0.5, 0.95, r'$-\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=20)
+    # f.text(0.5, 0.95, r'$2 \pi \beta \mu_{\rm H^+}\ (\rm rev^{-1})$', ha='center', fontsize=20)
+    f.text(0.95, 0.5, r'$\mu_{\rm H^+}\ (\rm k_{\rm B} T / rad)$', va='center', rotation=270, fontsize=20)
+    # f.tight_layout()
+    f.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
+
 if __name__ == "__main__":
     target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
     # flux_power_efficiency(target_dir)
@@ -2436,12 +2573,12 @@ if __name__ == "__main__":
     # plot_flux_contour(target_dir)
     # plot_flux_space(target_dir)
     # plot_power_efficiency_Ecouple_single(target_dir)
-    plot_power_Ecouple_single(target_dir)
+    # plot_power_Ecouple_single(target_dir)
     # plot_power_Ecouple_scaled(target_dir)
     # plot_energy_flux(target_dir)
     # plot_energy_flux_grid(target_dir)
     # plot_prob_flux(target_dir)
-    # plot_prob_flux_grid(target_dir)
+    plot_prob_flux_grid(target_dir)
     # plot_condprob_grid(target_dir)
     # plot_rel_flux_Ecouple(target_dir)
     # plot_marg_prob_space(target_dir)
