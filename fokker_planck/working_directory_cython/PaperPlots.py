@@ -383,7 +383,7 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
 def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency as a function of the coupling strength
     markerlst = ['D', 's', 'o', 'v', 'x']
     color_lst = ['C2', 'C3', 'C1', 'C4', 'C6']
-    Ecouple_array_tot = array([8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
+    Ecouple_array_tot = array([4.0, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51, 128.0])
 
     f, axarr = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(6, 6),
                             gridspec_kw={'width_ratios': [10, 1], 'height_ratios': [2, 1]})
@@ -433,7 +433,7 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
     axarr[0, 0].spines['right'].set_visible(False)
     axarr[0, 0].spines['top'].set_visible(False)
     axarr[0, 0].set_ylim((0, None))
-    axarr[0, 0].set_xlim((8, None))
+    axarr[0, 0].set_xlim((7, None))
     axarr[0, 0].set_yticks([0, 1, 2, 3])
 
     axarr[0, 1].spines['right'].set_visible(False)
@@ -482,7 +482,7 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
     axarr[1, 0].set_xlabel(r'$\beta E_{\rm couple}$', fontsize=20)
     axarr[1, 0].set_ylabel(r'$\eta / \eta^{\rm max}$', fontsize=20)
     axarr[1, 0].set_xscale('log')
-    axarr[1, 0].set_xlim((8, None))
+    axarr[1, 0].set_xlim((7, None))
     axarr[1, 0].set_ylim((0, None))
     axarr[1, 0].spines['right'].set_visible(False)
     axarr[1, 0].spines['top'].set_visible(False)
@@ -662,7 +662,7 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
     axarr[0, 0].spines['right'].set_visible(False)
     axarr[0, 0].spines['top'].set_visible(False)
     axarr[0, 0].set_ylim((0, None))
-    axarr[0, 0].set_xlim((8, None))
+    axarr[0, 0].set_xlim((7.5, None))
     axarr[0, 0].tick_params(axis='both', labelsize=14)
     axarr[0, 0].set_yticks([0, 1, 2, 3])
 
@@ -745,10 +745,10 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
 
 if __name__ == "__main__":
     target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
-    plot_power_efficiency_Ecouple(target_dir)
-    plot_power_Ecouple_grid(target_dir)
-    plot_power_efficiency_phi(target_dir)
-    plot_power_phi_single(target_dir)
-    plot_nn_power_efficiency_Ecouple(target_dir)
-    plot_nn_power_efficiency_phi(target_dir)
+    # plot_power_efficiency_Ecouple(target_dir)
+    # plot_power_Ecouple_grid(target_dir)
+    # plot_power_efficiency_phi(target_dir)
+    # plot_power_phi_single(target_dir)
+    # plot_nn_power_efficiency_Ecouple(target_dir)
+    # plot_nn_power_efficiency_phi(target_dir)
     plot_n0_power_efficiency_Ecouple(target_dir)
