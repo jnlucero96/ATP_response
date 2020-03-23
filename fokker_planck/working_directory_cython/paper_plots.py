@@ -745,10 +745,10 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
 
 if __name__ == "__main__":
     target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
-    # plot_power_efficiency_Ecouple(target_dir)
-    # plot_power_Ecouple_grid(target_dir)
-    # plot_power_efficiency_phi(target_dir)
-    # plot_power_phi_single(target_dir)
-    # plot_nn_power_efficiency_Ecouple(target_dir)
-    # plot_nn_power_efficiency_phi(target_dir)
+    plot_power_efficiency_Ecouple(target_dir)
+    plot_power_Ecouple_grid(target_dir)
+    plot_power_efficiency_phi(target_dir)
+    plot_power_phi_single(target_dir)
+    plot_nn_power_efficiency_Ecouple(target_dir)
+    plot_nn_power_efficiency_phi(target_dir)
     plot_n0_power_efficiency_Ecouple(target_dir)
