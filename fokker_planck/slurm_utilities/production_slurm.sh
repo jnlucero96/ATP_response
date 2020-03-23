@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --mail-user=emma.lathouwers@gmail.com
+#SBATCH --mail-user=<insert email here>
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mem=1G
 #SBATCH --no-requeue
