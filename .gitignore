@@ -1,0 +1,10 @@
+*.pdf
+*.dat
+*.sh
+*.xml
+*.o
+.DS_Store
+*.so
+fokker_planck/working_directory_cython/temp
+fokker_planck/working_directory_cython/19*
+fokker_planck/working_directory_cython/20*

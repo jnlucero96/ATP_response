@@ -8,7 +8,7 @@ from fpe_1d import launchpad_reference
 def get_params():
 
     # discretization parameters
-    dt = 1e-5  # time discretization. Keep this number low
+    dt = 1e-4  # time discretization. Keep this number low
     N = 360 # inverse space discretization. Keep this number high!
 
     # model-specific parameters
@@ -16,12 +16,12 @@ def get_params():
     beta = 1.0  # 1/kT
     m = 1.0  # mass
 
-    E = 8.0  # energy scale of system
+    E = 4.0 # energy scale of system
 
-    psi1 = 8.0 # force on system by chemical bath B1
-    psi2 = -2.0 # force on system by chemical bath B2
+    psi1 = 0.1 # force on system by chemical bath B1
+    psi2 = 0.0 # force on system by chemical bath B2
 
-    n = 3.0 # number of minima in system potential
+    n = 12.0 # number of minima in system potential
 
     return ( dt, N, gamma, beta, m, E, psi1, psi2, n )
 
@@ -30,7 +30,7 @@ def save_data_reference(
     potential_at_pos, drift_at_pos, diffusion_at_pos, N
     ):
 
-    target_dir = './master_output_dir/'
+    target_dir = './master_output_dir'
     data_filename = f'/reference_E_{E}_psi1_{psi1}_psi2_{psi2}_n_{n}_outfile.dat'
     data_total_path = target_dir + data_filename
 
@@ -84,7 +84,7 @@ def main():
         prob, p_now, p_last, p_last_ref,
         potential_at_pos,
         drift_at_pos, diffusion_at_pos,
-        N, dx, check_step, E, psi1, psi2, 
+        N, dx, check_step, E, psi1, psi2,
         n, dt, m, beta, gamma
     )
     print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Reference simulation done!")

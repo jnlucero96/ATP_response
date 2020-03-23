@@ -169,7 +169,7 @@ cdef double potential(
     double phase, double E0, double Ecouple, double E1
     ) nogil:
     return 0.5*(
-        E0*(1-cos((n1*position1-phase)))
+        E0*(1-cos(n1*(position1-phase)))
         + Ecouple*(1-cos(position1-position2))
         + E1*(1-cos((n2*position2)))
         )
@@ -184,7 +184,7 @@ cdef double drift1(
     # for F0
     return (-1.0/(m1*gamma1))*((0.5)*(
         Ecouple*sin(position1-position2)
-        + (n1*E0*sin((n1*position1)-(phase)))
+        + (n1*E0*sin(n1*(position1-phase)))
         ) - psi1)
 
 cdef double drift2(
@@ -199,7 +199,7 @@ cdef double drift2(
         (-1.0)*Ecouple*sin(position1-position2)
         + (n2*E1*sin(n2*position2))
         ) - psi2)
-
+        
 cdef double diffusion11(
     double position1, double position2,
     double m1, double beta, double gamma1

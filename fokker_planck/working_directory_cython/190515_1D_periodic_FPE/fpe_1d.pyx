@@ -59,18 +59,20 @@ cdef double drift(
     double position, double E, double psi1, double psi2, double n,
     double m, double beta, double gamma
     ) nogil: 
-    # drift of 2D equation in limit of Ecouple \to \infty
-    return -((1.0/(m*gamma))*(0.5*(n*E*sin(n*position))-(psi1+psi2)))
+    #return -((1.0/(m*gamma))*(0.5*(n*E*sin(n*position))-(psi1+psi2))) #F1 ATPase
+    return -0.5*((1.0/(m*gamma))*(0.5*(n*E*sin(n*position))-(psi1+psi2))) #infinitely strong coupled FoF1
 
 # position dependent diffusion on system 
 cdef double diffusion(
     double position, double m, double beta, double gamma
     ) nogil: 
-    return 1.0/(beta*m*gamma)
-
+    #return 1.0/(beta*m*gamma) #F1 ATPase
+    return 1.0/(2*beta*m*gamma) #infinitely strong coupled FoF1
+    
 # potential of system
 cdef double potential(double position, double E, double n) nogil: 
-    return 0.5*E*(1-cos((n*position)))
+    #return 0.5*E*(1-cos((n*position)))
+    return 0.25*E*(1-cos((n*position))) #infinitely strong coupled FoF1
 
 # =============================================================================
 # =============================================================================
