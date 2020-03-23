@@ -1,6 +1,5 @@
 *.pdf
 *.dat
-*.sh
 *.xml
 *.o
 .DS_Store
