@@ -8,63 +8,70 @@ from fpe import launchpad_reference
 
 def get_params():
 
+    """Specify parameters of simulation here."""
+
     # discretization parameters
     dt = 0.001  # time discretization. Keep this number low
     N = 540  # inverse space discretization. Keep this number high!
 
-    # model-specific parameters
-    gamma1 = 1000.0  # drag coefficient of subsystem 1
-    gamma2 = 1000.0  # drag coefficient of subsystem 2
+    # model constants
     beta = 1.0  # thermodynamic beta: 1/kT
-    m1 = 1.0  # mass of subsystem 1
-    m2 = 1.0  # mass of subsystem 2
+    m1 = m2 = 1.0  # masses of Fo and F1
 
-    E0 = 2.0 # energy scale of subsystem 1
-    Ecouple = 1.0 # energy scale of coupling between subsystems 1 and 2
-    E1 = 2.0 # energy scale of subsystem 2
-    psi1 = 4.0 #  energy INTO (positive) subsystem 1 by chemical bath 1
-    psi2 = 2.0 # energy INTO (positive) subsystem 2 by chemical bath 2
+    # model-specific parameters
+    gamma1 = gamma2 = 1000.0  # drag coefficients of Fo and F1
 
-    n1 = 3.0  # number of minima in the potential of system 1
-    n2 = 3.0  # number of minima in the potential of system 2
+    E0 = 2.0 # energy scale of Fo
+    Ecouple = 1.0 # energy scale of coupling between Fo and F1
+    E1 = 2.0 # energy scale of F1
+    mu_Hp = 4.0 #  mu_{H+}: energy INTO (positive) Fo by F1
+    mu_atp = 2.0 # mu_{ATP}: energy INTO (positive) F1 by Fo
+
+    n1 = 3.0  # number of minima in the potential of Fo
+    n2 = 3.0  # number of minima in the potential of F1
     phase = 0.0  # how much sub-systems are offset from one another
+
+    # specify full path to where simulation results are output
+    data_dir = '../../../../master_output_dir/'
 
     return (
         dt, N, gamma1, gamma2, beta, m1, m2, n1, n2,
-        phase, E0, E1, Ecouple, psi1, psi2
+        phase, E0, E1, Ecouple, mu_Hp, mu_atp, data_dir
     )
 
 
 def save_data_reference(
     n1, n2,
     phase,
-    E0, Ecouple, E1, psi1, psi2, p_now, p_equil,
+    E0, Ecouple, E1, mu_Hp, mu_atp, p_now, p_equil,
     potential_at_pos, drift_at_pos, diffusion_at_pos,
-    N
-):
+    N, data_dir
+    ):
 
-    target_dir = '../../../../master_output_dir/'
+    """Helper function that writes results of simulation to file."""
+
     data_filename = (
         f"/reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
-        + f"psi1_{psi1}_psi2_{psi2}_"
+        + f"psi1_{mu_Hp}_psi2_{mu_atp}_"
         + f"n1_{n1}_n2_{n2}_phase_{phase}_"
         + "outfile.dat"
-    )
-    data_total_path = target_dir + data_filename
+    ) #TODO: Consult with Emma on filenames. psi -> mu.
+
+    data_total_path = data_dir + data_filename
 
     with open(data_total_path, 'w') as dfile:
         for i in range(N):
             for j in range(N):
                 dfile.write(
-                    f'{p_now[i, j]:.15e}'  # 0
-                    + '\t' + f'{p_equil[i, j]:.15e}'  # 1
-                    + '\t' + f'{potential_at_pos[i, j]:.15e}'  # 2
-                    + '\t' + f'{drift_at_pos[0, i, j]:.15e}'  # 3
-                    + '\t' + f'{drift_at_pos[1, i, j]:.15e}'  # 4
-                    + '\t' + f'{diffusion_at_pos[0, i, j]:.15e}'  # 5
-                    + '\t' + f'{diffusion_at_pos[1, i, j]:.15e}'  # 6
-                    + '\t' + f'{diffusion_at_pos[2, i, j]:.15e}'  # 7
-                    + '\t' + f'{diffusion_at_pos[3, i, j]:.15e}'  # 8
+                    f'{p_now[i, j]:.15e}'
+                    + '\t' + f'{p_equil[i, j]:.15e}'
+                    + '\t' + f'{potential_at_pos[i, j]:.15e}'
+                    + '\t' + f'{drift_at_pos[0, i, j]:.15e}'
+                    + '\t' + f'{drift_at_pos[1, i, j]:.15e}'
+                    + '\t' + f'{diffusion_at_pos[0, i, j]:.15e}'
+                    + '\t' + f'{diffusion_at_pos[1, i, j]:.15e}'
+                    + '\t' + f'{diffusion_at_pos[2, i, j]:.15e}'
+                    + '\t' + f'{diffusion_at_pos[3, i, j]:.15e}'
                     + '\n'
                 )
 
@@ -74,19 +81,19 @@ def main():
     # unload parameters
     [
         dt, N, gamma1, gamma2, beta, m1, m2, n1, n2,
-        phase, E0, E1, Ecouple, psi1, psi2
+        phase, E0, E1, Ecouple, mu_Hp, mu_atp, data_dir
     ] = get_params()
 
     # calculate derived discretization parameters
     dx = (2*pi) / N  # space discretization: total distance / number of points
 
-    # provide CSL criteria to make sure simulation doesn't blow up
+    # provide CFL criteria to make sure simulation doesn't blow up
     if E0 == 0.0 and E1 == 0.0:
         time_check = 100000000.0
     else:
         time_check = dx/(
-            (0.5*(Ecouple+E0*n1)-psi1)/(m1*gamma1)
-            + (0.5*(Ecouple+E1*n2)-psi2)/(m2*gamma2)
+            (0.5*(Ecouple+E0*n1)-mu_Hp)/(m1*gamma1)
+            + (0.5*(Ecouple+E1*n2)-mu_atp)/(m2*gamma2)
         )
 
     if dt > time_check:
@@ -123,7 +130,7 @@ def main():
         drift_at_pos,
         diffusion_at_pos,
         N, dx, check_step,
-        E0, Ecouple, E1, psi1, psi2,
+        E0, Ecouple, E1, mu_Hp, mu_atp,
         dt, m1, m2, beta, gamma1, gamma2
     )
     print(
@@ -162,11 +169,14 @@ def main():
     save_data_reference(
         n1, n2,
         phase,
-        E0, Ecouple, E1, psi1, psi2, p_now, p_equil,
-        potential_at_pos, drift_at_pos, diffusion_at_pos, N
+        E0, Ecouple, E1, mu_Hp, mu_atp, p_now, p_equil,
+        potential_at_pos, drift_at_pos, diffusion_at_pos, N,
+        data_dir
     )
     print(
-        f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving completed!")
+        f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Saving completed!"
+    )
+
     print("Exiting...")
 
 
