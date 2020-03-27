@@ -13,22 +13,22 @@ rc('text', usetex=True)
 N=360
 dx=2*math.pi/N
 positions=linspace(0,2*math.pi-dx,N)
-E0=2.0
-E1=2.0
-num_minima1=3.0
+E0=4.0
+E1=4.0
+num_minima1=10.0
 num_minima2=3.0
 
 min_array = array([3.0])
 # psi1_array = array([1., 2., 4.])
 # psi2_array = array([-1., -2.0, -4.])
-psi1_array = array([4.0])
-psi2_array = array([-2.0])
+psi1_array = array([10.0])
+psi2_array = array([-9.0])
 # psi1_array = array([2.0, 4.0, 8.0])
 # psi2_array = array([-0.25, -0.5, -1.0, -2.0,-4.0])
 # psi_ratio = array([8, 4, 2])
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 # Ecouple_array = array([2.0])
-Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]) #twopisweep
+Ecouple_array = array([0.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]) #twopisweep
 # Ecouple_array = array([2.0, 8.0, 16.0, 32.0])
 Ecouple_array_extra = array([10.0, 12.0, 14.0, 18.0, 20.0, 22.0, 24.0]) #extra measurements
 Ecouple_array_extra2 = array([1.41, 2.83, 5.66, 11.31, 22.63, 45.25, 90.51])
@@ -1157,7 +1157,7 @@ def plot_power_efficiency_Ecouple_single(target_dir):#plot power and efficiency 
             f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
             
 def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupling strength
-    output_file_name = (target_dir + "power_Ecouple_cropped_" +
+    output_file_name = (target_dir + "power_Ecouple_" +
                         "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_phi_{4}" + "_log_.pdf")
     f,axarr=plt.subplots(1, 1, sharex='all', sharey='none', figsize=(6, 4))
 
@@ -1167,14 +1167,14 @@ def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupli
             axarr.axhline(1.029*10**(-8), color='grey', linestyle='--', linewidth=1)  # line at infinite coupling
             
             #zero-barrier theory lines
-            input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/" +
-                               "fokker_planck/working_directory_cython/200128_biologicalnumbers/processed_data/" +
-                               "flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
-            data_array = loadtxt(input_file_name.format(psi_1, psi_2))
-            Ecouple_array2 = array(data_array[:,0])
-            flux_y_array = array(data_array[:,2])
-            power_y = -flux_y_array*psi_2
-            axarr.plot(Ecouple_array2, power_y, '-')
+            # input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/" +
+            #                    "fokker_planck/working_directory_cython/200128_biologicalnumbers/processed_data/" +
+            #                    "flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
+            # data_array = loadtxt(input_file_name.format(psi_1, psi_2))
+            # Ecouple_array2 = array(data_array[:, 0])
+            # flux_y_array = array(data_array[:, 2])
+            # power_y = -flux_y_array*psi_2
+            # axarr.plot(Ecouple_array2, power_y, '-')
 
         
             # power_x_array=[]
@@ -1221,7 +1221,7 @@ def plot_power_Ecouple_single(target_dir):#plot of power as a function of coupli
             axarr.set_ylabel('$\\mathcal{P}_{\\rm ATP}$')
             axarr.spines['right'].set_visible(False)
             axarr.spines['top'].set_visible(False)
-            axarr.set_ylim((0, None))
+            # axarr.set_ylim((0, None))
         
             plt.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
             plt.close()
@@ -2556,11 +2556,12 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
     f.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
 
 if __name__ == "__main__":
-    target_dir="/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
+    target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/" + \
+               "working_directory_cython/"
     # flux_power_efficiency(target_dir)
     # flux_power_efficiency_extrapoints(target_dir)
     # plot_power_phi_grid(target_dir)
-    plot_power_phi_single(target_dir)
+    # plot_power_phi_single(target_dir)
     # plot_power_efficiency_phi_single(target_dir)
     # plot_power_Ecouple_grid(target_dir)
     # plot_efficiency_phi_single(target_dir)
@@ -2573,7 +2574,7 @@ if __name__ == "__main__":
     # plot_flux_contour(target_dir)
     # plot_flux_space(target_dir)
     # plot_power_efficiency_Ecouple_single(target_dir)
-    # plot_power_Ecouple_single(target_dir)
+    plot_power_Ecouple_single(target_dir)
     # plot_power_Ecouple_scaled(target_dir)
     # plot_energy_flux(target_dir)
     # plot_energy_flux_grid(target_dir)

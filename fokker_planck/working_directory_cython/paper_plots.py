@@ -30,14 +30,15 @@ def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs c
     f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 8))
 
     # power plot
-    axarr[0].axhline(0, color='black', linewidth=0.5)  # x-axis
+    axarr[0].axhline(0, color='black', linewidth=1)  # x-axis
     maxpower = 0.000085247 * timescale
-    axarr[0].axhline(maxpower, color='grey', linestyle=':', linewidth=1)  # line at infinite power coupling
-    axarr[0].axvline(12, color='grey', linestyle=':', linewidth=1)  # lining up features in the two plots
+    axarr[0].axhline(maxpower, color='black', linestyle=':', linewidth=1)  # line at infinite power coupling
+    axarr[0].axvline(12, color='black', linestyle='--', linewidth=1)  # lining up features in the two plots
+    axarr[0].fill_between([1, 250], 0, 6, facecolor='grey', alpha=0.2)  # shading power output
 
     # zero-barrier results
-    input_file_name = (target_dir + "190624_Twopisweep_complete_set/processed_data/"
-                       + "Flux_zerobarrier_evenlyspaced_psi1_{0}_psi2_{1}_outfile.dat")
+    input_file_name = (target_dir + "plotting_data/"
+                       + "flux_zerobarrier_evenlyspaced_psi1_{0}_psi2_{1}_outfile.dat")
     data_array = loadtxt(input_file_name.format(psi_1, psi_2))
     Ecouple_array2 = array(data_array[:, 0])
     flux_y_array = array(data_array[:, 2])
@@ -48,7 +49,7 @@ def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs c
     i = 0  # only use phase=0 data
     power_y_array = []
     for ii, Ecouple in enumerate(Ecouple_array_tot):
-        input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
+        input_file_name = (target_dir + "plotting_data/" + "flux_power_efficiency_"
                            + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
         try:
             data_array = loadtxt(
@@ -70,6 +71,7 @@ def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs c
     axarr[0].spines['top'].set_visible(False)
     axarr[0].spines['bottom'].set_visible(False)
     axarr[0].set_xlim((1.7, 135))
+    axarr[0].set_ylim((-10, 5))
     axarr[0].set_yticks([-10, -5, 0, 5])
 
     leg = axarr[0].legend(title=r'$\beta E_{\rm o} = \beta E_1$', fontsize=14, loc='lower right', frameon=False)
@@ -79,12 +81,13 @@ def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs c
     #####################################################
     # efficiency plot
     axarr[1].axhline(0, color='black', linewidth=1)  # x axis
-    axarr[1].axvline(12, color='grey', linestyle=':', linewidth=1)  # lining up features
-    axarr[1].axhline(1, color='grey', linestyle=':', linewidth=1)  # max efficiency
+    axarr[1].axvline(12, color='black', linestyle='--', linewidth=1)  # lining up features
+    axarr[1].axhline(1, color='black', linestyle=':', linewidth=1)  # max efficiency
+    axarr[1].fill_between([1, 250], 0, 1, facecolor='grey', alpha=0.2)  # shading power output
 
     # zero-barrier curve
     input_file_name = (
-            target_dir + "190624_Twopisweep_complete_set/processed_data/"
+            target_dir + "plotting_data/"
             + "Flux_zerobarrier_evenlyspaced_psi1_{0}_psi2_{1}_outfile.dat")
     try:
         data_array = loadtxt(input_file_name.format(psi_1, psi_2))
@@ -102,7 +105,7 @@ def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs c
     eff_array = []
     for ii, Ecouple in enumerate(Ecouple_array_tot):
         input_file_name = (
-                target_dir + "191217_morepoints/processed_data/flux_power_efficiency_"
+                target_dir + "plotting_data/flux_power_efficiency_"
                 + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
         try:
             data_array = loadtxt(
@@ -146,7 +149,7 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
 
             # line at highest Ecouple power
             input_file_name = (
-                            target_dir + "190624_Twopisweep_complete_set/processed_data/"
+                            target_dir + "plotting_data/"
                             + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_n1_3.0_n2_3.0_outfile.dat")
             try:
                 inf_array = loadtxt(input_file_name, usecols=2)
@@ -157,7 +160,7 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
 
             # zero-barrier result
             input_file_name = (
-                        target_dir + "191217_morepoints/processed_data/"
+                        target_dir + "plotting_data/"
                         + "Flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
             data_array = loadtxt(input_file_name.format(psi_1, psi_2))
             Ecouple_array2 = array(data_array[:, 0])
@@ -170,7 +173,7 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
             power_y_array = []
             for ii, Ecouple in enumerate(Ecouple_array_tot):
                 input_file_name = (
-                            target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
+                            target_dir + "plotting_data/" + "flux_power_efficiency_"
                             + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
                 try:
                     # print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
@@ -218,11 +221,11 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
                 axarr[i, j].yaxis.offsetText.set_fontsize(14)
 
             if j == psi1_array.size - 1:
-                axarr[i, j].set_ylabel(r'$%.0f$' % psi_ratio[::-1][i], labelpad=16, rotation=270, fontsize=14)
+                axarr[i, j].set_ylabel(r'$%.0f$' % psi_ratio[::-1][i], labelpad=16, rotation=270, fontsize=18)
                 axarr[i, j].yaxis.set_label_position('right')
 
             if i == 0:
-                axarr[i, j].set_title(r'$%.0f$' % psi1_array[::-1][j], fontsize=14)
+                axarr[i, j].set_title(r'$%.0f$' % psi1_array[::-1][j], fontsize=18)
 
             if j == 2 and i == 1:
                 axarr[i, j].tick_params(axis='x', colors='red', which='both')
@@ -230,15 +233,15 @@ def plot_power_Ecouple_grid(target_dir):  # grid of plots of the flux as a funct
                 axarr[i, j].spines['left'].set_color('red')
                 axarr[i, j].spines['bottom'].set_color('red')
             else:
-                axarr[i, j].tick_params(axis='both', labelsize=14)
+                axarr[i, j].tick_params(axis='both', labelsize=18)
 
     f.tight_layout()
-    f.subplots_adjust(bottom=0.1, left=0.1, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
-    f.text(0.5, 0.01, r'$\beta E_{\rm couple}$', ha='center', fontsize=20)
+    f.subplots_adjust(bottom=0.12, left=0.12, right=0.9, top=0.88, wspace=0.1, hspace=0.1)
+    f.text(0.5, 0.01, r'$\beta E_{\rm couple}$', ha='center', fontsize=24)
     f.text(0.01, 0.5, r'$\beta \mathcal{P}_{\rm ATP}\ (\rm s^{-1})$', va='center', rotation='vertical',
-           fontsize=20)
-    f.text(0.5, 0.95, r'$-\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=20)
-    f.text(0.95, 0.5, r'$\mu_{\rm H^+}\ (k_{\rm B} T / \rm rad)$', va='center', rotation=270, fontsize=20)
+           fontsize=24)
+    f.text(0.5, 0.95, r'$-\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=24)
+    f.text(0.95, 0.5, r'$\mu_{\rm H^+}\ (k_{\rm B} T / \rm rad)$', va='center', rotation=270, fontsize=24)
 
     f.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
 
@@ -252,7 +255,7 @@ def plot_power_efficiency_phi(target_dir): # plot power and efficiency as a func
 
     # zero-barrier results
     input_file_name = (
-                target_dir + "190624_Twopisweep_complete_set/processed_data/"
+                target_dir + "plotting_data/"
                 + "flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
     data_array = loadtxt(input_file_name.format(psi_1, psi_2))
     flux_y_array = array(data_array[:, 2])
@@ -262,7 +265,7 @@ def plot_power_efficiency_phi(target_dir): # plot power and efficiency as a func
     # Fokker-Planck results (barriers)
     for ii, Ecouple in enumerate([16.0]):
         input_file_name = (
-                    target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
+                    target_dir + "plotting_data/" + "flux_power_efficiency_"
                     + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
         try:
             data_array = loadtxt(
@@ -290,7 +293,7 @@ def plot_power_efficiency_phi(target_dir): # plot power and efficiency as a func
 
     for ii, Ecouple in enumerate([16.0]):
         input_file_name = (
-                    target_dir + "191217_morepoints/processed_data/flux_power_efficiency_"
+                    target_dir + "plotting_data/flux_power_efficiency_"
                     + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
         try:
             data_array = loadtxt(
@@ -308,13 +311,13 @@ def plot_power_efficiency_phi(target_dir): # plot power and efficiency as a func
     axarr[1].tick_params(axis='both', labelsize=14)
     axarr[1].set_yticks([0, 0.5, 1.0])
     axarr[1].set_xticks([0, pi/9, 2*pi/9, pi/3, 4*pi/9, 5*pi/9, 2*pi/3])
-    axarr[1].set_xticklabels(['$0$', '', '', '$1/6$', '', '', '$1/3$'])
+    axarr[1].set_xticklabels(['$0$', '', '', '$\pi$', '', '', '$2 \pi$'])
 
     leg = axarr[1].legend(title=r'$\beta E_{\rm o} = \beta E_1$', fontsize=14, loc='lower right', frameon=False)
     leg_title = leg.get_title()
     leg_title.set_fontsize(14)
 
-    f.text(0.55, 0.07, r'$\phi\ (\rm rev)$', fontsize=20, ha='center')
+    f.text(0.55, 0.07, r'$n \phi\ (\rm rad)$', fontsize=20, ha='center')
     f.text(0.03, 0.93, r'$\mathbf{a)}$', fontsize=20)
     f.text(0.03, 0.37, r'$\mathbf{b)}$', fontsize=20)
     f.tight_layout()
@@ -329,12 +332,12 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
                         + "Power_ATP_phi_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}" + "_.pdf")
 
     plt.figure()
-    f, ax = plt.subplots(1, 1, figsize=(8, 6))
+    f, ax = plt.subplots(1, 1, figsize=(6, 4.5))
     ax.axhline(0, color='black', linewidth=1)
 
     # Fokker-Planck results (barriers)
     for ii, Ecouple in enumerate(Ecouple_array):
-        input_file_name = (target_dir + "191217_morepoints/processed_data/" + "flux_power_efficiency_"
+        input_file_name = (target_dir + "plotting_data/" + "flux_power_efficiency_"
                            + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
         try:
             data_array = loadtxt(
@@ -349,7 +352,7 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
             print('Missing file')
 
     # Infinite coupling result
-    input_file_name = (target_dir + "190530_Twopisweep/master_output_dir/processed_data/"
+    input_file_name = (target_dir + "plotting_data/"
                        + "Flux_phi_Ecouple_inf_Fx_4.0_Fy_-2.0_test.dat")
     data_array = loadtxt(input_file_name, usecols=(0, 1))
     phase_array = data_array[:, 0]
@@ -370,14 +373,14 @@ def plot_power_phi_single(target_dir):  # plot of the power as a function of the
     leg_title = leg.get_title()
     leg_title.set_fontsize(14)
 
-    f.text(0.55, 0.02, r'$\phi\ (\rm rev)$', fontsize=20, ha='center')
+    f.text(0.55, 0.02, r'$n \phi\ (\rm rad)$', fontsize=20, ha='center')
     plt.ylabel(r'$\beta \mathcal{P}_{\rm ATP}\ (\rm s^{-1})$', fontsize=20)
     plt.xticks([0, pi / 9, 2 * pi / 9, pi / 3, 4 * pi / 9, 5 * pi / 9, 2 * pi / 3],
-               ['$0$', '', '', '$1/6$', '', '', '$1/3$'])
+               ['$0$', '', '', '$\pi$', '', '', '$2 \pi$'])
 
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
     f.tight_layout()
-    f.subplots_adjust(bottom=0.12)
+    f.subplots_adjust(bottom=0.14)
     f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
 
 def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency as a function of the coupling strength
@@ -397,7 +400,7 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
         power_y_array = []
         for ii, Ecouple in enumerate(Ecouple_array_tot):
             input_file_name = (
-                        target_dir + "200218_morepoints/processed_data/" + "flux_power_efficiency_"
+                        target_dir + "plotting_data/" + "flux_power_efficiency_"
                         + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
             try:
                 data_array = loadtxt(
@@ -413,7 +416,7 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                 print(input_file_name.format(E0, E1, psi_1, psi_2, num_min, num_min, Ecouple))
 
         # Infinite coupling data
-        input_file_name = (target_dir + "190729_Varying_n/processed_data/" +
+        input_file_name = (target_dir + "plotting_data/" +
         "Power_ATP_Ecouple_inf_no_n1_E0_2.0_E1_2.0_psi1_4.0_psi2_-2.0_outfile.dat")
         try:
             data_array = loadtxt(input_file_name)
@@ -461,7 +464,7 @@ def plot_nn_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
         eff_array = []
         for ii, Ecouple in enumerate(Ecouple_array_tot):
             input_file_name = (
-                        target_dir + "200218_morepoints/processed_data/flux_power_efficiency_"
+                        target_dir + "plotting_data/flux_power_efficiency_"
                         + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
             try:
                 data_array = loadtxt(
@@ -523,7 +526,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
     markerlst = ['D', 's', 'o', 'v', 'x']
     color_lst = ['C2', 'C3', 'C1', 'C4', 'C6']
 
-    f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 5.5))
+    f, axarr = plt.subplots(2, 1, sharex='all', sharey='none', figsize=(6, 4.5))
 
     output_file_name = (
             target_dir + "power_efficiency_phi_vary_n_"
@@ -534,7 +537,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
 
     # zero-barrier results
     input_file_name = (
-                target_dir + "190624_Twopisweep_complete_set/processed_data/"
+                target_dir + "plotting_data/"
                 + "flux_zerobarrier_psi1_{0}_psi2_{1}_outfile.dat")
     data_array = loadtxt(input_file_name.format(psi_1, psi_2))
     flux_y_array = array(data_array[:, 2])
@@ -545,16 +548,20 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
     for i, num_min in enumerate(min_array):
         for ii, Ecouple in enumerate(Ecouple_array):
             input_file_name = (
-                        target_dir + "200218_morepoints/processed_data/" + "flux_power_efficiency_"
+                        target_dir + "plotting_data/" + "flux_power_efficiency_"
                         + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
             try:
                 data_array = loadtxt(
                     input_file_name.format(E0, E1, psi_1, psi_2, num_min, num_min, Ecouple),
                     usecols=4)
-                power_y = array(data_array)
+                if num_min == 3.0:
+                    power_y = array(data_array[::2])
+                else:
+                    power_y = array(data_array)
             except OSError:
                 print('Missing file flux')
-        power_y = append(power_y, power_y[0])
+        if num_min != 3.0:
+            power_y = append(power_y, power_y[0])
         axarr[0].plot(phase_array, -power_y*timescale, '-', markersize=8, color=color_lst[i],
                       marker=markerlst[i], label=n_labels[i])
 
@@ -582,15 +589,19 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
     for i, num_min in enumerate(min_array):
         for ii, Ecouple in enumerate(Ecouple_array):
             input_file_name = (
-                        target_dir + "200218_morepoints/processed_data/" + "flux_power_efficiency_"
+                        target_dir + "plotting_data/" + "flux_power_efficiency_"
                         + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
             try:
                 data_array = loadtxt(
                     input_file_name.format(E0, E1, psi_1, psi_2, num_min, num_min, Ecouple), usecols=5)
-                eff_array = array(data_array)
+                if num_min == 3.0:
+                    eff_array = array(data_array[::2])
+                else:
+                    eff_array = array(data_array)
             except OSError:
                 print('Missing file efficiency')
-        eff_array = append(eff_array, eff_array[0])
+        if num_min != 3.0:
+            eff_array = append(eff_array, eff_array[0])
         axarr[1].plot(phase_array, eff_array / (-psi_2 / psi_1), marker=markerlst[i], label=n_labels[i],
                       markersize=8, color=color_lst[i])
 
@@ -602,11 +613,11 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
     axarr[1].tick_params(axis='both', labelsize=14)
     axarr[1].set_yticks([0, 0.5, 1.0])
     axarr[1].set_xticks([0, pi/3, 2*pi/3, pi, 4*pi/3, 5*pi/3, 2*pi])
-    axarr[1].set_xticklabels(['$0$', '', '', '$1/2$', '', '', '$1$'])
+    axarr[1].set_xticklabels(['$0$', '', '', '$\pi$', '', '', '$2 \pi$'])
 
-    f.text(0.55, 0.03, r'$n \phi \ (\rm rev)$', fontsize=20, ha='center')  # xlabel seems broken
+    f.text(0.55, 0.03, r'$n \phi \ (\rm rad)$', fontsize=20, ha='center')  # xlabel seems broken
     f.text(0.03, 0.93, r'$\mathbf{a)}$', fontsize=20)
-    f.text(0.03, 0.37, r'$\mathbf{b)}$', fontsize=20)
+    f.text(0.03, 0.4, r'$\mathbf{b)}$', fontsize=20)
     f.tight_layout()
     f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2))
 
@@ -626,7 +637,7 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
         power_y_array = []
         for ii, Ecouple in enumerate(Ecouple_array_tot):
             input_file_name = (
-                        target_dir + "200218_morepoints/processed_data/" + "flux_power_efficiency_"
+                        target_dir + "plotting_data/" + "flux_power_efficiency_"
                         + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
             try:
                 data_array = loadtxt(
@@ -645,7 +656,7 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
                          linestyle='-', color=color_lst[j])
 
         # infinite coupling result
-        input_file_name = (target_dir + "/190924_no_vary_n1_3/processed_data/" +
+        input_file_name = (target_dir + "plotting_data/" +
                            "Power_ATP_Ecouple_inf_no_varies_n1_3.0_E0_2.0_E1_2.0_psi1_4.0_psi2_-2.0_outfile.dat"
                            )
         try:
@@ -690,7 +701,7 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
         eff_array = []
         for ii, Ecouple in enumerate(Ecouple_array_tot):
             input_file_name = (
-                        target_dir + "200218_morepoints/processed_data/" + "flux_power_efficiency_"
+                        target_dir + "plotting_data/" + "flux_power_efficiency_"
                         + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
             try:
                 data_array = loadtxt(
@@ -744,7 +755,8 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
     f.savefig(output_file_name.format(E0, E1, psi_1, psi_2, 3.0))
 
 if __name__ == "__main__":
-    target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/working_directory_cython/"
+    target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/" + \
+                 "prediction/fokker_planck/working_directory_cython/"
     plot_power_efficiency_Ecouple(target_dir)
     plot_power_Ecouple_grid(target_dir)
     plot_power_efficiency_phi(target_dir)
