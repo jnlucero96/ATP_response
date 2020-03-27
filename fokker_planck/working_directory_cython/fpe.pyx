@@ -23,7 +23,7 @@ def launchpad_reference(
     double[:, :, :] drift_at_pos,
     double[:, :, :] diffusion_at_pos,
     int N, double dx, unsigned int check_step,
-    double E0, double Ecouple, double E1, double psi1, double psi2,
+    double E0, double Ecouple, double E1, double mu_Hp, double mu_atp,
     double dt, double m1, double m2, double beta, double gamma1, double gamma2
     ):
 
@@ -53,7 +53,7 @@ def launchpad_reference(
     # build the drift vector
     construct_drift_vec_func(
         drift_at_pos, positions,
-        E0, Ecouple, E1, psi1, psi2,
+        E0, Ecouple, E1, mu_Hp, mu_atp,
         phase, n1, n2, m1, m2,
         gamma1, gamma2, N
         )
@@ -64,7 +64,7 @@ def launchpad_reference(
         )
 
     # initialize the simulation to steady state distribution
-    # start with uniform distribution as initial guess
+    # start with Gibbs-Boltzmann distribution as initial guess
     for i in range(N):
         for j in range(N):
             p_now[i, j] = prob[i, j]
@@ -77,14 +77,14 @@ def launchpad_reference(
 
 def construct_drift_vec(
     double[:, :, :] drift_at_pos, double[:] positions,
-    double E0, double Ecouple, double E1, double psi1, double psi2,
+    double E0, double Ecouple, double E1, double mu_Hp, double mu_atp,
     double phase, double n1, double n2, double m1, double m2,
     double gamma1, double gamma2, int N
     ):
 
     construct_drift_vec_func(
         drift_at_pos, positions,
-        E0, Ecouple, E1, psi1, psi2,
+        E0, Ecouple, E1, mu_Hp, mu_atp,
         phase, n1, n2, m1, m2,
         gamma1, gamma2, N
         )
@@ -108,7 +108,7 @@ def construct_diffusion_tensor(
 
 cdef void construct_drift_vec_func(
     double[:, :, :] drift_at_pos, double[:] positions,
-    double E0, double Ecouple, double E1, double psi1, double psi2,
+    double E0, double Ecouple, double E1, double mu_Hp, double mu_atp,
     double phase, double n1, double n2, double m1, double m2,
     double gamma1, double gamma2, int N
     ) nogil:
@@ -119,12 +119,12 @@ cdef void construct_drift_vec_func(
         for j in range(N):
             drift_at_pos[0, i, j] = drift1(
                 positions[i], positions[j],
-                n1, phase, E0, Ecouple, psi1,
+                n1, phase, E0, Ecouple, mu_Hp,
                 m1, gamma1
                 )
             drift_at_pos[1, i, j] = drift2(
                 positions[i], positions[j],
-                n2, E1, Ecouple, psi2,
+                n2, E1, Ecouple, mu_atp,
                 m2, gamma2
                 )
 
@@ -176,7 +176,7 @@ cdef double potential(
 
 cdef double drift1(
     double position1, double position2, double n1,
-    double phase, double E0, double Ecouple, double psi1,
+    double phase, double E0, double Ecouple, double mu_Hp,
     double m1, double gamma1
     ) nogil:
     # Returns the force on system F0. H+ chemical potential set up so that
@@ -185,21 +185,21 @@ cdef double drift1(
     return (-1.0/(m1*gamma1))*((0.5)*(
         Ecouple*sin(position1-position2)
         + (n1*E0*sin(n1*(position1-phase)))
-        ) - psi1)
+        ) - mu_Hp)
 
 cdef double drift2(
     double position1, double position2, double n2,
-    double E1, double Ecouple, double psi2,
+    double E1, double Ecouple, double mu_atp,
     double m2, double gamma2
     ) nogil:
-    # Returns the force on system F1. Chemical potential set up so that
-    # postive values of chemical potential returns positive values of the of
-    # the flux for F1
+    # Returns the force on system F1. Chemical potential \mu_{ATP} set up so
+    # that postive values of chemical potential returns positive values of
+    # the of the flux for F1
     return (-1.0/(m2*gamma2))*((0.5)*(
         (-1.0)*Ecouple*sin(position1-position2)
         + (n2*E1*sin(n2*position2))
-        ) - psi2)
-        
+        ) - mu_atp)
+
 cdef double diffusion11(
     double position1, double position2,
     double m1, double beta, double gamma1
@@ -296,6 +296,8 @@ cdef void update_probability_full(
     double[:, :, :] diffusion_at_pos,
     int N, double dx, double dt
     ) nogil:
+
+    # update the distribution using FTCS method.
 
     # declare iterator variables
     cdef Py_ssize_t i, j

@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jun  2 16:00:44 2016
-
-@author: JLucero
-"""
 
 from distutils.core import setup, Extension
 from Cython.Build import build_ext
