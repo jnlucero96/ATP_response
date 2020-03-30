@@ -1,11 +1,11 @@
-from numpy import array, linspace, loadtxt, append, pi
+from numpy import array, linspace, loadtxt, append, pi, empty, sqrt, zeros, asarray, trapz
 import math
 import matplotlib.pyplot as plt
 from matplotlib import rc
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 rc('text', usetex=True)
 
-N = 360  # NxN grid was used for Fokker-Planck simulations
+N = 360  # N x N grid is used for Fokker-Planck simulations
 dx = 2 * math.pi / N  # spacing between gridpoints
 positions = linspace(0, 2 * math.pi - dx, N)  # gridpoints
 timescale = 1.5 * 10**4  # conversion factor between simulation and experimental timescale
@@ -19,6 +19,179 @@ num_minima2 = 3.0  # number of barriers in F1's landscape
 
 Ecouple_array = array([2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0])  # coupling strengths
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])  # number of energy minima/ barriers
+
+def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array, N):
+    # explicit update of the corners
+    # first component
+    flux_array[0, 0, 0] = (
+        (drift_at_pos[0, 0, 0]*p_now[0, 0])
+        -(diffusion_at_pos[0, 1, 0]*p_now[1, 0]-diffusion_at_pos[0, N-1, 0]*p_now[N-1, 0])/(2.0*dx)
+        -(diffusion_at_pos[1, 0, 1]*p_now[0, 1]-diffusion_at_pos[1, 0, N-1]*p_now[0, N-1])/(2.0*dx)
+        )
+    flux_array[0, 0, N-1] = (
+        (drift_at_pos[0, 0, N-1]*p_now[0, N-1])
+        -(diffusion_at_pos[0, 1, N-1]*p_now[1, N-1]-diffusion_at_pos[0, N-1, N-1]*p_now[N-1, N-1])/(2.0*dx)
+        -(diffusion_at_pos[1, 0, 0]*p_now[0, 0]-diffusion_at_pos[1, 0, N-2]*p_now[0, N-2])/(2.0*dx)
+        )
+    flux_array[0, N-1, 0] = (
+        (drift_at_pos[0, N-1, 0]*p_now[N-1, 0])
+        -(diffusion_at_pos[0, 0, 0]*p_now[0, 0]-diffusion_at_pos[0, N-2, 0]*p_now[N-2, 0])/(2.0*dx)
+        -(diffusion_at_pos[1, N-1, 1]*p_now[N-1, 1]-diffusion_at_pos[1, N-1, N-1]*p_now[N-1, N-1])/(2.0*dx)
+        )
+    flux_array[0, N-1, N-1] = (
+        (drift_at_pos[0, N-1, N-1]*p_now[N-1, N-1])
+        -(diffusion_at_pos[0, 0, N-1]*p_now[0, N-1]-diffusion_at_pos[0, N-2, N-1]*p_now[N-2, N-1])/(2.0*dx)
+        -(diffusion_at_pos[1, N-1, 0]*p_now[N-1, 0]-diffusion_at_pos[1, N-1, N-2]*p_now[N-1, N-2])/(2.0*dx)
+        )
+
+    # second component
+    flux_array[1, 0, 0] = (
+        (drift_at_pos[1, 0, 0]*p_now[0, 0])
+        -(diffusion_at_pos[2, 1, 0]*p_now[1, 0]-diffusion_at_pos[2, N-1, 0]*p_now[N-1, 0])/(2.0*dx)
+        -(diffusion_at_pos[3, 0, 1]*p_now[0, 1]-diffusion_at_pos[3, 0, N-1]*p_now[0, N-1])/(2.0*dx)
+        )
+    flux_array[1, 0, N-1] = (
+        (drift_at_pos[1, 0, N-1]*p_now[0, N-1])
+        -(diffusion_at_pos[2, 1, N-1]*p_now[1, N-1]-diffusion_at_pos[2, N-1, N-1]*p_now[N-1, N-1])/(2.0*dx)
+        -(diffusion_at_pos[3, 0, 0]*p_now[0, 0]-diffusion_at_pos[3, 0, N-2]*p_now[0, N-2])/(2.0*dx)
+        )
+    flux_array[1, N-1, 0] = (
+        (drift_at_pos[1, N-1, 0]*p_now[N-1, 0])
+        -(diffusion_at_pos[2, 0, 0]*p_now[0, 0]-diffusion_at_pos[2, N-2, 0]*p_now[N-2, 0])/(2.0*dx)
+        -(diffusion_at_pos[3, N-1, 1]*p_now[N-1, 1]-diffusion_at_pos[3, N-1, N-1]*p_now[N-1, N-1])/(2.0*dx)
+        )
+    flux_array[1, N-1, N-1] = (
+        (drift_at_pos[1, N-1, N-1]*p_now[N-1, N-1])
+        -(diffusion_at_pos[2, 0, N-1]*p_now[0, N-1]-diffusion_at_pos[2, N-2, N-1]*p_now[N-2, N-1])/(2.0*dx)
+        -(diffusion_at_pos[3, N-1, 0]*p_now[N-1, 0]-diffusion_at_pos[3, N-1, N-2]*p_now[N-1, N-2])/(2.0*dx)
+        )
+
+    for i in range(1, N-1):
+        # explicitly update for edges not corners
+        # first component
+        flux_array[0, 0, i] = (
+            (drift_at_pos[0, 0, i]*p_now[0, i])
+            -(diffusion_at_pos[0, 1, i]*p_now[1, i]-diffusion_at_pos[0, N-1, i]*p_now[N-1, i])/(2.0*dx)
+            -(diffusion_at_pos[1, 0, i+1]*p_now[0, i+1]-diffusion_at_pos[1, 0, i-1]*p_now[0, i-1])/(2.0*dx)
+            )
+        flux_array[0, i, 0] = (
+            (drift_at_pos[0, i, 0]*p_now[i, 0])
+            -(diffusion_at_pos[0, i+1, 0]*p_now[i+1, 0]-diffusion_at_pos[0, i-1, 0]*p_now[i-1, 0])/(2.0*dx)
+            -(diffusion_at_pos[1, i, 1]*p_now[i, 1]-diffusion_at_pos[1, i, N-1]*p_now[i, N-1])/(2.0*dx)
+            )
+        flux_array[0, N-1, i] = (
+            (drift_at_pos[0, N-1, i]*p_now[N-1, i])
+            -(diffusion_at_pos[0, 0, i]*p_now[0, i]-diffusion_at_pos[0, N-2, i]*p_now[N-2, i])/(2.0*dx)
+            -(diffusion_at_pos[1, N-1, i+1]*p_now[N-1, i+1]-diffusion_at_pos[1, N-1, i-1]*p_now[N-1, i-1])/(2.0*dx)
+            )
+        flux_array[0, i, N-1] = (
+            (drift_at_pos[0, i, N-1]*p_now[i, N-1])
+            -(diffusion_at_pos[0, i+1, N-1]*p_now[i+1, N-1]-diffusion_at_pos[0, i-1, N-1]*p_now[i-1, N-1])/(2.0*dx)
+            -(diffusion_at_pos[1, i, 0]*p_now[i, 0]-diffusion_at_pos[1, i, N-2]*p_now[i, N-2])/(2.0*dx)
+            )
+
+        # second component
+        flux_array[1, 0, i] = (
+            (drift_at_pos[1, 0, i]*p_now[0, i])
+            -(diffusion_at_pos[2, 1, i]*p_now[1, i]-diffusion_at_pos[2, N-1, i]*p_now[N-1, i])/(2.0*dx)
+            -(diffusion_at_pos[3, 0, i+1]*p_now[0, i+1]-diffusion_at_pos[3, 0, i-1]*p_now[0, i-1])/(2.0*dx)
+            )
+        flux_array[1, i, 0] = (
+            (drift_at_pos[1, i, 0]*p_now[i, 0])
+            -(diffusion_at_pos[2, i+1, 0]*p_now[i+1, 0]-diffusion_at_pos[2, i-1, 0]*p_now[i-1, 0])/(2.0*dx)
+            -(diffusion_at_pos[3, i, 1]*p_now[i, 1]-diffusion_at_pos[3, i, N-1]*p_now[i, N-1])/(2.0*dx)
+            )
+        flux_array[1, N-1, i] = (
+            (drift_at_pos[1, N-1, i]*p_now[N-1, i])
+            -(diffusion_at_pos[2, 0, i]*p_now[0, i]-diffusion_at_pos[2, N-2, i]*p_now[N-2, i])/(2.0*dx)
+            -(diffusion_at_pos[3, N-1, i+1]*p_now[N-1, i+1]-diffusion_at_pos[3, N-1, i-1]*p_now[N-1, i-1])/(2.0*dx)
+            )
+        flux_array[1, i, N-1] = (
+            (drift_at_pos[1, i, N-1]*p_now[i, N-1])
+            -(diffusion_at_pos[2, i+1, N-1]*p_now[i+1, N-1]-diffusion_at_pos[2, i-1, N-1]*p_now[i-1, N-1])/(2.0*dx)
+            -(diffusion_at_pos[3, i, 0]*p_now[i, 0]-diffusion_at_pos[3, i, N-2]*p_now[i, N-2])/(2.0*dx)
+            )
+
+        # for points with well defined neighbours
+        for j in range(1, N-1):
+            # first component
+            flux_array[0, i, j] = (
+                (drift_at_pos[0, i, j]*p_now[i, j])
+                -(diffusion_at_pos[0, i+1, j]*p_now[i+1, j]-diffusion_at_pos[0, i-1, j]*p_now[i-1, j])/(2.0*dx)
+                -(diffusion_at_pos[1, i, j+1]*p_now[i, j+1]-diffusion_at_pos[1, i, j-1]*p_now[i, j-1])/(2.0*dx)
+                )
+            # second component
+            flux_array[1, i, j] = (
+                (drift_at_pos[1, i, j]*p_now[i, j])
+                -(diffusion_at_pos[2, i+1, j]*p_now[i+1, j]-diffusion_at_pos[2, i-1, j]*p_now[i-1, j])/(2.0*dx)
+                -(diffusion_at_pos[3, i, j+1]*p_now[i, j+1]-diffusion_at_pos[3, i, j-1]*p_now[i, j-1])/(2.0*dx)
+                )
+
+def flux_power_efficiency(target_dir): # processing of raw data
+    phase_array = array([0.0])
+    psi1_array = array([4.0])
+    psi2_array = array([-2.0])
+
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            integrate_flux_X = empty(phase_array.size)
+            integrate_flux_Y = empty(phase_array.size)
+            integrate_power_X = empty(phase_array.size)
+            integrate_power_Y = empty(phase_array.size)
+            efficiency_ratio = empty(phase_array.size)
+
+            for Ecouple in Ecouple_array:
+                for ii, phase_shift in enumerate(phase_array):
+                    input_file_name = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190624_phaseoffset/" +
+                                       "reference_E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                                       "_outfile.dat")
+
+                    output_file_name = (target_dir + "flux_power_efficiency_" +
+                                        "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+
+                    print("Calculating flux for " + f"psi_1 = {psi_1}, psi_2 = {psi_2}, " +
+                          f"Ecouple = {Ecouple}, num_minima1 = {num_minima1}, num_minima2 = {num_minima2}")
+
+                    try:
+                        data_array = loadtxt(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1,
+                                                                    num_minima2, phase_shift),
+                                             usecols=(0, 3, 4, 5, 6, 7, 8))
+                        N = int(sqrt(len(data_array)))  # check grid size
+                        print('Grid size: ', N)
+
+                        prob_ss_array = data_array[:, 0].reshape((N, N))
+                        drift_at_pos = data_array[:, 1:3].T.reshape((2, N, N))
+                        diffusion_at_pos = data_array[:, 3:].T.reshape((4, N, N))
+
+                        flux_array = zeros((2, N, N))
+                        calc_flux(prob_ss_array, drift_at_pos, diffusion_at_pos, flux_array, N)
+                        flux_array = asarray(flux_array)/(dx*dx)
+
+                        integrate_flux_X[ii] = (1./(2*pi))*trapz(trapz(flux_array[0, ...], dx=dx, axis=1), dx=dx)
+                        integrate_flux_Y[ii] = (1./(2*pi))*trapz(trapz(flux_array[1, ...], dx=dx, axis=0), dx=dx)
+
+                        integrate_power_X[ii] = integrate_flux_X[ii]*psi_1
+                        integrate_power_Y[ii] = integrate_flux_Y[ii]*psi_2
+                    except OSError:
+                        print('Missing file')
+                        print(input_file_name.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2,
+                                                     phase_shift))
+                if abs(psi_1) <= abs(psi_2):
+                    efficiency_ratio = -(integrate_power_X/integrate_power_Y)
+                else:
+                    efficiency_ratio = -(integrate_power_Y/integrate_power_X)
+
+                with open(output_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple), "w") as \
+                        ofile:
+                    for ii, phase_shift in enumerate(phase_array):
+                        ofile.write(
+                            f"{phase_shift:.15e}" + "\t"
+                            + f"{integrate_flux_X[ii]:.15e}" + "\t"
+                            + f"{integrate_flux_Y[ii]:.15e}" + "\t"
+                            + f"{integrate_power_X[ii]:.15e}" + "\t"
+                            + f"{integrate_power_Y[ii]:.15e}" + "\t"
+                            + f"{efficiency_ratio[ii]:.15e}" + "\n")
+                    ofile.flush()
 
 def plot_power_efficiency_Ecouple(target_dir):  # plot power and efficiency vs coupling strength
     Ecouple_array_tot = array(
@@ -757,10 +930,11 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
 if __name__ == "__main__":
     target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/" + \
                  "prediction/fokker_planck/working_directory_cython/"
-    plot_power_efficiency_Ecouple(target_dir)
-    plot_power_Ecouple_grid(target_dir)
-    plot_power_efficiency_phi(target_dir)
-    plot_power_phi_single(target_dir)
-    plot_nn_power_efficiency_Ecouple(target_dir)
-    plot_nn_power_efficiency_phi(target_dir)
-    plot_n0_power_efficiency_Ecouple(target_dir)
+    flux_power_efficiency(target_dir)
+    # plot_power_efficiency_Ecouple(target_dir)
+    # plot_power_Ecouple_grid(target_dir)
+    # plot_power_efficiency_phi(target_dir)
+    # plot_power_phi_single(target_dir)
+    # plot_nn_power_efficiency_Ecouple(target_dir)
+    # plot_nn_power_efficiency_phi(target_dir)
+    # plot_n0_power_efficiency_Ecouple(target_dir)

@@ -2574,7 +2574,7 @@ if __name__ == "__main__":
     # plot_flux_contour(target_dir)
     # plot_flux_space(target_dir)
     # plot_power_efficiency_Ecouple_single(target_dir)
-    plot_power_Ecouple_single(target_dir)
+    # plot_power_Ecouple_single(target_dir)
     # plot_power_Ecouple_scaled(target_dir)
     # plot_energy_flux(target_dir)
     # plot_energy_flux_grid(target_dir)
