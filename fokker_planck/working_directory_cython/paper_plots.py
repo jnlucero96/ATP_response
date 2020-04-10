@@ -720,7 +720,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
     data_array = loadtxt(input_file_name.format(psi_1, psi_2))
     flux_y_array = array(data_array[:, 2])
     power_y = -flux_y_array * psi_2
-    axarr[0].axhline(2*pi*power_y[17]*timescale, color='C0', linewidth=2, label='$0$')
+    axarr[0].axhline(2*pi*power_y[28]*timescale, color='C0', linewidth=2, label='$0$')
 
     # Fokker-Planck results (barriers)
     for i, num_min in enumerate(min_array):
@@ -750,7 +750,7 @@ def plot_nn_power_efficiency_phi(target_dir):  # plot power and efficiency as a 
     axarr[0].set_ylabel(r'$\beta \mathcal{P}_{\rm ATP}\ (\rm s^{-1})$', fontsize=20)
     axarr[0].spines['right'].set_visible(False)
     axarr[0].spines['top'].set_visible(False)
-    axarr[0].set_ylim((0, 31))
+    axarr[0].set_ylim((0, None))
     axarr[0].set_xlim((0, 6.3))
 
     leg = axarr[0].legend(title=r'$n_{\rm o} = n_1$', fontsize=14, loc='lower center', frameon=False, ncol=3)
@@ -935,10 +935,10 @@ def plot_n0_power_efficiency_Ecouple(target_dir):  # plot power and efficiency a
 if __name__ == "__main__":
     target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/" + \
                  "prediction/fokker_planck/working_directory_cython/"
-    # flux_power_efficiency(target_dir)
+    flux_power_efficiency(target_dir)
     # plot_power_efficiency_Ecouple(target_dir)
     # plot_power_Ecouple_grid(target_dir)
-    plot_power_efficiency_phi(target_dir)
+    # plot_power_efficiency_phi(target_dir)
     # plot_power_phi_single(target_dir)
     # plot_nn_power_efficiency_Ecouple(target_dir)
     # plot_nn_power_efficiency_phi(target_dir)
