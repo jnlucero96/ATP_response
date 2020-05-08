@@ -11,3 +11,4 @@ energy_flow.py
 *.zip
 fokker_planck/working_directory_cython/utilities.c
 fokker_planck/working_directory_cython/fpe.c
+*.iml
