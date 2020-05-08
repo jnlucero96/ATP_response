@@ -34,7 +34,7 @@ def get_params():
     # define the problem
     problem = problem_2D(
         n=N, m=N, E0=E0, Ec=Ecouple, E1=E1,
-        num_minima0=n1, num_minima1=n2, phase=phase
+        num_minima0=n1, num_minima1=n2, phase=phase,
         D=D, psi0=psi1, psi1=psi2
     )
 

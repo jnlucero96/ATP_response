@@ -16,7 +16,7 @@ class problem_2D(object):
         y0=0.0, ym=2.0*pi,
         n=360, m=360,
         E0=2.0, Ec=8.0, E1=2.0,
-        num_minima0=3.0, num_minima1=3.0, phase=0.0
+        num_minima0=3.0, num_minima1=3.0, phase=0.0,
         D=0.001, psi0=0.0, psi1=0.0
     ):
 
@@ -72,7 +72,7 @@ class problem_2D(object):
     # define the potential V
     def potential(self):
         return 0.5*(
-            self.E0*(1.0-cos(self.num_minima0*(self.theta0[:, None]-phase)))
+            self.E0*(1.0-cos(self.num_minima0*(self.theta0[:, None]-self.phase)))
             + self.Ec*(1.0-cos(self.theta0[:, None]-self.theta1[None, :]))
             + self.E1*(1.0-cos(self.num_minima1*self.theta1[None, :]))
         )
