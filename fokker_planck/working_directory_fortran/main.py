@@ -56,6 +56,8 @@ def save_data_reference(
     psi1 = problem.psi0
     psi2 = problem.psi1
 
+    phase = problem.phase
+
     potential_at_pos = problem.Epot
 
     p_equil = problem.p_equil
@@ -70,7 +72,7 @@ def save_data_reference(
     data_filename = (
         f"/reference_E0_{E0}_Ecouple_{Ecouple}_E1_{E1}_"
         + f"psi1_{psi1}_psi2_{psi2}_"
-        + f"n1_{n1}_n2_{n2}_phase_0.0_"
+        + f"n1_{n1}_n2_{n2}_phase_{phase}_"
         + "outfile.dat"
     )
     data_total_path = target_dir + data_filename
