@@ -2789,6 +2789,183 @@ def plot_power_Ecouple_grid_extended(target_dir):  # grid of plots of the flux a
     # f.tight_layout()
     f.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
 
+def plot_power_ratio_Ecouple_grid(target_dir):
+    Ecouple_array_tot = array(
+        [2.0, 2.83, 4.0, 5.66, 8.0, 10.0, 11.31, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 22.63, 24.0,
+         32.0, 45.25, 64.0, 90.51, 128.0])
+    psi1_array = array([2.0, 4.0, 8.0])
+    psi_ratio = array([8, 4, 2])
+    colorlst = ['C1', 'C2', 'C3']
+    barrier_heights = array([2.0, 4.0])
+
+    output_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/results/FP_Full_2D/" +
+                        "P_ATP_P_inf_log_Ecouple_grid_" + "E0_{0}_E1_{1}_n1_{2}_n2_{3}" + "_.pdf")
+
+    f, axarr = plt.subplots(3, 3, sharex='col', sharey='all', figsize=(8, 6))
+
+    for i, psi_1 in enumerate(psi1_array):
+        for j, ratio in enumerate(psi_ratio):
+            psi_2 = -psi_1 / ratio
+            print('Chemical driving forces:', psi_1, psi_2)
+
+            axarr[i, j].axhline(1, color='grey', linestyle='--', linewidth=2)
+
+            # Fokker-Planck results (2 kT barriers)
+            for k, E0 in enumerate(barrier_heights):
+                E1 = E0
+
+                # Power at infinite coupling
+                if E0 == 2.0:
+                    input_file_name = (
+                                "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/data/FP_Full_2D/plotting_data/"
+                                + "Power_Ecouple_inf_grid_E0_2.0_E1_2.0_n1_3.0_n2_3.0_outfile.dat")
+                else:
+                    input_file_name = ("/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/data/Rigid_coupling/"
+                                       + "Power_Ecouple_inf_grid_E0_4.0_E1_4.0_n1_3.0_n2_3.0_outfile.dat")
+
+                try:
+                    inf_array = loadtxt(input_file_name, usecols=2)
+                except OSError:
+                    print('Missing file Infinite Power Coupling')
+
+                power_y_array = []
+                for ii, Ecouple in enumerate(Ecouple_array_tot):
+                    if Ecouple in Ecouple_extra and E0 == 2.0:
+                        input_file_name = (
+                                target_dir + "200511_2kT_extra/" + "flux_power_efficiency_"
+                                + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    elif E0 == 4.0:
+                        input_file_name = (
+                                target_dir + "200506_4kTbarrier/spectral/" + "flux_power_efficiency_"
+                                + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    elif E0 == 6.0:
+                        input_file_name = (
+                                target_dir + "200511_6kTbarrier/" + "flux_power_efficiency_"
+                                + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    else:
+                        input_file_name = (
+                                target_dir + "plotting_data/" + "flux_power_efficiency_"
+                                + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" + "_outfile.dat")
+                    try:
+                        if Ecouple == 22.63 and (E0 == 4.0 or E0 == 6.0):
+                            data_array = loadtxt(
+                                input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, 22.62),
+                                usecols=4)
+                        else:
+                            data_array = loadtxt(
+                                input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple),
+                                usecols=4)
+
+                        if data_array.size > 2:  # data format varies a little
+                            power_y = array(data_array[0])
+                        else:
+                            power_y = array(data_array)
+                        power_y_array = append(power_y_array, power_y)
+                    except OSError:
+                        print('Missing file flux')
+                        print(input_file_name.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+                if E0 == 2.0:
+                    print(-power_y_array / inf_array[3 * i + j])
+                axarr[i, j].plot(Ecouple_array_tot, -power_y_array / inf_array[3 * i + j], '.', color=colorlst[k],
+                                 markersize=14)
+
+            axarr[i, j].set_xscale('log')
+            axarr[i, j].set_yscale('log')
+            axarr[i, j].spines['right'].set_visible(False)
+            axarr[i, j].spines['top'].set_visible(False)
+            axarr[i, j].set_xticks([1., 10., 100.])
+            if j == 0:
+                axarr[i, j].set_xlim((2, 150))
+            elif j == 1:
+                axarr[i, j].set_xlim((3, 150))
+            else:
+                axarr[i, j].set_xlim((5, 150))
+
+            axarr[i, j].set_ylim((0.5, 15))
+            axarr[i, j].set_yticks([1, 10])
+
+            if j == 0 and i > 0:
+                axarr[i, j].yaxis.offsetText.set_fontsize(0)
+            else:
+                axarr[i, j].yaxis.offsetText.set_fontsize(14)
+
+            if j == psi1_array.size - 1:
+                axarr[i, j].set_ylabel(r'$%.0f$' % psi_ratio[::-1][i], labelpad=16, rotation=270, fontsize=18)
+                axarr[i, j].yaxis.set_label_position('right')
+
+            if i == 0:
+                axarr[i, j].set_title(r'$%.0f$' % psi1_array[::-1][j], fontsize=18)
+
+            if j == 2 and i == 1:
+                print( )
+                # axarr[i, j].tick_params(axis='x', colors='red', which='both')
+                # axarr[i, j].tick_params(axis='y', colors='red', which='both')
+                # axarr[i, j].spines['left'].set_color('red')
+                # axarr[i, j].spines['bottom'].set_color('red')
+            else:
+                axarr[i, j].tick_params(axis='both', labelsize=18)
+
+    f.tight_layout()
+    f.subplots_adjust(bottom=0.12, left=0.12, right=0.9, top=0.88, wspace=0.1, hspace=0.1)
+    f.text(0.5, 0.01, r'$\beta E_{\rm couple}$', ha='center', fontsize=24)
+    f.text(0.01, 0.5, r'$\mathcal{P}_{\rm ATP} / \mathcal{P}^{\infty}_{\rm ATP}$', va='center', rotation='vertical',
+           fontsize=24)
+    f.text(0.5, 0.95, r'$-\mu_{\rm H^+} / \mu_{\rm ATP}$', ha='center', rotation=0, fontsize=24)
+    f.text(0.95, 0.5, r'$\mu_{\rm H^+}\ (k_{\rm B} T / \rm rad)$', va='center', rotation=270, fontsize=24)
+    f.savefig(output_file_name.format(E0, E1, num_minima1, num_minima2))
+
+def plot_Pss(target_dir):
+    output_file_name1 = (
+                "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/results/FP_Full_2D/" +
+                "Diff_Pss_Peq_" + "E0_{0}_E1_{1}_psi1_{2}_psi2_{3}_n1_{4}_n2_{5}_Ecouple_{6}" +
+                "_.pdf")
+
+    # psi1_array = array([2.0, 4.0, 8.0])
+    # psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
+    psi1_array = array([0.0])
+    psi2_array = array([0.0])
+
+    for psi_1 in psi1_array:
+        for psi_2 in psi2_array:
+            for ii, Ecouple in enumerate(Ecouple_array):
+                plt.figure()
+                f1, ax1 = plt.subplots(1, 1)
+
+                # usual data
+                input_file_name1 = ("/Users/Emma/Documents/Data/ATPsynthase/Full-2D-FP/190520_phaseoffset" +
+                                    "/reference_" +
+                                    "E0_{0}_Ecouple_{1}_E1_{2}_psi1_{3}_psi2_{4}_n1_{5}_n2_{6}_phase_{7}" +
+                                    "_outfile.dat")
+                try:
+                    data_array = loadtxt(
+                        input_file_name1.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0),
+                        usecols=(0, 1))
+                    N = int(sqrt(len(data_array)))  # check grid size
+                    print('Grid size: ', N)
+                    prob_ss_array = data_array[:, 0].reshape((N, N))
+                    prob_eq_array = data_array[:, 1].reshape((N, N))
+                    prob_ss_x = trapz(prob_ss_array, dx=dx, axis=1)
+                    prob_ss_y = trapz(prob_ss_array, dx=dx, axis=0)
+                    prob_eq_x = trapz(prob_eq_array, dx=dx, axis=1)
+                    prob_eq_y = trapz(prob_eq_array, dx=dx, axis=0)
+                except OSError:
+                    print('Missing file')
+                    print(input_file_name1.format(E0, Ecouple, E1, psi_1, psi_2, num_minima1, num_minima2, 0.0))
+
+                ax1.plot(positions, prob_ss_x - prob_eq_x, color='C0', linewidth=2.0)
+                ax1.plot(positions, prob_ss_y - prob_eq_y, color='C1', linewidth=2.0)
+
+                print(max(abs(prob_ss_array - prob_eq_array)))
+
+                ax1.set_xlabel(r'$ \theta_{\rm o, 1} $')
+                ax1.set_ylabel(r'$P_{\rm ss}( \theta_{\rm o, 1}) - P_{\rm eq}( \theta_{\rm o, 1})  $')
+                ax1.spines['right'].set_visible(False)
+                ax1.spines['top'].set_visible(False)
+                ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
+                f1.savefig(output_file_name1.format(E0, E1, psi_1, psi_2, num_minima1, num_minima2, Ecouple))
+
+
 
 if __name__ == "__main__":
     target_dir = "/Users/Emma/sfuvault/SivakGroup/Emma/ATPsynthase/FokkerPlanck_2D_full/prediction/fokker_planck/" + \
@@ -2826,3 +3003,5 @@ if __name__ == "__main__":
     # plot_pmf_coord(target_dir)
     # calculate_lag(target_dir)
     # plot_path(target_dir)
+    # plot_power_ratio_Ecouple_grid(target_dir)
+    # plot_Pss(target_dir)
