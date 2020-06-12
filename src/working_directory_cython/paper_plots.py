@@ -23,7 +23,7 @@ Ecouple_array_tot = array([2.0, 2.83, 4.0, 5.66, 8.0, 10.0, 11.31, 12.0, 14.0, 1
 min_array = array([1.0, 2.0, 3.0, 6.0, 12.0])  # number of energy minima/ barriers
 barrier_heights = array([2.0, 4.0])  # barrier heights
 psi1_array = array([2.0, 4.0, 8.0])  # driving force on Fo
-psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])
+psi2_array = array([-0.25, -0.5, -1.0, -2.0, -4.0])  # driving force on F1
 psi_ratio = array([8, 4, 2])  # ratio of driving forces
 
 def calc_flux(p_now, drift_at_pos, diffusion_at_pos, flux_array, N):
